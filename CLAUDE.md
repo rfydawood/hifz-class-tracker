@@ -39,6 +39,7 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 
 ## Working conventions established so far
 
+- **Always push to GitHub yourself after any change, without being asked.** The user is non-technical and explicitly said they'll forget to ask and will assume local edits are already live. Every change = commit + push + trigger a Pages rebuild + confirm it's actually live (see the `gh api ... pages/builds` step above) — never leave a change sitting local-only, and never wait for the user to say "push it."
 - Git commits end with `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>` — match existing `git log` style.
 - Each teacher's data is independent per device by default (localStorage) — this must stay true unless the user explicitly asks to change it.
 - Prefer free tooling/hosting for everything; flag clearly any time something would cost money (e.g. Google Play Store's one-time $25 fee) rather than assuming it's wanted.

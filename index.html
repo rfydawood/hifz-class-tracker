@@ -283,6 +283,9 @@ input,select{font:inherit;color:inherit}
   </aside>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
@@ -349,7 +352,7 @@ function mergeSettings(x){
 }
 function ensureAttendance(){ state.students.forEach(x=>{ if(!state.attendance[x.id]) state.attendance[x.id]={status:'present',at:null,note:''}; }); }
 /* roster edits and rule changes belong to the class, not to one day */
-function saveProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings})); }catch(e){} }
+function saveProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings})); }catch(e){} cloudSync(); }
 function loadProfile(){
   try{
     const o=JSON.parse(localStorage.getItem(PKEY)||'null'); if(!o) return;
@@ -371,6 +374,137 @@ function load(){
     s.settings=mergeSettings(s.settings);                       // settings shape may have grown since the save
     s.lastAction=null; Object.assign(state,s); ensureAttendance();
   }catch(e){}
+}
+
+/* ===== optional cloud sync: opt-in, per-class code, best-effort =====
+   Off by default. Everything above still works with zero internet connection.
+   When a teacher turns this on, save()/saveProfile() also push a copy to
+   Firestore under a private code, so the same class can be pulled up on
+   another device. The code is a shared secret (like a link) - there is no
+   password check on the server, so anyone with the code can read/write that
+   class's data. Codes are long and random enough that guessing one isn't
+   practical, but they should be kept private the way a password would be. */
+const FIREBASE_CONFIG={
+  projectId:"hifz-class-tracker-dece7",
+  appId:"1:726082000637:web:c4bc54fd73d8853f44d094",
+  storageBucket:"hifz-class-tracker-dece7.firebasestorage.app",
+  apiKey:"AIzaSyAZS_OEMnmcvc5xDzNESMVBvXJ4oGWCUBo",
+  authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
+  messagingSenderId:"726082000637"
+};
+const CCKEY='hifz.guest.classcode';
+let fbApp=null, fbDb=null, fbAuthReady=null, cloudStatus='off';
+function classCode(){ try{ return localStorage.getItem(CCKEY)||''; }catch(e){ return ''; } }
+function setClassCode(code){ try{ if(code) localStorage.setItem(CCKEY,code); else localStorage.removeItem(CCKEY); }catch(e){} }
+function genClassCode(){
+  const abc='ABCDEFGHJKMNPQRSTUVWXYZ23456789';                // no 0/O/1/I/L look-alikes
+  let s=''; for(let i=0;i<10;i++) s+=abc[Math.floor(Math.random()*abc.length)];
+  return s.match(/.{1,5}/g).join('-');
+}
+function cloudStatusLabel(){
+  return cloudStatus==='synced'?'Synced just now'
+    :cloudStatus==='connecting'?'Syncing…'
+    :cloudStatus==='error'?'Sync error — this device\'s copy is safe, but it hasn\'t reached the cloud'
+    :'Not synced yet';
+}
+function initCloud(){
+  if(fbAuthReady) return fbAuthReady;
+  fbAuthReady=new Promise(resolve=>{
+    try{
+      fbApp=firebase.initializeApp(FIREBASE_CONFIG);
+      fbDb=firebase.firestore(fbApp);
+      firebase.auth(fbApp).signInAnonymously().then(()=>resolve(true)).catch(()=>resolve(false));
+    }catch(e){ resolve(false); }
+  });
+  return fbAuthReady;
+}
+function cloudPayload(){
+  return {
+    profileJSON:JSON.stringify({students:state.students,settings:state.settings}),
+    dayJSON:JSON.stringify({day:todayKey(),state}),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+function cloudSync(){
+  const code=classCode(); if(!code) { cloudStatus='off'; return; }
+  clearTimeout(cloudSync._t);
+  cloudSync._t=setTimeout(()=>{
+    initCloud().then(ok=>{
+      if(!ok){ cloudStatus='error'; return; }
+      cloudStatus='connecting';
+      fbDb.collection('classes').doc(code).set(cloudPayload(),{merge:true})
+        .then(()=>{ cloudStatus='synced'; })
+        .catch(()=>{ cloudStatus='error'; });
+    });
+  },1500);
+}
+function turnOnSync(){
+  setClassCode(genClassCode());
+  cloudStatus='connecting';
+  cloudSync();
+  openCloudSync();
+}
+function turnOffSync(){
+  setClassCode('');
+  cloudStatus='off';
+  toast('Cloud sync turned off. This device keeps its own copy as usual.');
+  closeSheet();
+}
+function pullFromCloud(code){
+  code=(code||'').trim().toUpperCase();
+  if(!code) return toast('Type a sync code first.');
+  initCloud().then(ok=>{
+    if(!ok) return toast('Could not connect. Check your internet and try again.');
+    fbDb.collection('classes').doc(code).get().then(doc=>{
+      if(!doc.exists) return toast('No class found with that code.');
+      const data=doc.data();
+      try{
+        if(data.profileJSON){
+          const p=JSON.parse(data.profileJSON);
+          if(Array.isArray(p.students)) state.students=p.students;
+          state.settings=mergeSettings(p.settings);
+        }
+        if(data.dayJSON){
+          const o=JSON.parse(data.dayJSON);
+          if(o&&o.day===todayKey()&&o.state){
+            const d=v=>v?new Date(v):null, s=o.state;
+            s.session.startedAt=d(s.session.startedAt); s.session.endedAt=d(s.session.endedAt); s.session.lunchAt=d(s.session.lunchAt);
+            Object.values(s.attendance).forEach(a=>a.at=d(a.at));
+            Object.values(s.active).forEach(a=>a.startAt=d(a.startAt));
+            s.breaks.forEach(b=>{b.startAt=d(b.startAt); b.endAt=d(b.endAt);});
+            s.log.forEach(l=>l.t=d(l.t));
+            s.settings=mergeSettings(s.settings);
+            s.lastAction=null; Object.assign(state,s);
+          }
+        }
+        ensureAttendance(); state.setup=true; setClassCode(code); cloudStatus='synced';
+        localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings}));
+        localStorage.setItem(KEY,JSON.stringify({day:todayKey(),state}));
+        closeSheet(); render();
+        toast('Class loaded from the cloud');
+      }catch(e){ toast('That code loaded, but the data looked invalid.'); }
+    }).catch(()=>toast('Could not reach the cloud. Check your internet and try again.'));
+  });
+}
+function openCloudSync(){
+  closeDrawer();
+  const code=classCode();
+  if(code){
+    sheetHTML('Cloud sync','Lets you pick up this same class on another device of yours.',
+      `<div class="body">
+        <div style="font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:10px">${code}</div>
+        <p style="color:var(--mute);font-size:13px;line-height:1.5;margin-bottom:14px">On another device, open the teacher menu → Cloud sync → enter this code to load this same class there. <b>Keep it private</b> — anyone with this code can see this class's data, so treat it like a password.</p>
+        <p style="font-size:14px;font-weight:700">Status: ${cloudStatusLabel()}</p>
+       </div>
+       <div class="actions"><button class="btn ghost" onclick="turnOffSync()">Turn off sync</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+  } else {
+    sheetHTML('Cloud sync','Optional. Keeps an online backup of this class and lets you pick it up on another device (helpful if this tablet is ever lost, reset, or replaced). Nothing changes unless you choose one of these.',
+      `<div class="body">
+        <button class="dbtn leaf" onclick="turnOnSync()">Turn on sync for this class<small>Creates a private code for this device's data</small></button>
+        <div class="note"><input id="pullCode" placeholder="Or type an existing sync code"></div>
+        <button class="btn ghost" style="margin-top:10px;width:100%" onclick="pullFromCloud(($('pullCode')||{}).value)">Load a class using that code</button>
+       </div>`);
+  }
 }
 
 function toast(msg,undoable){
@@ -820,6 +954,8 @@ function drawDrawer(){
    <div class="field"><div>Other<small>No trip cap; timer turns red after</small></div><select onchange="state.settings.longMin=+this.value;render();drawDrawer()">${[5,8,10,15,20].map(m=>`<option ${set.longMin===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select></div>
    <h4>Today's log</h4>
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
+   <h4>Cloud sync</h4>
+   <button class="dbtn" onclick="openCloudSync()">${classCode()?`Manage cloud sync<small>${cloudStatusLabel()}</small>`:'Turn on cloud sync<small>Optional — back up this class and use it on another device</small>'}</button>
    <h4>Prototype</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Days are archived on this device as you use the tracker. ${Object.keys(readHistory()).length} day(s) recorded so far.</small>
    <button class="dbtn" onclick="resetDay()">Reset the day</button>`;
