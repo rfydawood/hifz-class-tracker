@@ -1,8 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.hifztracker.app",
-    "sha256_cert_fingerprints": ["B4:FB:9B:A6:52:FB:13:02:F2:FC:27:C1:38:88:AA:20:A5:15:C3:BE:11:2F:49:C2:B7:7D:29:5D:C5:FA:5B:BF"]
-  }
-}]

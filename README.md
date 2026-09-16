@@ -9,12 +9,13 @@ Classroom attendance and break tracker for hifz teachers. Pure client-side app �
 
 ## Native Android app (optional)
 
-A thin native wrapper (Trusted Web Activity, built with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap)) around the same live site, for teachers who want it to look like a Play Store–style app.
+A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`capacitor-app/`), for teachers who want it to look like a Play Store–style app. The web app's HTML/CSS/JS is bundled directly inside the app at build time and runs in a plain WebView — no browser chrome, no address bar, no install-time website verification of any kind.
 
-- **Direct APK download:** https://github.com/rfydawood/hifz-class-tracker/releases/latest
-- **Firebase App Distribution** (installs through Google Play's installer, more reliable than a raw APK download): https://console.firebase.google.com/project/hifz-class-tracker-dece7/appdistribution
+- **Firebase App Distribution** (installs through a Google-provided installer flow): https://console.firebase.google.com/project/hifz-class-tracker-dece7/appdistribution
 
-Because the wrapper just loads the live site, pushing changes to `index.html` updates everyone instantly — no new APK needed, for either install method. A new APK build is only needed if the app's name, icon, or native permissions change.
+**This replaced an earlier version built as a Trusted Web Activity** (a thin wrapper that loaded the live site, via [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap), in `android-app/`). That approach required a "digital asset links" file to live at the true root of the `rfydawood.github.io` domain to open without a browser address bar — but this project only controls the `/hifz-class-tracker/` subpath of that domain, not the root, so verification could never fully succeed there for free. `android-app/` is kept only for reference and is no longer built or distributed.
+
+**Trade-off of going fully native:** unlike the old wrapper, this app's content is bundled at build time, so a code change no longer shows up automatically — it needs a new build pushed to Firebase App Distribution (see "Rebuilding the native app" below). The web app / PWA above is unaffected and still updates instantly.
 
 ## Optional cloud sync (class codes)
 
@@ -29,19 +30,24 @@ Off by default — nothing changes unless a teacher turns it on from the teacher
 
 - `index.html` — the entire app (HTML/CSS/JS, no build step)
 - `manifest.json`, `sw.js`, `icons/` — PWA support (installability + offline)
-- `.well-known/assetlinks.json` — lets the native Android app open full-screen with no browser address bar
 - `firebase.json`, `firestore.rules` — cloud sync backend config (see above)
-- `android-app/` — the native Android wrapper project (Gradle/Bubblewrap). Buildable from scratch; the signing key and built APK are intentionally **not** committed (see below)
+- `capacitor-app/` — the current native Android app (Capacitor). Buildable from scratch; `node_modules/`, Gradle build output, and the built APK are intentionally **not** committed
+- `android-app/` — the earlier Trusted Web Activity native wrapper (Bubblewrap). Legacy/reference only — no longer built or distributed (see above)
 - `make_icons.py` — regenerates the app icons if the design ever changes
 
 ## Rebuilding the native app
 
-The signing key (`android-app/android.keystore`) and its password are kept **local only**, never committed — anyone with them could push updates under this app's identity. They're backed up outside git; ask Rafaye if a rebuild is needed on a new machine.
+The signing key (`android-app/android.keystore`, reused for the Capacitor app too so updates install cleanly over old installs) and its password are kept **local only**, never committed — anyone with them could push updates under this app's identity. They're backed up outside git; ask Rafaye if a rebuild is needed on a new machine.
 
 To rebuild after code changes:
 ```
-cd android-app
-node generate.js          # regenerates the project from the live manifest.json
+cd capacitor-app
+cp ../index.html ../manifest.json ../sw.js www/ && cp -r ../icons www/   # pull in the latest web app
+npx cap sync android
+cd android
 ./gradlew.bat assembleRelease
-# then zipalign + apksigner sign with android.keystore (see KEYSTORE_PASSWORD_KEEP_SAFE.txt)
+# then zipalign + apksigner sign app-release-unsigned.apk with ../../android-app/android.keystore
+# (see android-app/KEYSTORE_PASSWORD_KEEP_SAFE.txt), then
+# firebase appdistribution:distribute <signed.apk> --app 1:726082000637:android:5627f387c8f7218644d094 --project hifz-class-tracker-dece7 --testers "..."
 ```
+Remember to bump `versionCode`/`versionName` in `capacitor-app/android/app/build.gradle` each time.

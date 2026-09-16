@@ -10,10 +10,10 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
   gh api -X POST repos/rfydawood/hifz-class-tracker/pages/builds
   ```
   then poll `gh api repos/rfydawood/hifz-class-tracker/pages` until `"status":"built"` before telling the user it's live.
-- **Native Android app (secondary distribution):**
-  - GitHub Release APK: https://github.com/rfydawood/hifz-class-tracker/releases/latest
-  - Firebase App Distribution (more reliable install than raw APK — goes through Play's installer): https://console.firebase.google.com/project/hifz-class-tracker-dece7/appdistribution
-  - It's a Trusted Web Activity (Bubblewrap) wrapper that just loads the live site — pushing site changes updates it automatically, no rebuild needed *unless* the app's name/icon/native permissions change.
+- **Native Android app (secondary distribution):** `capacitor-app/` — a fully native Capacitor app (plain WebView, content bundled at build time). Distributed via Firebase App Distribution: https://console.firebase.google.com/project/hifz-class-tracker-dece7/appdistribution
+  - **Unlike the web app, this does NOT auto-update.** A code change requires a rebuild + `firebase appdistribution:distribute` to reach testers. See README.md "Rebuilding the native app" for the exact steps. Bump `versionCode`/`versionName` in `capacitor-app/android/app/build.gradle` each time.
+  - `android-app/` (Bubblewrap/Trusted Web Activity) is the **abandoned first attempt** — kept for reference, never build or distribute from it again. It failed because Digital Asset Links verification requires `assetlinks.json` at the true root of `rfydawood.github.io`, which this project doesn't control (only the `/hifz-class-tracker/` subpath) — confirmed via Google's own verification API rejecting the subpath. Symptom was: installed app fell back to a browser view with an address bar, and Chrome's own PWA-install prompt fired on top of it (looked like "opens and asks to install again").
+  - The Capacitor app reuses the **exact same signing key** as the old TWA (`android-app/android.keystore`) so it installs as a clean in-place upgrade, not a conflicting second app. Never generate a new keystore for this app.
 
 ## Firebase project
 
@@ -24,16 +24,19 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 
 ## Local machine setup (already installed, don't reinstall)
 
-- Node.js, JDK 17 (Microsoft Build, `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot`), Android SDK (`C:\Users\Rafaye\android-sdk`) — all installed via winget/npm for building the Android app.
-- `@bubblewrap/cli` installed globally; config at `~/.bubblewrap/config.json` points at the JDK/SDK above.
-- Android signing key: `android-app/android.keystore` + password in `android-app/KEYSTORE_PASSWORD_KEEP_SAFE.txt` — **both gitignored, local only, never commit.** Needed only to rebuild/re-sign the native app. If lost, the app can never be updated under the same identity again — back these up somewhere private outside git.
+- Node.js, JDK 17 (Microsoft Build, `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot`) — used by the legacy `android-app/` (Bubblewrap) setup, kept installed but no longer needed for new work.
+- JDK 21 (Microsoft Build, `C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot`) — **use this one for `capacitor-app/`**, its Capacitor Android module requires Java 21 specifically (JDK 17 fails the build).
+- Android SDK (`C:\Users\Rafaye\android-sdk`), `build-tools/36.1.0` (has `zipalign.exe`, `apksigner.bat`) — shared by both projects.
+- `@bubblewrap/cli` installed globally (legacy, for `android-app/` only, not used going forward).
+- Android signing key: `android-app/android.keystore` + password in `android-app/KEYSTORE_PASSWORD_KEEP_SAFE.txt` — **both gitignored, local only, never commit.** Reused for `capacitor-app/` too (same package name + cert = clean upgrades). If lost, the app can never be updated under the same identity again — back these up somewhere private outside git.
 
 ## Repo layout
 
 - `index.html` — the entire web app (no build step, no framework)
 - `manifest.json`, `sw.js`, `icons/` — PWA support
-- `.well-known/assetlinks.json` — lets the native app open full-screen (no browser address bar)
-- `android-app/` — native wrapper project source (buildable; see its own notes / README.md for rebuild steps)
+- `firebase.json`, `firestore.rules` — cloud sync backend config
+- `capacitor-app/` — **current** native Android app (Capacitor, fully bundled, no auto-update — see above)
+- `android-app/` — **legacy** native wrapper (Bubblewrap/TWA), abandoned, reference only
 - `make_icons.py` — regenerates app icons if the design changes
 - `README.md` — human-facing summary of the above (keep it updated alongside this file when things change)
 

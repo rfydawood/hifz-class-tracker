@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hifz Class Tracker</title>
+<meta name="description" content="Classroom attendance and break tracker for hifz teachers. Works offline, data stays on this device.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F2E36">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hifz Tracker">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1F2E36; --leaf:#0F7B7B; --leaf-soft:#DCEDED;
+  --gold:#D39A22; --gold-soft:#FBF0D8; --ember:#C0503A; --ember-soft:#F8E5E0;
+  --paper:#F2F5F6; --card:#FFFFFF; --line:#D6DFE2; --mute:#5B6B73;
+  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#E3EAEC;color:var(--ink);-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input,select{font:inherit;color:inherit}
+
+.app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 18px;background:var(--ink);color:#EEF3F4}
+.top h1{font-size:23px;font-weight:800;letter-spacing:-.01em}
+.top .sub{font-size:14px;color:#A6BFC7;margin-top:4px}
+.when{margin-left:auto;text-align:right}
+.top .clock{font-size:34px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.top .date{font-size:16px;font-weight:700;white-space:nowrap;color:#A6BFC7;margin-bottom:6px;line-height:1}
+.pill{padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.12)}
+.pill b{font-size:15px}
+.pill.out{background:var(--gold);color:var(--ink)}
+.pill.absent{background:rgba(255,255,255,.08);color:#BDCED4}
+.start-btn{background:var(--leaf);color:#fff;padding:12px 18px;border-radius:12px;font-weight:800;font-size:15px;white-space:nowrap}
+.start-btn.end{background:var(--ember)}
+.start-btn.lunch{background:var(--gold);color:var(--ink)}
+.menu-btn{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.12);display:grid;place-items:center;flex:none}
+.menu-btn svg{width:22px;height:22px;stroke:#EEF3F4;stroke-width:2.2;fill:none;stroke-linecap:round}
+
+.banner{display:flex;align-items:center;gap:14px;padding:12px 22px;background:var(--gold-soft);border-bottom:1px solid #E5C57E;font-weight:700;font-size:15px}
+.banner.leaf{background:var(--leaf-soft);border-color:#BBD9D9}
+.banner.paper{background:#fff;border-color:var(--line);color:var(--mute);font-weight:600}
+.banner .act{margin-left:auto;background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px}
+
+.stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr clamp(230px,27%,380px);gap:14px;padding:14px 16px 16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.panel-head h2{font-size:16px;font-weight:700}
+.panel-head .hint{color:var(--mute);font-size:13px;margin-left:auto}
+
+.grid{flex:1;padding:14px;display:grid;gap:10px;overflow:auto;align-content:start}
+.tile{position:relative;border-radius:14px;padding:14px 14px 12px;min-height:112px;display:flex;flex-direction:column;justify-content:space-between;border:2px solid transparent;transition:transform .1s}
+.tile:active{transform:scale(.97)}
+@media (hover:hover){.tile:hover{border-color:var(--leaf)}.dbtn:hover,.reason:hover{border-color:var(--leaf)}}
+@media (max-width:560px){.stage{grid-template-columns:1fr}}
+.tile .name{font-size:18px;font-weight:800;line-height:1.15;letter-spacing:-.01em;overflow-wrap:anywhere}
+.tile .state{font-size:13px;font-weight:600;margin-top:8px;color:var(--mute);font-variant-numeric:tabular-nums}
+.tile.present{background:#E7F1F1;border-color:#CFE2E2}
+.tile.present .state{color:#0C5C5C}
+.tile.deact{background:#EDF1F2;color:#7D8D95;border-style:dashed;border-color:#C6D2D6}
+.tile.deact .name{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#B6C4C9}
+.tile.deact .state{color:#7D8D95}
+.tile.out{background:var(--gold-soft);border-color:var(--gold)}
+.tile.out .state{color:#6B4B0C;font-weight:800;font-size:15px}
+.tile.out.long{background:var(--ember-soft);border-color:var(--ember)}
+.tile.out.long .state{color:var(--ember)}
+.tile .tag{position:absolute;top:9px;right:9px;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;background:var(--gold-soft);color:#6B4B0C}
+.tile .tag.flag{background:var(--ember-soft);color:var(--ember)}
+.tile.deact .tag{background:#E2E8EA;color:#6B7A81}
+.tile:disabled{opacity:.6;cursor:default}
+@media (prefers-reduced-motion:reduce){.tile,.sheet{transition:none;animation:none}}
+
+.out-list{flex:1;overflow:auto;padding:12px}
+.out-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--gold-soft);border:1px solid #E5C57E;margin-bottom:10px}
+.out-item.long{background:var(--ember-soft);border-color:#E4B4A6}
+.out-item .who{flex:1;min-width:0}
+.out-item .who b{display:block;font-size:17px;font-weight:800}
+.out-item .who span{font-size:13px;color:var(--mute)}
+.out-item .t{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.out-item.long .t{color:var(--ember)}
+.out-item .back{background:var(--ink);color:#fff;border-radius:10px;padding:11px 14px;font-weight:700;font-size:14px;white-space:nowrap}
+.empty{padding:26px 18px;text-align:center;color:var(--mute);font-size:14px;line-height:1.5}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+
+.reasons{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.reason{border:2px solid var(--line);border-radius:18px;padding:20px 12px;font-size:19px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:9px;background:var(--card)}
+.reason .cap{font-size:12px;font-weight:700;color:var(--mute)}
+.reason.capped{border-color:var(--ember);background:var(--ember-soft)}
+.reason.capped .cap{color:var(--ember)}
+.mins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mins button{border:2px solid var(--line);border-radius:16px;padding:22px 10px;font-size:20px;font-weight:800;background:var(--card)}
+.mins button:active{border-color:var(--gold);background:var(--gold-soft)}
+.reason:active{border-color:var(--gold);background:var(--gold-soft)}
+.reason svg{width:40px;height:40px;stroke:var(--ink);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.reason{position:relative}
+.rdot{position:absolute;top:12px;left:12px;width:10px;height:10px;border-radius:50%}
+.washroom{background:#2F8F6B}
+.water{background:#2E7FB5}
+.wudhu{background:#6B5CA5}
+.assigned{background:#C0803A}
+.other{background:#93A3A9}
+.bdots{margin-left:auto;margin-right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:6px}
+.bdots .d{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:150px}
+.bdots .d i{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
+.bdots .d i.flagged{box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),0 0 0 2px var(--ember)}
+.bdots span{font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap}
+.bdots + .x{margin-left:0}
+
+.scrim{position:absolute;inset:0;background:rgba(31,46,54,.5);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+.scrim.show{display:flex}
+.sheet{width:100%;max-width:720px;max-height:100%;background:var(--card);border-radius:22px;padding:22px 24px 24px;display:flex;flex-direction:column;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:flex-start;gap:14px}
+.sheet h3{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.sheet p{color:var(--mute);margin-top:4px;font-size:15px;line-height:1.4}
+.sheet .x{margin-left:auto;width:44px;height:44px;border-radius:12px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+.sheet .x svg{width:20px;height:20px;stroke:var(--ink);stroke-width:2.2;fill:none;stroke-linecap:round}
+.sheet .body{flex:1;overflow:auto;margin-top:16px;min-height:0}
+.actions{display:flex;gap:12px;margin-top:18px}
+.btn{flex:1;border-radius:14px;padding:16px;font-size:17px;font-weight:800;text-align:center}
+.btn.primary{background:var(--leaf);color:#fff}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.ghost{background:var(--paper);border:1px solid var(--line)}
+.btn.warn{background:var(--ember);color:#fff}
+.note{margin-top:14px}
+.note input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--paper)}
+.rowlist{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.row b{flex:1;font-size:16px}
+.row .time{color:var(--mute);font-size:13px;min-width:130px;text-align:right}
+.seg{display:inline-flex;background:var(--card);border:1px solid #C6D2D6;border-radius:10px;overflow:hidden}
+.seg button{padding:7px 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid #E4EBED}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:#fff}
+.seg button.on.absent{background:var(--ember)}
+.seg button.on.tardy{background:var(--gold);color:var(--ink)}
+.summary{display:flex;gap:10px;margin-top:14px}
+.summary div{flex:1;border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;display:flex;justify-content:space-between}
+.summary div b{font-size:18px}
+.summary .p{background:var(--leaf-soft);color:#0C5C5C}
+.summary .t{background:var(--gold-soft);color:#6B4B0C}
+.summary .a{background:var(--ember-soft);color:var(--ember)}
+
+.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap}
+.toast.show{display:flex}
+.toast button{color:var(--gold);font-weight:800;padding:4px 6px}
+
+.drawer{position:absolute;top:0;right:0;bottom:0;width:380px;background:var(--card);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .2s ease;z-index:25;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(31,46,54,.15)}
+.drawer.show{transform:none}
+.drawer .dhead{display:flex;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.drawer .dhead h3{font-size:18px;font-weight:800}
+.drawer .dbody{flex:1;overflow:auto;padding:16px 20px}
+.drawer h4{font-size:13px;font-weight:700;color:var(--mute);margin:14px 0 8px}
+.drawer h4:first-child{margin-top:0}
+.dbtn{display:block;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);font-weight:700;font-size:15px;margin-bottom:8px;background:var(--card)}
+.dbtn small{display:block;font-weight:500;color:var(--mute);font-size:13px;margin-top:2px}
+.dbtn.gold{background:var(--gold-soft);border-color:#E5C57E}
+.dbtn.ember{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
+.dbtn.leaf{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.dbtn.leaf small{color:#CFE3F0}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:700}
+.field small{display:block;font-weight:500;color:var(--mute);font-size:12px;margin-top:2px}
+.field select,.field input{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--paper);font-size:14px;width:96px}
+.leftday{display:block;width:100%;margin-top:14px;text-align:center;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font-weight:700;font-size:15px;color:var(--mute)}
+.rrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
+.rrow b{flex:1}
+.rrow small{font-weight:500;color:var(--mute);font-size:12px}
+.rrow button{font-size:13px;font-weight:700;color:var(--ember);padding:4px 6px}
+.rrow button.back{color:var(--leaf)}
+.rctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 22px 14px}
+.rctl select{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card);font-size:14px;font-weight:700;color:var(--ink)}
+.rnav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.rnav button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:17px;font-weight:800;color:var(--ink)}
+.rnav b{font-size:14px;min-width:150px;text-align:center}
+.chips{display:flex;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
+.chip{flex:1;min-width:104px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;color:var(--mute)}
+.chip b{display:block;font-size:22px;color:var(--ink);letter-spacing:-.02em;margin-top:2px}
+.chip.warn{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
+.chip.warn b{color:var(--ember)}
+.stat{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stat>b{width:94px;font-weight:800}
+.bar{flex:1;height:10px;border-radius:6px;background:var(--paper);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px}
+.stat .v{width:172px;text-align:right;font-size:13px;font-weight:700;color:var(--mute)}
+.stat .v em{font-style:normal;color:var(--ember)}
+.two{display:flex;gap:6px}
+.two select,.two input{max-width:104px}
+.row .time.flag{color:var(--ember);font-weight:800}
+.radd{display:flex;gap:8px;margin-top:12px}
+.radd input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper);font-size:14px}
+.radd button{background:var(--ink);color:#fff;border-radius:10px;padding:10px 15px;font-weight:700;font-size:14px}
+.setup{position:fixed;inset:0;background:var(--paper);display:none;place-items:center;z-index:80;padding:24px;overflow:auto}
+.setup.show{display:grid}
+.setup-card{background:var(--card);border:1px solid var(--line);border-radius:20px;max-width:580px;width:100%;padding:30px}
+.setup-card h2{font-size:27px;letter-spacing:-.02em}
+.setup-card .lede{color:var(--mute);font-size:15px;line-height:1.55;margin:9px 0 22px}
+.setup-card label{display:block;font-weight:800;font-size:14px;margin-bottom:18px}
+.setup-card input,.setup-card textarea{display:block;width:100%;margin-top:7px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-size:15px;font-weight:600;background:var(--paper);resize:vertical;font-family:inherit}
+.setup-card .hint{font-weight:600;color:var(--mute);font-size:13px;margin-top:7px}
+.roster-list{margin:12px 0;border:1px solid var(--line);border-radius:12px;max-height:280px;overflow-y:auto;background:var(--paper)}
+.roster-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px}
+.roster-item:last-child{border-bottom:none}
+.roster-item button{color:var(--ember);font-weight:700;font-size:13px;padding:4px 8px}
+.roster-add{display:flex;gap:8px}
+.roster-add input{flex:1;min-width:0}
+.setup-actions{display:flex;align-items:center;gap:12px}
+.setup-actions span{color:var(--mute);font-size:14px;font-weight:700}
+.setup-actions .btn{margin-left:auto}
+.err{color:var(--ember);font-weight:700;font-size:14px;margin-top:12px;min-height:18px}
+.tour{position:fixed;inset:0;background:rgba(31,46,54,.55);display:none;place-items:center;z-index:70;padding:24px}
+.tour.show{display:grid}
+.tour-card{background:var(--card);border-radius:20px;max-width:540px;width:100%;padding:28px}
+.tour-card h3{font-size:22px;letter-spacing:-.01em}
+.tour-card p{font-size:15px;line-height:1.6;color:var(--mute);margin-top:10px}
+.tour-steps{display:flex;gap:6px;margin:20px 0 22px}
+.tour-steps i{flex:1;height:4px;border-radius:3px;background:var(--line)}
+.tour-steps i.on{background:var(--leaf)}
+.tour-actions{display:flex;gap:10px;align-items:center}
+.tour-actions .skip{color:var(--mute);font-weight:700;font-size:14px;margin-right:auto}
+.rh{font-size:13px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px}
+.log{font-size:13px;color:var(--mute);line-height:1.5}
+.log div{padding:6px 0;border-bottom:1px solid var(--line)}
+.log b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div><h1 id="title">Hifz Class</h1><div class="sub" id="sub"></div></div>
+    <span class="pill">In class <b id="cIn">0</b></span>
+    <span class="pill out">Out <b id="cOut">0</b></span>
+    <span class="pill absent">Not here <b id="cAbs">0</b></span>
+    <div class="when"><div class="date" id="date"></div><div class="clock" id="clock"></div></div>
+    <button class="start-btn" id="mainBtn" onclick="mainAction()"></button>
+    <button class="menu-btn" aria-label="Teacher menu" onclick="openDrawer()"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+  <div id="banner"></div>
+  <main class="stage">
+    <section class="panel">
+      <div class="panel-head"><h2 id="gridTitle">Tap your name</h2><span class="hint" id="gridHint"></span></div>
+      <div class="grid" id="grid"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Out right now</h2><span class="hint" id="outHint"></span></div>
+      <div class="out-list" id="outList"></div>
+    </section>
+  </main>
+
+  <div class="setup" id="setup"><div class="setup-card">
+    <h2>Set up your class</h2>
+    <p class="lede">Two things and you are ready. Everything stays on this computer &mdash; nothing is sent anywhere, and no account is needed.</p>
+    <label>Your name
+      <input id="tName" placeholder="e.g. Ustadh Bilal" oninput="setupCount()">
+      <span class="hint">Shown in the corner as &ldquo;[your name]'s Hifz Class&rdquo;.</span>
+    </label>
+    <label>Your students
+      <div class="roster-list" id="rosterList"></div>
+      <div class="roster-add">
+        <input id="tStudent" placeholder="Type a name and press Enter" onkeydown="if(event.key==='Enter')addSetupStudent()">
+        <button class="btn ghost" onclick="addSetupStudent()">Add</button>
+      </div>
+      <span class="hint">Add them one by one. You can add or remove students anytime later.</span>
+    </label>
+    <div class="setup-actions"><span id="setupCount">0 students</span><button class="btn dark" onclick="finishSetup()">Create my class</button></div>
+    <p class="err" id="setupErr"></p>
+  </div></div>
+  <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
+  <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
+  <div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+  <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" onclick="undo()">Undo</button></div>
+  <div class="scrim" id="drawerScrim" style="background:rgba(31,46,54,.25)" onclick="closeDrawer()"></div>
+  <aside class="drawer" id="drawer">
+    <div class="dhead"><h3>Teacher menu</h3><button class="menu-btn" style="margin-left:auto;background:var(--paper)" onclick="closeDrawer()"><svg viewBox="0 0 24 24" style="stroke:var(--ink)"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="dbody" id="dbody"></div>
+  </aside>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+const REASONS=[
+  {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
+  {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
+  {key:'wudhu',label:'Wudhu',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s3.5 4.4 3.5 6.6a3.5 3.5 0 0 1-7 0C8.5 7.4 12 3 12 3z"/><path d="M3.5 15c2.2 3.3 5.3 5 8.5 5s6.3-1.7 8.5-5"/></svg>'},
+  {key:'other',label:'Other',icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg>'},
+  {key:'assigned',label:'Assigned',icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 13V9M9.5 2.5h5M19.5 5.5 21 7"/></svg>'}
+];
+const state={
+  teacher:'', setup:false,
+  students:[],
+  settings:{
+    startTime:'08:00', endTime:'15:30',
+    snack:{start:'10:10',end:'10:20'}, lunch:{start:'12:05',end:'14:05'},
+    longMin:10,                                   // fallback alert for Other
+    limits:{washroom:{min:5,trips:2}, water:{min:1,trips:2}, wudhu:{min:2,trips:2}}
+  },
+  session:{status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null}, // preclass | live | paused | ended
+  // attendance: sid -> {status:'present'|'absent'|'tardy', at:Date|null, note}
+  // Everyone is assumed present. Pre-class tap = deactivate (absent). Post-start tap on deactivated = tardy, time noted.
+  attendance:{}, active:{}, breaks:[], log:[], lastAction:null
+};
+state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''});
+
+const $=id=>document.getElementById(id);
+const clockStr=d=>d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const dateStr=d=>d.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+const pad=n=>String(n).padStart(2,'0');
+const fmtDur=ms=>{const s=Math.max(0,Math.floor(ms/1000));return `${Math.floor(s/60)}:${pad(s%60)}`};
+const nameOf=sid=>(state.students.find(s=>s.id===sid)||{}).name||'';
+const roster=()=>state.students.filter(s=>s.active);            // kept in the teacher's roll order
+const RSN=k=>REASONS.find(r=>r.key===k)||{key:k,label:k};
+const LIMIT=k=>state.settings.limits[k]||null;
+const capMs=(k,assignedMin)=>k==='assigned'?Math.max(1,assignedMin||0)*60000:(LIMIT(k)?LIMIT(k).min*60000:state.settings.longMin*60000);
+const tripsUsed=(sid,k)=>state.breaks.filter(b=>b.sid===sid&&b.reason===k).length+(((state.active[sid]||{}).reason===k)?1:0);
+const flagsOf=sid=>state.breaks.filter(b=>b.sid===sid&&b.flag).length;
+const isLong=a=>!!a.allowMs&&Date.now()-a.startAt>a.allowMs;
+const toMin=t=>{const[h,m]=String(t).split(':').map(Number);return h*60+m};
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+const hm=t=>{const[h,m]=String(t).split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return clockStr(d)};
+function dueBreak(){
+  const S=state.settings,n=nowMin();
+  if(n>=toMin(S.snack.start)&&n<toMin(S.snack.end)) return {kind:'Snack break',start:S.snack.start,end:S.snack.end};
+  if(n>=toMin(S.lunch.start)&&n<toMin(S.lunch.end)) return {kind:'Lunch and recess',start:S.lunch.start,end:S.lunch.end};
+  return null;
+}
+function nextUp(){
+  const S=state.settings,n=nowMin();
+  const items=[[toMin(S.snack.start),'snack break '+hm(S.snack.start)],[toMin(S.lunch.start),'lunch '+hm(S.lunch.start)],[toMin(S.endTime),'end of class '+hm(S.endTime)]];
+  const nx=items.find(i=>i[0]>n); return nx?nx[1]:'';
+}
+const att=sid=>state.attendance[sid];
+const st=()=>state.session.status;
+function logIt(msg){ state.log.unshift({t:new Date(),msg}); }
+
+/* ===== keeps the day alive through a refresh or a closed lid ===== */
+const KEY='hifz.guest.day', PKEY='hifz.guest.profile', todayKey=()=>new Date().toDateString();
+function mergeSettings(x){
+  const def=state.settings, out=Object.assign({},def,x||{});
+  out.limits=Object.assign({},def.limits,(x||{}).limits||{});
+  out.snack=Object.assign({},def.snack,(x||{}).snack||{});
+  out.lunch=Object.assign({},def.lunch,(x||{}).lunch||{});
+  return out;
+}
+function ensureAttendance(){ state.students.forEach(x=>{ if(!state.attendance[x.id]) state.attendance[x.id]={status:'present',at:null,note:''}; }); }
+/* roster edits and rule changes belong to the class, not to one day */
+function saveProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings})); }catch(e){} cloudSync(); }
+function loadProfile(){
+  try{
+    const o=JSON.parse(localStorage.getItem(PKEY)||'null'); if(!o) return;
+    if(Array.isArray(o.students)&&o.students.length) state.students=o.students;
+    state.settings=mergeSettings(o.settings); ensureAttendance();
+  }catch(e){}
+}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({day:todayKey(),state})); saveProfile(); archive(); }catch(e){} }
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY); if(!raw) return;
+    const o=JSON.parse(raw); if(!o||o.day!==todayKey()) return;
+    const d=v=>v?new Date(v):null, s=o.state;
+    s.session.startedAt=d(s.session.startedAt); s.session.endedAt=d(s.session.endedAt); s.session.lunchAt=d(s.session.lunchAt);
+    Object.values(s.attendance).forEach(a=>a.at=d(a.at));
+    Object.values(s.active).forEach(a=>a.startAt=d(a.startAt));
+    s.breaks.forEach(b=>{b.startAt=d(b.startAt); b.endAt=d(b.endAt);});
+    s.log.forEach(l=>l.t=d(l.t));
+    s.settings=mergeSettings(s.settings);                       // settings shape may have grown since the save
+    s.lastAction=null; Object.assign(state,s); ensureAttendance();
+  }catch(e){}
+}
+
+/* ===== optional cloud sync: opt-in, per-class code, best-effort =====
+   Off by default. Everything above still works with zero internet connection.
+   When a teacher turns this on, save()/saveProfile() also push a copy to
+   Firestore under a private code, so the same class can be pulled up on
+   another device. The code is a shared secret (like a link) - there is no
+   password check on the server, so anyone with the code can read/write that
+   class's data. Codes are long and random enough that guessing one isn't
+   practical, but they should be kept private the way a password would be. */
+const FIREBASE_CONFIG={
+  projectId:"hifz-class-tracker-dece7",
+  appId:"1:726082000637:web:c4bc54fd73d8853f44d094",
+  storageBucket:"hifz-class-tracker-dece7.firebasestorage.app",
+  apiKey:"AIzaSyAZS_OEMnmcvc5xDzNESMVBvXJ4oGWCUBo",
+  authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
+  messagingSenderId:"726082000637"
+};
+const CCKEY='hifz.guest.classcode';
+let fbApp=null, fbDb=null, fbAuthReady=null, cloudStatus='off';
+function classCode(){ try{ return localStorage.getItem(CCKEY)||''; }catch(e){ return ''; } }
+function setClassCode(code){ try{ if(code) localStorage.setItem(CCKEY,code); else localStorage.removeItem(CCKEY); }catch(e){} }
+function genClassCode(){
+  const abc='ABCDEFGHJKMNPQRSTUVWXYZ23456789';                // no 0/O/1/I/L look-alikes
+  let s=''; for(let i=0;i<10;i++) s+=abc[Math.floor(Math.random()*abc.length)];
+  return s.match(/.{1,5}/g).join('-');
+}
+function cloudStatusLabel(){
+  return cloudStatus==='synced'?'Synced just now'
+    :cloudStatus==='connecting'?'Syncing…'
+    :cloudStatus==='error'?'Sync error — this device\'s copy is safe, but it hasn\'t reached the cloud'
+    :'Not synced yet';
+}
+function initCloud(){
+  if(fbAuthReady) return fbAuthReady;
+  fbAuthReady=new Promise(resolve=>{
+    try{
+      fbApp=firebase.initializeApp(FIREBASE_CONFIG);
+      fbDb=firebase.firestore(fbApp);
+      firebase.auth(fbApp).signInAnonymously().then(()=>resolve(true)).catch(()=>resolve(false));
+    }catch(e){ resolve(false); }
+  });
+  return fbAuthReady;
+}
+function cloudPayload(){
+  return {
+    profileJSON:JSON.stringify({students:state.students,settings:state.settings}),
+    dayJSON:JSON.stringify({day:todayKey(),state}),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+function cloudSync(){
+  const code=classCode(); if(!code) { cloudStatus='off'; return; }
+  clearTimeout(cloudSync._t);
+  cloudSync._t=setTimeout(()=>{
+    initCloud().then(ok=>{
+      if(!ok){ cloudStatus='error'; return; }
+      cloudStatus='connecting';
+      fbDb.collection('classes').doc(code).set(cloudPayload(),{merge:true})
+        .then(()=>{ cloudStatus='synced'; })
+        .catch(()=>{ cloudStatus='error'; });
+    });
+  },1500);
+}
+function turnOnSync(){
+  setClassCode(genClassCode());
+  cloudStatus='connecting';
+  cloudSync();
+  openCloudSync();
+}
+function turnOffSync(){
+  setClassCode('');
+  cloudStatus='off';
+  toast('Cloud sync turned off. This device keeps its own copy as usual.');
+  closeSheet();
+}
+function pullFromCloud(code){
+  code=(code||'').trim().toUpperCase();
+  if(!code) return toast('Type a sync code first.');
+  initCloud().then(ok=>{
+    if(!ok) return toast('Could not connect. Check your internet and try again.');
+    fbDb.collection('classes').doc(code).get().then(doc=>{
+      if(!doc.exists) return toast('No class found with that code.');
+      const data=doc.data();
+      try{
+        if(data.profileJSON){
+          const p=JSON.parse(data.profileJSON);
+          if(Array.isArray(p.students)) state.students=p.students;
+          state.settings=mergeSettings(p.settings);
+        }
+        if(data.dayJSON){
+          const o=JSON.parse(data.dayJSON);
+          if(o&&o.day===todayKey()&&o.state){
+            const d=v=>v?new Date(v):null, s=o.state;
+            s.session.startedAt=d(s.session.startedAt); s.session.endedAt=d(s.session.endedAt); s.session.lunchAt=d(s.session.lunchAt);
+            Object.values(s.attendance).forEach(a=>a.at=d(a.at));
+            Object.values(s.active).forEach(a=>a.startAt=d(a.startAt));
+            s.breaks.forEach(b=>{b.startAt=d(b.startAt); b.endAt=d(b.endAt);});
+            s.log.forEach(l=>l.t=d(l.t));
+            s.settings=mergeSettings(s.settings);
+            s.lastAction=null; Object.assign(state,s);
+          }
+        }
+        ensureAttendance(); state.setup=true; setClassCode(code); cloudStatus='synced';
+        localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings}));
+        localStorage.setItem(KEY,JSON.stringify({day:todayKey(),state}));
+        closeSheet(); render();
+        toast('Class loaded from the cloud');
+      }catch(e){ toast('That code loaded, but the data looked invalid.'); }
+    }).catch(()=>toast('Could not reach the cloud. Check your internet and try again.'));
+  });
+}
+function openCloudSync(){
+  closeDrawer();
+  const code=classCode();
+  if(code){
+    sheetHTML('Cloud sync','Lets you pick up this same class on another device of yours.',
+      `<div class="body">
+        <div style="font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:10px">${code}</div>
+        <p style="color:var(--mute);font-size:13px;line-height:1.5;margin-bottom:14px">On another device, open the teacher menu → Cloud sync → enter this code to load this same class there. <b>Keep it private</b> — anyone with this code can see this class's data, so treat it like a password.</p>
+        <p style="font-size:14px;font-weight:700">Status: ${cloudStatusLabel()}</p>
+       </div>
+       <div class="actions"><button class="btn ghost" onclick="turnOffSync()">Turn off sync</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+  } else {
+    sheetHTML('Cloud sync','Optional. Keeps an online backup of this class and lets you pick it up on another device (helpful if this tablet is ever lost, reset, or replaced). Nothing changes unless you choose one of these.',
+      `<div class="body">
+        <button class="dbtn leaf" onclick="turnOnSync()">Turn on sync for this class<small>Creates a private code for this device's data</small></button>
+        <div class="note"><input id="pullCode" placeholder="Or type an existing sync code"></div>
+        <button class="btn ghost" style="margin-top:10px;width:100%" onclick="pullFromCloud(($('pullCode')||{}).value)">Load a class using that code</button>
+       </div>`);
+  }
+}
+
+function toast(msg,undoable){
+  $('toastMsg').textContent=msg; $('toastUndo').style.display=undoable?'inline':'none';
+  $('toast').classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>$('toast').classList.remove('show'),4500);
+}
+function undo(){
+  const a=state.lastAction; if(!a) return;
+  if(a.type==='checkout') delete state.active[a.sid];
+  if(a.type==='return'){ state.breaks=state.breaks.filter(b=>b!==a.rec); state.active[a.sid]=a.prev; }
+  if(a.type==='att') state.attendance[a.sid]=a.prev;
+  state.log.shift(); state.lastAction=null; $('toast').classList.remove('show'); render();
+}
+
+/* ===== the tile tap: one gesture, context decides ===== */
+function editBreak(sid){
+  const o=state.active[sid]; if(!o) return;
+  const now=Date.now(), elapsed=now-o.startAt, hours=Math.floor(elapsed/3600000), mins=Math.floor((elapsed%3600000)/60000), secs=Math.floor((elapsed%60000)/1000);
+  const stStart=new Date(o.startAt), stEnd=new Date(now);
+  const timeStr=(d)=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const h=sheetHTML(`
+    <div style="font-weight:600;margin-bottom:14px">${nameOf(sid)} is out for ${o.label}</div>
+    <div style="display:flex;gap:12px;margin-bottom:16px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Left at</div>
+        <input id="startTime" type="time" value="${timeStr(stStart)}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Return at (now)</div>
+        <input id="endTime" type="time" value="${timeStr(stEnd)}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--bg);border-radius:8px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">Elapsed</div>
+        <div style="font-size:18px;font-weight:600;color:var(--leaf)">${hours}h ${mins}m ${secs}s</div>
+      </div>
+      <div style="flex:1;text-align:right">
+        <div style="font-size:12px;color:var(--mute)">Allowed</div>
+        <div style="font-size:15px;font-weight:600">${o.allowMs?fmtDur(o.allowMs):'unlimited'}</div>
+      </div>
+    </div>
+    <div class="confirmSheet">
+      <button class="btn dark" onclick="saveBreakEdits('${sid}')">Return ${nameOf(sid)}</button>
+      <button class="btn ghost" onclick="cancelBreak('${sid}')">Cancel break</button>
+    </div>
+  `);
+  openSheet(h);
+}
+function saveBreakEdits(sid){
+  const o=state.active[sid]; if(!o) return closeSheet();
+  const startTime=$('startTime').value, endTime=$('endTime').value;
+  if(!startTime||!endTime) return toast('Please set both times.');
+  const [sh,sm]=startTime.split(':'), [eh,em]=endTime.split(':');
+  const now=new Date(), stStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),+sh,+sm), stEnd=new Date(now.getFullYear(),now.getMonth(),now.getDate(),+eh,+em);
+  if(stStart>stEnd) return toast('Start time cannot be after end time.');
+  o.startAt=stStart; ret(sid);
+}
+function cancelBreak(sid){
+  confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Cancel break',()=>{
+    logIt(`<b>${nameOf(sid)}</b>'s break cancelled`);
+    delete state.active[sid]; closeSheet(); toast(`${nameOf(sid)}'s break cancelled`,true); render();
+  });
+}
+
+function tap(sid){
+  const a=att(sid), o=state.active[sid], s=st();
+  if(o) return editBreak(sid);                                   // out -> back in
+  if(s==='preclass'){                                       // before start: toggle presence
+    const prev={...a};
+    if(a.status==='absent'){ a.status='present'; a.at=null; a.note=''; logIt(`<b>${nameOf(sid)}</b> re-activated before class`); toast(`${nameOf(sid)} marked present`,true); }
+    else { a.status='absent'; a.at=null; a.note='Deactivated before class'; logIt(`<b>${nameOf(sid)}</b> deactivated (not here)`); toast(`${nameOf(sid)} marked not here`,true); }
+    state.lastAction={type:'att',sid,prev}; return render();
+  }
+  if(s==='ended') return toast('Class has ended for today.');
+  if(s==='lunch') return toast(`${state.session.pauseLabel||'Break'}: individual breaks are paused.`);
+  if(a.status==='absent'){                                  // after start: activate as tardy
+    const prev={...a}, now=new Date();
+    a.status='tardy'; a.at=now; a.note=`Arrived ${clockStr(now)}, ${Math.max(1,Math.round((now-state.session.startedAt)/60000))} min after start`;
+    logIt(`<b>${nameOf(sid)}</b> activated, marked tardy at ${clockStr(now)}`);
+    state.lastAction={type:'att',sid,prev}; toast(`${nameOf(sid)} is here · tardy, ${clockStr(now)}`,true); return render();
+  }
+  openReason(sid);                                          // present -> break
+}
+function markLeft(sid){
+  const a=att(sid), prev={...a}, now=new Date();
+  if(state.active[sid]) ret(sid,true);
+  a.status='absent'; a.at=now; a.note=`Left at ${clockStr(now)}`;
+  logIt(`<b>${nameOf(sid)}</b> left for the day at ${clockStr(now)}`);
+  state.lastAction={type:'att',sid,prev}; closeSheet(); toast(`${nameOf(sid)} left for the day`,true); render();
+}
+function checkout(sid,key,note,assignedMin){
+  const r=RSN(key), lim=LIMIT(key), overTrip=!!(lim&&tripsUsed(sid,key)>=lim.trips);
+  state.active[sid]={reason:key,label:r.label,startAt:new Date(),note:note||'',allowMs:capMs(key,assignedMin),assignedMin:assignedMin||null,overTrip};
+  logIt(`<b>${nameOf(sid)}</b> out · ${r.label}${assignedMin?` (${assignedMin} min assigned)`:''}${overTrip?' · past the daily limit':''}`);
+  state.lastAction={type:'checkout',sid}; closeSheet();
+  toast(overTrip?`${nameOf(sid)} out for ${r.label.toLowerCase()} · past the daily limit`:`${nameOf(sid)} out for ${r.label.toLowerCase()}`,true);
+  render();
+}
+function ret(sid,silent){
+  const a=state.active[sid]; if(!a) return;
+  const dur=Date.now()-a.startAt, over=a.allowMs?Math.max(0,dur-a.allowMs):0;
+  const rec={sid,reason:a.reason,label:a.label,startAt:a.startAt,endAt:new Date(),dur,
+             allowMs:a.allowMs,assignedMin:a.assignedMin||null,over,overTrip:!!a.overTrip,note:a.note||''};
+  rec.flag=over>0||rec.overTrip;
+  state.breaks.push(rec); delete state.active[sid];
+  logIt(`<b>${nameOf(sid)}</b> back after ${fmtDur(dur)}${over?` · ${fmtDur(over)} over the ${a.label.toLowerCase()} limit`:''}${rec.overTrip?' · past the daily limit':''}`);
+  state.lastAction={type:'return',sid,rec,prev:a}; closeSheet();
+  if(!silent) toast(rec.flag?`${nameOf(sid)} back after ${fmtDur(dur)} · flagged`:`${nameOf(sid)} back after ${fmtDur(dur)}`,true);
+  render();
+}
+
+/* ===== class-wide ===== */
+function mainAction(){ const s=st(); if(s==='preclass'||s==='ended') doStart(); else if(s==='lunch') endPause(); else endClass(); }
+function doStart(){
+  const now=new Date(); state.session={status:'live',startedAt:now,endedAt:null,lunchAt:null};
+  state.students.forEach(s=>{ const a=att(s.id); if(a.status==='present'){ a.at=now; } });
+  const abs=roster().filter(s=>att(s.id).status==='absent').length;
+  logIt(`Class started · ${roster().length-abs} present, ${abs} not here`);
+  closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
+}
+function endClass(){
+  confirmSheet('End class for today?','Open breaks will be closed. Students still deactivated stay marked absent.','End class',()=>{
+    Object.keys(state.active).forEach(sid=>ret(sid,true));
+    state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended'); closeSheet(); closeDrawer(); toast('Class ended'); render();
+  },'warn');
+}
+function startPause(kind,resumeAt){
+  confirmSheet(`Start ${kind.toLowerCase()} for the whole class?`,'Open breaks are closed and individual timers stop. This time is not counted against anyone.',`Start ${kind.toLowerCase()}`,()=>{
+    Object.keys(state.active).forEach(sid=>ret(sid,true));
+    state.session.status='lunch'; state.session.lunchAt=new Date(); state.session.pauseLabel=kind; state.session.resumeAt=resumeAt||null;
+    logIt(`${kind} started`); closeSheet(); closeDrawer(); toast(`${kind} started`); render();
+  });
+}
+function endPause(){
+  const k=state.session.pauseLabel||'Break';
+  state.session.status='live'; state.session.lunchAt=null; state.session.pauseLabel=null; state.session.resumeAt=null;
+  logIt(`${k} ended`); closeDrawer(); toast('Back in class'); render();
+}
+function resetDay(){ state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null}; state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''}); state.active={}; state.breaks=[]; state.log=[]; closeDrawer(); render(); }
+
+/* ===== sheets ===== */
+function sheetHTML(title,sub,body,extra){
+  $('sheet').innerHTML=`<div class="sheet-head"><div><h3>${title}</h3>${sub?`<p>${sub}</p>`:''}</div>${extra||''}<button class="x" aria-label="Close" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}`;
+  $('scrim').classList.add('show');
+}
+function closeSheet(){ $('scrim').classList.remove('show'); }
+function openReason(sid){
+  const bs=state.breaks.filter(b=>b.sid===sid), mins=Math.round(bs.reduce((a,b)=>a+b.dur,0)/60000), fl=bs.filter(b=>b.flag).length;
+  const dots = bs.length ? `<div class="bdots" title="Breaks so far today"><div class="d">${bs.map(b=>`<i class="${b.reason}${b.flag?' flagged':''}" title="${b.label} · ${fmtDur(b.dur)}"></i>`).join('')}</div><span>${bs.length} today · ${mins} min${fl?` · ${fl} flagged`:''}</span></div>` : '';
+  sheetHTML(`Where is ${nameOf(sid)} going?`,'The timer starts as soon as you pick a reason.',
+    `<div class="body"><div class="reasons">${REASONS.map(r=>{
+       const lim=LIMIT(r.key), used=tripsUsed(sid,r.key), capped=!!(lim&&used>=lim.trips);
+       const cap = r.key==='assigned' ? 'you set the minutes'
+                 : lim ? (capped?`${used} of ${lim.trips} used`:`${used} of ${lim.trips} · ${lim.min} min each`)
+                 : `alert after ${state.settings.longMin} min`;
+       const act = r.key==='assigned' ? `openAssign('${sid}')` : `checkout('${sid}','${r.key}',($('rnote')||{}).value)`;
+       return `<button class="reason ${capped?'capped':''}" onclick="${act}"><i class="rdot ${r.key}"></i>${r.icon}${r.label}<span class="cap">${capped?'over daily limit':cap}</span></button>`;
+     }).join('')}</div>
+     <div class="note"><input id="rnote" placeholder="Optional short note (for Other)"></div>
+     <button class="leftday" onclick="markLeft('${sid}')">${nameOf(sid)} left for the day</button></div>`, dots);
+}
+function openAssign(sid){
+  sheetHTML(`How long is ${nameOf(sid)} assigned for?`,'That time is excused. Anything past it is flagged and counted against the student.',
+   `<div class="body"><div class="mins">${[2,5,10,15,20,30].map(m=>`<button onclick="checkout('${sid}','assigned',($('anote')||{}).value,${m})">${m} min</button>`).join('')}</div>
+    <div class="note"><input id="anote" placeholder="What is the task? (optional)"></div>
+    <div class="actions"><button class="btn ghost" onclick="openReason('${sid}')">Back</button></div></div>`);
+}
+function confirmSheet(title,sub,label,fn,kind){
+  confirmSheet.fn=fn;
+  sheetHTML(title,sub,`<div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn ${kind==='warn'?'warn':'dark'}" onclick="confirmSheet.fn()">${label}</button></div>`);
+}
+function openAttendanceReview(){
+  closeDrawer();
+  const list=roster(), c={present:0,tardy:0,absent:0}; list.forEach(s=>c[att(s.id).status]++);
+  sheetHTML("Today's attendance",'Tardy times were recorded when you marked the student in. Change anything that needs correcting.',
+   `<div class="summary"><div class="p">Present <b>${c.present}</b></div><div class="t">Tardy <b>${c.tardy}</b></div><div class="a">Absent <b>${c.absent}</b></div></div>
+    <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row"><b>${s.name}</b><span class="time">${a.note||(a.at?clockStr(a.at):'')}</span><div class="seg">${['present','tardy','absent'].map(k=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${k}</button>`).join('')}</div></div>`}).join('')}</div></div>
+    <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+function setStatus(sid,k){ const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); } render(); openAttendanceReview(); }
+
+function openDaySummary(){
+  closeDrawer();
+  const list=state.students.filter(s=>s.active||state.breaks.some(b=>b.sid===s.id));
+  const c={present:0,tardy:0,absent:0}; list.forEach(s=>c[att(s.id).status]++);
+  const flagged=list.filter(s=>flagsOf(s.id)).length;
+  const when=state.session.startedAt?`${clockStr(state.session.startedAt)}${state.session.endedAt?' to '+clockStr(state.session.endedAt):', still running'}`:'Class has not started yet';
+  sheetHTML('Day summary',`${dateStr(new Date())} · ${when}`,
+   `<div class="summary"><div class="p">Present <b>${c.present}</b></div><div class="t">Tardy <b>${c.tardy}</b></div><div class="a">Not here <b>${c.absent}</b></div><div class="a">Flagged <b>${flagged}</b></div></div>
+    <div class="body"><div class="rowlist">${list.map(s=>{
+      const a=att(s.id), bs=state.breaks.filter(b=>b.sid===s.id);
+      const mins=Math.round(bs.reduce((x,b)=>x+b.dur,0)/60000);
+      const overMin=Math.round(bs.reduce((x,b)=>x+(b.over||0),0)/60000), fl=bs.filter(b=>b.flag).length;
+      const status=a.status==='present'?'Present':a.status==='tardy'?`Tardy, in at ${clockStr(a.at)}`:(a.note||'Not here');
+      const btxt=bs.length?`${bs.length} break${bs.length>1?'s':''} · ${mins} min out`:'No breaks';
+      const ftxt=fl?`⚑ ${fl} flagged${overMin?` · ${overMin} min over`:''}`:'';
+      return `<div class="row"><b>${s.name}</b><span class="time">${status}</span><span class="time">${btxt}</span><span class="time flag">${ftxt}</span></div>`;
+    }).join('')}</div></div>
+    <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+
+/* ===== first run: setup and tutorial ===== */
+let setupStudents=[];
+function setupCount(){ $('setupCount').textContent=`${setupStudents.length} student${setupStudents.length===1?'':'s'}`; }
+function addSetupStudent(){
+  const inp=$('tStudent'), name=(inp.value||'').replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'\`]/g,'').trim();
+  if(!name) return;
+  if(setupStudents.includes(name)) return inp.value='';
+  setupStudents.push(name); inp.value=''; drawRosterList(); setupCount();
+}
+function removeSetupStudent(name){ setupStudents=setupStudents.filter(x=>x!==name); drawRosterList(); setupCount(); }
+function drawRosterList(){
+  $('rosterList').innerHTML=setupStudents.length?setupStudents.map(n=>`<div class="roster-item"><span>${n}</span><button onclick="removeSetupStudent('${n.replace(/'/g,"\\'")}')">${n}</button></div>`).join(''):
+    `<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">No students yet</div>`;
+}
+function openSetup(){ setupStudents=[]; $('setup').classList.add('show'); $('tName').value=state.teacher||''; drawRosterList(); setupCount(); $('tStudent').focus(); }
+function finishSetup(){
+  const name=($('tName').value||'').replace(/[<>"'\`]/g,'').trim();
+  if(!name) return $('setupErr').textContent='Please add your name.';
+  if(!setupStudents.length) return $('setupErr').textContent='Please add at least one student.';
+  state.teacher=name;
+  state.students=setupStudents.map((n,i)=>({id:'s'+i,name:n,active:true}));
+  state.attendance={}; ensureAttendance();
+  state.setup=true; saveProfile();
+  $('setupErr').textContent=''; $('setup').classList.remove('show');
+  render(); startTour();
+}
+const TOUR=[
+ {h:'Everyone starts present',p:'Before you begin, every student is assumed to be here. Click anyone who is absent to mark them not here, then press Start class. If they walk in later, clicking them again records them as tardy with the arrival time.'},
+ {h:'Logging a break',p:'Click a student and pick a reason: washroom, water, wudhu, other, or a break you assign. The timer starts immediately and the student appears in Out right now. Click them again when they are back.'},
+ {h:'Limits and flags',p:'Each reason has its own allowance and a daily trip cap. The timer turns red once a break runs past its limit, and a red flag appears on the student for the rest of the day. An assigned break is excused for the minutes you set; only the overage counts against the student.'},
+ {h:'Snack and lunch',p:'Whole-class breaks pause every individual timer, so nothing counts against anyone. When a scheduled break time arrives, a banner offers to start it with one click. You can adjust the times in the teacher menu.'},
+ {h:'The teacher menu',p:'Everything else lives behind the menu button: fix attendance, see the day summary, open reports by day, week or month for the whole class or one student, export a CSV, edit your roster, and change the break rules.'}
+];
+let tourI=0;
+function startTour(){ tourI=0; drawTour(); $('tour').classList.add('show'); }
+function endTour(){ $('tour').classList.remove('show'); }
+function tourStep(d){ tourI+=d; if(tourI<0) tourI=0; if(tourI>=TOUR.length) return endTour(); drawTour(); }
+function drawTour(){
+  const t=TOUR[tourI], last=tourI===TOUR.length-1;
+  $('tourCard').innerHTML=`<h3>${t.h}</h3><p>${t.p}</p>
+    <div class="tour-steps">${TOUR.map((x,i)=>`<i class="${i<=tourI?'on':''}"</i>`).join('')}</div>
+    <div class="tour-actions"><button class="skip" onclick="endTour()">Skip</button>
+      ${tourI?`<button class="btn ghost" onclick="tourStep(-1)">Back</button>`:''}
+      <button class="btn dark" onclick="tourStep(1)">${last?'Start using it':'Next'}</button></div>`;
+}
+function backupAll(){
+  const data={saved:new Date().toISOString(),profile:{teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings},history:readHistory()};
+  try{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
+    a.download=`hifz-backup-${dayId(new Date())}.json`; a.click(); toast('Backup downloaded');
+  }catch(e){ toast('Backup is not available in this preview'); }
+}
+function restoreBackup(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(d.profile){ localStorage.setItem(PKEY,JSON.stringify(d.profile)); }
+      if(d.history){ writeHistory(d.history); }
+      toast('Backup restored · reloading'); setTimeout(()=>location.reload(),700);
+    }catch(e){ toast('That file could not be read'); }
+  };
+  r.readAsText(f); input.value='';
+}
+function startFresh(){
+  confirmSheet('Clear this class and start over?','The roster, settings and every archived day on this computer are deleted. Download a backup first if you want to keep them.','Delete everything',()=>{
+    try{ localStorage.removeItem(KEY); localStorage.removeItem(PKEY); localStorage.removeItem(HKEY); }catch(e){}
+    location.reload();
+  });
+}
+
+/* ===== the day archive: every day is snapshotted so reports can look back ===== */
+const HKEY='hifz.tracker.history';
+const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function readHistory(){ try{ return JSON.parse(localStorage.getItem(HKEY)||'{}'); }catch(e){ return {}; } }
+function writeHistory(h){ try{ localStorage.setItem(HKEY,JSON.stringify(h)); }catch(e){} }
+function hasActivity(){ return state.breaks.length>0 || st()!=='preclass'; }
+function snapshot(){
+  return {
+    date:dayId(new Date()),
+    startedAt:state.session.startedAt?+state.session.startedAt:null,
+    endedAt:state.session.endedAt?+state.session.endedAt:null,
+    names:Object.fromEntries(state.students.map(x=>[x.id,x.name])),
+    att:Object.fromEntries(roster().map(x=>[x.id,{status:att(x.id).status,note:att(x.id).note||''}])),
+    breaks:state.breaks.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null}))
+  };
+}
+function archive(){ if(!hasActivity()) return; const h=readHistory(); h[dayId(new Date())]=snapshot(); writeHistory(h); }
+
+/* ===== reports ===== */
+const rpt={scope:'class',sid:null,kind:'day',offset:0};
+function periodDays(kind,offset){
+  const now=new Date(); let start,end,label;
+  if(kind==='day'){ start=new Date(now); start.setDate(start.getDate()+offset); end=new Date(start);
+    label=start.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'}); }
+  else if(kind==='week'){ start=new Date(now); start.setDate(start.getDate()-((start.getDay()+6)%7)+offset*7);
+    end=new Date(start); end.setDate(start.getDate()+6);
+    label=`Week of ${start.toLocaleDateString([],{month:'short',day:'numeric'})}`; }
+  else { start=new Date(now.getFullYear(),now.getMonth()+offset,1); end=new Date(start.getFullYear(),start.getMonth()+1,0);
+    label=start.toLocaleDateString([],{month:'long',year:'numeric'}); }
+  const ids=[]; const c=new Date(start); c.setHours(0,0,0,0); end.setHours(0,0,0,0);
+  while(c<=end){ ids.push(dayId(c)); c.setDate(c.getDate()+1); }
+  return {ids,label};
+}
+function reportDays(){
+  const {ids,label}=periodDays(rpt.kind,rpt.offset), h=readHistory(), tid=dayId(new Date());
+  const days=ids.map(id=>(id===tid&&hasActivity())?snapshot():h[id]).filter(Boolean);
+  return {days,label};
+}
+function agg(days,sid){
+  const per={}, out={trips:0,mins:0,flags:0,over:0,att:{present:0,tardy:0,absent:0}};
+  REASONS.forEach(r=>per[r.key]={trips:0,mins:0,flags:0,over:0});
+  days.forEach(d=>{
+    Object.entries(d.att||{}).forEach(([id,a])=>{ if(sid&&id!==sid) return; if(out.att[a.status]!==undefined) out.att[a.status]++; });
+    (d.breaks||[]).forEach(b=>{ if(sid&&b.sid!==sid) return;
+      const q=per[b.reason]||(per[b.reason]={trips:0,mins:0,flags:0,over:0});
+      const m=b.dur/60000, ov=(b.over||0)/60000;
+      q.trips++; q.mins+=m; q.flags+=b.flag?1:0; q.over+=ov;
+      out.trips++; out.mins+=m; out.flags+=b.flag?1:0; out.over+=ov;
+    });
+  });
+  return {per,out};
+}
+function setReport(k,v){ if(k==='kind'){ rpt.kind=v; rpt.offset=0; } else if(k==='scope'){ rpt.scope=v; } else if(k==='sid'){ rpt.sid=v; } else if(k==='offset'){ rpt.offset+=v; } openReports(); }
+function openReports(){
+  closeDrawer();
+  const {days,label}=reportDays();
+  const sid = rpt.scope==='student' ? (rpt.sid||(roster()[0]||{}).id) : null;
+  if(sid) rpt.sid=sid;
+  const {per,out}=agg(days,sid);
+  const nameFor=id=>nameOf(id)||((days.find(d=>d.names&&d.names[id])||{names:{}}).names[id])||'Student';
+  const r1=Math.round;
+  const maxMins=Math.max(1,...REASONS.map(r=>per[r.key].mins));
+  const bars=REASONS.map(r=>{
+    const q=per[r.key], lim=LIMIT(r.key);
+    const avg=q.trips?q.mins/q.trips:0;
+    const cap=lim?` · limit ${lim.min} min`:'';
+    return `<div class="stat"><b>${r.label}</b><div class="bar"><i class="${r.key}" style="width:${Math.round(q.mins/maxMins*100)}%"></i></div>
+      <span class="v">${q.trips} trip${q.trips===1?'':'s'} · ${r1(q.mins)} min${q.trips?` · avg ${avg.toFixed(1)}`:''}${cap}${q.flags?` · <em>⚑ ${q.flags}</em>`:''}</span></div>`;
+  }).join('');
+
+  let detail;
+  if(sid){
+    detail=`<h4 class="rh">Day by day</h4><div class="rowlist">${days.length?days.slice().reverse().map(d=>{
+      const a=(d.att||{})[sid]||{status:'—'}, bs=(d.breaks||[]).filter(b=>b.sid===sid);
+      const fl=bs.filter(b=>b.flag).length, mins=r1(bs.reduce((x,b)=>x+b.dur,0)/60000);
+      const dd=new Date(d.date+'T00:00:00');
+      return `<div class="row"><b>${dd.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</b>
+        <span class="time">${a.status==='—'?'no record':a.status}</span>
+        <span class="time">${bs.length} break${bs.length===1?'':'s'} · ${mins} min</span>
+        <span class="time flag">${fl?`⚑ ${fl}`:''}</span></div>`;
+    }).join(''):''}</div>`;
+  } else {
+    const tally={};
+    days.forEach(d=>(d.breaks||[]).forEach(b=>{ if(b.flag) tally[b.sid]=(tally[b.sid]||0)+1; }));
+    const top=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+    detail=`<h4 class="rh">Flags by student</h4><div class="rowlist">${top.length?top.map(([id,n])=>{
+      const mins=r1(days.reduce((x,d)=>x+(d.breaks||[]).filter(b=>b.sid===id).reduce((y,b)=>y+(b.over||0),0),0)/60000);
+      return `<div class="row"><b>${nameFor(id)}</b><span class="time">${n} flagged break${n===1?'':'s'}</span><span class="time flag">${mins?`${mins} min over`:''}</span>
+        <button class="btn ghost" style="padding:7px 11px;font-size:13px" onclick="rpt.scope='student';setReport('sid','${id}')">Open</button></div>`;
+    }).join(''):'<div class="row"><b>No flags in this period</b></div>'}</div>`;
+  }
+
+  const seg=(k,opts)=>`<div class="seg">${opts.map(o=>`<button class="${rpt[k]===o[0]?'on present':''}" onclick="setReport('${k}','${o[0]}')">${o[1]}</button>`).join('')}</div>`;
+  sheetHTML('Reports', sid?`${nameFor(sid)} · ${label}`:`Whole class · ${label}`,
+   `<div class="rctl">
+      ${seg('kind',[['day','Daily'],['week','Weekly'],['month','Monthly']])}
+      ${seg('scope',[['class','Class'],['student','Student']])}
+      ${rpt.scope==='student'?`<select onchange="setReport('sid',this.value)">${roster().map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${x.name}</option>`).join('')}</select>`:''}
+      <div class="rnav"><button onclick="setReport('offset',-1)">‹</button><b>${label}</b><button onclick="setReport('offset',1)">›</button></div>
+    </div>
+    <div class="chips">
+      <div class="chip">Days recorded<b>${days.length}</b></div>
+      <div class="chip">Breaks<b>${out.trips}</b></div>
+      <div class="chip">Time out<b>${r1(out.mins)} min</b></div>
+      <div class="chip ${out.flags?'warn':''}">Flagged<b>${out.flags}</b></div>
+      <div class="chip ${out.over?'warn':''}">Over limit<b>${r1(out.over)} min</b></div>
+      ${sid?`<div class="chip">Tardy days<b>${out.att.tardy}</b></div><div class="chip">Absent days<b>${out.att.absent}</b></div>`
+           :`<div class="chip">Tardy marks<b>${out.att.tardy}</b></div><div class="chip">Absences<b>${out.att.absent}</b></div>`}
+    </div>
+    <div class="body">${days.length?`${bars}${detail}`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div>
+    <div class="actions"><button class="btn ghost" onclick="exportCSV()">Export CSV</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+function exportCSV(){
+  const {days,label}=reportDays();
+  const rows=[['date','student','reason','minutes','allowed_minutes','minutes_over','flagged','past_daily_limit']];
+  days.forEach(d=>(d.breaks||[]).forEach(b=>rows.push([d.date,(d.names||{})[b.sid]||b.sid,b.reason,(b.dur/60000).toFixed(1),b.assignedMin||'',((b.over||0)/60000).toFixed(1),b.flag?'yes':'no',b.overTrip?'yes':'no'])));
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  try{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download=`hifz-breaks-${label.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.csv`; a.click();
+    toast('CSV downloaded');
+  }catch(e){ toast('Export is not available in this preview'); }
+}
+
+/* ===== roster ===== */
+function addStudent(){
+  const el=$('newName'), n=(el.value||'').replace(/[<>"'`]/g,'').trim(); if(!n) return;
+  const id='s'+Date.now(), started=st()!=='preclass';
+  state.students.push({id,name:n,active:true});
+  state.attendance[id]={status:started?'absent':'present',at:null,note:started?'Added after class started':''};
+  el.value=''; logIt(`<b>${n}</b> added to the class list`); render(); drawDrawer();
+}
+function archiveStudent(sid){
+  const s=state.students.find(x=>x.id===sid); if(!s) return;
+  if(state.active[sid]) ret(sid,true);
+  s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); render(); drawDrawer(); toast(`${s.name} removed from the list`);
+}
+function restoreStudent(sid){
+  const s=state.students.find(x=>x.id===sid); if(!s) return;
+  s.active=true; logIt(`<b>${s.name}</b> put back on the class list`); render(); drawDrawer();
+}
+
+/* ===== drawer ===== */
+function openDrawer(){ $('drawer').classList.add('show'); $('drawerScrim').classList.add('show'); drawDrawer(); }
+function closeDrawer(){ $('drawer').classList.remove('show'); $('drawerScrim').classList.remove('show'); }
+function drawDrawer(){
+  const s=st(), set=state.settings;
+  $('dbody').innerHTML=`
+   <h4>Class-wide</h4>
+   ${s==='live'?`<button class="dbtn gold" onclick="startPause('Snack break','${set.snack.end}')">Start snack break<small>Scheduled ${hm(set.snack.start)} to ${hm(set.snack.end)}</small></button>`:''}
+   ${s==='live'?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
+   ${s==='lunch'?`<button class="dbtn leaf" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button>`:''}
+   ${s==='live'||s==='lunch'?`<button class="dbtn ember" onclick="endClass()">End class<small>Closes open breaks</small></button>`:''}
+   ${s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}
+   <h4>Review</h4>
+   <button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, absent</small></button>
+   <button class="dbtn" onclick="openDaySummary()">Day summary<small>Attendance and break totals per student</small></button>
+   <button class="dbtn" onclick="openReports()">Reports<small>Daily, weekly, monthly · class or one student</small></button>
+   <h4>Class list</h4>
+   ${state.students.filter(x=>x.active).map((x,i)=>`<div class="rrow"><b>${i+1}. ${x.name}</b><button onclick="archiveStudent('${x.id}')">Remove</button></div>`).join('')}
+   ${state.students.some(x=>!x.active)?`${state.students.filter(x=>!x.active).map(x=>`<div class="rrow"><b>${x.name}</b><small>removed</small><button class="back" onclick="restoreStudent('${x.id}')">Put back</button></div>`).join('')}`:''}
+   <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>
+   <h4>Settings</h4>
+   <div class="field"><div>Class hours<small>Monday to Friday</small></div><span class="two"><input type="time" value="${set.startTime}" onchange="state.settings.startTime=this.value;render();drawDrawer()"><input type="time" value="${set.endTime}" onchange="state.settings.endTime=this.value;render();drawDrawer()"></span></div>
+   <div class="field"><div>Snack break<small>School-wide</small></div><span class="two"><input type="time" value="${set.snack.start}" onchange="state.settings.snack.start=this.value;render();drawDrawer()"><input type="time" value="${set.snack.end}" onchange="state.settings.snack.end=this.value;render();drawDrawer()"></span></div>
+   <div class="field"><div>Lunch and recess<small>School-wide</small></div><span class="two"><input type="time" value="${set.lunch.start}" onchange="state.settings.lunch.start=this.value;render();drawDrawer()"><input type="time" value="${set.lunch.end}" onchange="state.settings.lunch.end=this.value;render();drawDrawer()"></span></div>
+   <h4>Break limits</h4>
+   ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
+     <select onchange="state.settings.limits.${k}.min=+this.value;render();drawDrawer()">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
+     <select onchange="state.settings.limits.${k}.trips=+this.value;render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
+   <div class="field"><div>Other<small>No trip cap; timer turns red after</small></div><select onchange="state.settings.longMin=+this.value;render();drawDrawer()">${[5,8,10,15,20].map(m=>`<option ${set.longMin===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select></div>
+   <h4>Today's log</h4>
+   <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
+   <h4>Cloud sync</h4>
+   <button class="dbtn" onclick="openCloudSync()">${classCode()?`Manage cloud sync<small>${cloudStatusLabel()}</small>`:'Turn on cloud sync<small>Optional — back up this class and use it on another device</small>'}</button>
+   <h4>Prototype</h4>
+   <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Days are archived on this device as you use the tracker. ${Object.keys(readHistory()).length} day(s) recorded so far.</small>
+   <button class="dbtn" onclick="resetDay()">Reset the day</button>`;
+}
+
+/* ===== render ===== */
+function render(){
+  const now=new Date(), s=st(), list=roster();
+  $('clock').textContent=clockStr(now); $('date').textContent=dateStr(now);
+  const outs=Object.keys(state.active).length, abs=list.filter(x=>att(x.id).status==='absent').length;
+  $('cIn').textContent=list.length-outs-abs; $('cOut').textContent=outs; $('cAbs').textContent=abs;
+  $('title').textContent = state.teacher ? `${state.teacher}'s Hifz Class` : 'Hifz Class';
+  const nx=nextUp();
+  $('sub').textContent= s==='preclass'?`Before class · scheduled ${hm(state.settings.startTime)} to ${hm(state.settings.endTime)}`
+    : s==='live'?`In session since ${clockStr(state.session.startedAt)}${nx?` · next: ${nx}`:''}`
+    : s==='lunch'?`${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}`
+    : `Ended ${clockStr(state.session.endedAt)}`;
+
+  const mb=$('mainBtn'); mb.className='start-btn'+(s==='live'?' end':s==='lunch'?' lunch':'');
+  mb.textContent= s==='preclass'?'Start class':s==='live'?'End class':s==='lunch'?'End break':'Start again';
+
+  const due=s==='live'?dueBreak():null; render.nudge=due?due.kind:'';
+  const late=state.session.resumeAt&&nowMin()>=toMin(state.session.resumeAt);
+  $('banner').innerHTML= s==='preclass'?`<div class="banner paper">Everyone is assumed present. Click a student who is not here to mark them absent. Once class starts, clicking a marked student records them tardy with the time.</div>`
+    : due?`<div class="banner">${due.kind} is scheduled now, ${hm(due.start)} to ${hm(due.end)}. Individual break logging pauses while it runs.<button class="act" onclick="startPause('${due.kind}','${due.end}')">Start ${due.kind.toLowerCase()}</button></div>`
+    : s==='lunch'?`<div class="banner${late?'':''}">${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}.${state.session.resumeAt?` ${late?'Class was due back at':'Class resumes at'} ${hm(state.session.resumeAt)}.`:''} Individual break logging is paused.<button class="act" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button></div>`
+    : s==='ended'?`<div class="banner leaf">Class ended at ${clockStr(state.session.endedAt)}.<button class="act" onclick="openDaySummary()">View day summary</button><button class="act" style="margin-left:8px;background:var(--paper);color:var(--ink);border:1px solid var(--line)" onclick="resetDay()">Reset day</button></div>`:'';
+
+  $('gridTitle').textContent= s==='preclass'?'Mark anyone who is absent':'Class';
+  $('gridHint').textContent= s==='preclass'?'Tap a name to mark them not here':'Tap a student to log a break · tap again when they are back';
+
+  const g=$('grid'); g.style.gridTemplateColumns='repeat(auto-fill,minmax(155px,1fr))'; g.style.gridTemplateRows='';
+  g.innerHTML=list.map(x=>{
+    const a=att(x.id), o=state.active[x.id];
+    const fl=flagsOf(x.id);
+    if(o) return `<button class="tile out ${isLong(o)?'long':''}" data-long="${+o.startAt}" data-lim="${o.allowMs||0}" onclick="tap('${x.id}')"><span class="tag">Back in</span><span class="name">${x.name}</span><span class="state">${o.label}${o.assignedMin?` ${o.assignedMin} min`:''} · <span data-t="${+o.startAt}">${fmtDur(now-o.startAt)}</span></span></button>`;
+    if(a.status==='absent') return `<button class="tile deact" onclick="tap('${x.id}')">${s==='preclass'?'':'<span class="tag">Mark in</span>'}<span class="name">${x.name}</span><span class="state">${s==='preclass'?'Not here today':'Not here · tap to mark tardy'}</span></button>`;
+    const tag = fl?`<span class="tag flag">⚑ ${fl}</span>`:a.status==='tardy'?`<span class="tag">Tardy ${clockStr(a.at)}</span>`:'';
+    const line = s==='preclass'?'Present':(a.status==='tardy'&&fl)?`In class · tardy ${clockStr(a.at)}`:'In class';
+    return `<button class="tile present" onclick="tap('${x.id}')">${tag}<span class="name">${x.name}</span><span class="state">${line}</span></button>`;
+  }).join('');
+
+  const outEntries=Object.entries(state.active).sort((a,b)=>a[1].startAt-b[1].startAt);
+  $('outHint').textContent=outs||'';
+  $('outList').innerHTML=outEntries.length?outEntries.map(([sid,a])=>`<div class="out-item ${isLong(a)?'long':''}" data-long="${+a.startAt}" data-lim="${a.allowMs||0}"><div class="who"><b>${nameOf(sid)}</b><span>${a.label} · left ${clockStr(a.startAt)}${a.allowMs?` · ${Math.round(a.allowMs/60000)} min allowed`:''}${a.overTrip?' · past daily limit':''}</span></div><div class="t" data-t="${+a.startAt}">${fmtDur(now-a.startAt)}</div><button class="back" onclick="ret('${sid}')">Back in</button></div>`).join('')
+    :`<div class="empty"><b>Everyone is in class</b>Log a break and the timer appears here.</div>`;
+  tick(); save();
+}
+function tick(){
+  const now=Date.now();
+  document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
+  document.querySelectorAll('[data-long]').forEach(el=>{const lim=+el.dataset.lim||0; el.classList.toggle('long',lim>0&&now-(+el.dataset.long)>lim);});
+  const due=st()==='live'&&dueBreak()?dueBreak().kind:''; if(due!==render.nudge) return render();
+  const d=new Date(); $('clock').textContent=clockStr(d); $('date').textContent=dateStr(d);
+}
+loadProfile(); load(); render(); setInterval(tick,1000);
+if(!state.setup) openSetup();
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+</script>
+</body>
+</html>
