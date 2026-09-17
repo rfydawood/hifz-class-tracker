@@ -1,4 +1,4 @@
-const CACHE = 'hifz-tracker-v1';
+const CACHE = 'hifz-tracker-v3';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -30,7 +30,25 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  // App shell: cache-first, refresh in the background so updates are picked up next load
+  // The app page itself: network-first, so a fix or feature reaches the teacher the
+  // moment they reopen it (online), not one open later. Falls back to the cached
+  // copy only when there's no connection - that's what keeps this working offline.
+  if (req.mode === 'navigate' || req.url.endsWith('/index.html')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Everything else (icons, manifest): cache-first, refresh in the background
   event.respondWith(
     caches.match(req).then((cached) => {
       const network = fetch(req)

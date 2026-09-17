@@ -352,12 +352,15 @@ function mergeSettings(x){
 }
 function ensureAttendance(){ state.students.forEach(x=>{ if(!state.attendance[x.id]) state.attendance[x.id]={status:'present',at:null,note:''}; }); }
 /* roster edits and rule changes belong to the class, not to one day */
-function saveProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings})); }catch(e){} cloudSync(); }
+function saveProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify({teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings})); }catch(e){} cloudSync(); }
 function loadProfile(){
   try{
     const o=JSON.parse(localStorage.getItem(PKEY)||'null'); if(!o) return;
     if(Array.isArray(o.students)&&o.students.length) state.students=o.students;
+    if(o.teacher) state.teacher=o.teacher;
     state.settings=mergeSettings(o.settings); ensureAttendance();
+    // a saved roster means setup already happened, even on data saved before `setup` itself was persisted
+    if(o.setup||(Array.isArray(state.students)&&state.students.length)) state.setup=true;
   }catch(e){}
 }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify({day:todayKey(),state})); saveProfile(); archive(); }catch(e){} }
@@ -372,7 +375,9 @@ function load(){
     s.breaks.forEach(b=>{b.startAt=d(b.startAt); b.endAt=d(b.endAt);});
     s.log.forEach(l=>l.t=d(l.t));
     s.settings=mergeSettings(s.settings);                       // settings shape may have grown since the save
-    s.lastAction=null; Object.assign(state,s); ensureAttendance();
+    s.lastAction=null;
+    delete s.setup; delete s.teacher;                           // profile fields - loadProfile() already set these, don't let a stale same-day snapshot revert them
+    Object.assign(state,s); ensureAttendance();
   }catch(e){}
 }
 
