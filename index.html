@@ -375,7 +375,9 @@ function load(){
     s.breaks.forEach(b=>{b.startAt=d(b.startAt); b.endAt=d(b.endAt);});
     s.log.forEach(l=>l.t=d(l.t));
     s.settings=mergeSettings(s.settings);                       // settings shape may have grown since the save
-    s.lastAction=null; Object.assign(state,s); ensureAttendance();
+    s.lastAction=null;
+    delete s.setup; delete s.teacher;                           // profile fields - loadProfile() already set these, don't let a stale same-day snapshot revert them
+    Object.assign(state,s); ensureAttendance();
   }catch(e){}
 }
 
@@ -1016,7 +1018,13 @@ function tick(){
 }
 loadProfile(); load(); render(); setInterval(tick,1000);
 if(!state.setup) openSetup();
-if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  // an update installed in the background while this page was open - reload once to actually use it,
+  // instead of leaving the teacher on the old code until the next full close-and-reopen
+  let swRefreshed=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(swRefreshed) return; swRefreshed=true; location.reload(); });
+}
 </script>
 </body>
 </html>
