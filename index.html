@@ -1018,13 +1018,7 @@ function tick(){
 }
 loadProfile(); load(); render(); setInterval(tick,1000);
 if(!state.setup) openSetup();
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
-  // an update installed in the background while this page was open - reload once to actually use it,
-  // instead of leaving the teacher on the old code until the next full close-and-reopen
-  let swRefreshed=false;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(swRefreshed) return; swRefreshed=true; location.reload(); });
-}
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
 </body>
 </html>
