@@ -1,4 +1,4 @@
-const CACHE = 'hifz-tracker-v2';
+const CACHE = 'hifz-tracker-v3';
 const PRECACHE_URLS = [
   './',
   './index.html',
