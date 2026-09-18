@@ -12,7 +12,8 @@
   "type": "commonjs",
   "dependencies": {
     "@capacitor/android": "^8.5.2",
-    "@capacitor/core": "^8.5.2"
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/preferences": "^8.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2"

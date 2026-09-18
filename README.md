@@ -30,19 +30,44 @@ Off by default — nothing changes unless a teacher turns it on from the teacher
 
 - `index.html` — the entire app (HTML/CSS/JS, no build step)
 - `manifest.json`, `sw.js`, `icons/` — PWA support (installability + offline)
+- `vendor/firebase/` — the Firebase SDK files the app loads, committed here so the native app never needs a CDN at startup
+- `scripts/build.mjs` — stamps a version/build id into `index.html`/`sw.js` and copies the canonical files into `capacitor-app/www/`. Run via `npm run build`. This is the **only** way `capacitor-app/www/` should be updated — never hand-edit or hand-copy into it, that's what caused web fixes to silently never reach the tablet.
 - `firebase.json`, `firestore.rules` — cloud sync backend config (see above)
-- `capacitor-app/` — the current native Android app (Capacitor). Buildable from scratch; `node_modules/`, Gradle build output, and the built APK are intentionally **not** committed
+- `capacitor-app/` — the current native Android app (Capacitor). Buildable from scratch; `node_modules/`, Gradle build output, and the built APK are intentionally **not** committed. `capacitor-app/www/` **is** committed — it's the build script's output, kept in git so a CI check can catch drift (see below)
 - `android-app/` — the earlier Trusted Web Activity native wrapper (Bubblewrap). Legacy/reference only — no longer built or distributed (see above)
 - `make_icons.py` — regenerates the app icons if the design ever changes
 
-## Rebuilding the native app
+## Build pipeline and drift gate
 
-The signing key (`android-app/android.keystore`, reused for the Capacitor app too so updates install cleanly over old installs) and its password are kept **local only**, never committed — anyone with them could push updates under this app's identity. They're backed up outside git; ask Rafaye if a rebuild is needed on a new machine.
+`capacitor-app/www/` used to be a hand-maintained copy of the root files, which drifted silently and cost a multi-hour debugging session. Now it's generated:
 
-To rebuild after code changes:
 ```
+npm run build     # stamp version/build id, copy index.html/sw.js/manifest.json/icons/vendor into capacitor-app/www/
+npm run verify    # same, then fails if the result differs from what's committed (beyond the build timestamp)
+```
+
+A GitHub Action (`.github/workflows/verify.yml`) runs `npm run verify` on every PR and on pushes to `main` — if someone edits `index.html` and forgets to run `npm run build` before committing, CI fails.
+
+The current build/version is shown at the bottom of the teacher menu in the app itself (`vN.N.N · build <id>`), so "which build is this tablet on?" is answerable by looking at the screen.
+
+## Release checklist
+
+**Web (updates instantly, no build needed by users):**
+1. `npm run build` (stamps the new version/build id into `index.html` and `sw.js`, and refreshes `capacitor-app/www/` to match)
+2. Commit and push to `main`
+3. Trigger a Pages rebuild (legacy branch-based deploy, pushes alone don't rebuild it):
+   ```
+   gh api -X POST repos/rfydawood/hifz-class-tracker/pages/builds
+   ```
+4. Poll `gh api repos/rfydawood/hifz-class-tracker/pages` until `"status":"built"` before telling anyone it's live.
+
+**Native (does NOT auto-update — every tablet needs this pushed to it):**
+
+The signing key (`android-app/android.keystore`, reused for the Capacitor app too so updates install cleanly over old installs) and its password are kept **local only**, never committed — anyone with them could push updates under this app's identity. They're backed up outside git; ask Rafaye if a rebuild is needed on a new machine. **A cloud agent cannot produce an installable native build** — this step always requires the owner's machine.
+
+```
+npm run build                      # refreshes capacitor-app/www/ from the canonical source
 cd capacitor-app
-cp ../index.html ../manifest.json ../sw.js www/ && cp -r ../icons www/   # pull in the latest web app
 npx cap sync android
 cd android
 ./gradlew.bat assembleRelease

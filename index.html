@@ -283,10 +283,11 @@ input,select{font:inherit;color:inherit}
   </aside>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="6a12bff631",APP_BUILD_TIME="2026-09-17T22:53:53.058Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -341,6 +342,36 @@ const att=sid=>state.attendance[sid];
 const st=()=>state.session.status;
 function logIt(msg){ state.log.unshift({t:new Date(),msg}); }
 
+/* ===== durable storage: localStorage on the web, native SharedPreferences on
+   Android via @capacitor/preferences (survives WebView data clears - plain
+   localStorage does not reliably on native, which is what caused "loses my
+   data when the app shuts down"). Reads are synchronous off an in-memory
+   cache hydrated once at boot; writes are fire-and-forget, same best-effort
+   spirit as the try/catch localStorage calls this file already used. ===== */
+const Store=(function(){
+  const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences);
+  const Prefs=native?window.Capacitor.Plugins.Preferences:null;
+  const cache={};
+  async function hydrate(keys){
+    await Promise.all(keys.map(async k=>{
+      if(native){ try{ const r=await Prefs.get({key:k}); cache[k]=(r&&r.value!=null)?r.value:null; return; }catch(e){} }
+      try{ cache[k]=localStorage.getItem(k); }catch(e){ cache[k]=null; }
+    }));
+  }
+  function get(key){ return Object.prototype.hasOwnProperty.call(cache,key) ? cache[key] : (()=>{ try{ return localStorage.getItem(key); }catch(e){ return null; } })(); }
+  function set(key,value){
+    cache[key]=value;
+    if(native){ Prefs.set({key,value}).catch(()=>{}); return; }
+    try{ localStorage.setItem(key,value); }catch(e){}
+  }
+  function remove(key){
+    cache[key]=null;
+    if(native){ Prefs.remove({key}).catch(()=>{}); return; }
+    try{ localStorage.removeItem(key); }catch(e){}
+  }
+  return {hydrate,get,set,remove,native};
+})();
+
 /* ===== keeps the day alive through a refresh or a closed lid ===== */
 const KEY='hifz.guest.day', PKEY='hifz.guest.profile', todayKey=()=>new Date().toDateString();
 function mergeSettings(x){
@@ -352,10 +383,10 @@ function mergeSettings(x){
 }
 function ensureAttendance(){ state.students.forEach(x=>{ if(!state.attendance[x.id]) state.attendance[x.id]={status:'present',at:null,note:''}; }); }
 /* roster edits and rule changes belong to the class, not to one day */
-function saveProfile(){ try{ localStorage.setItem(PKEY,JSON.stringify({teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings})); }catch(e){} cloudSync(); }
+function saveProfile(){ Store.set(PKEY,JSON.stringify({teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings})); cloudSync(); }
 function loadProfile(){
   try{
-    const o=JSON.parse(localStorage.getItem(PKEY)||'null'); if(!o) return;
+    const o=JSON.parse(Store.get(PKEY)||'null'); if(!o) return;
     if(Array.isArray(o.students)&&o.students.length) state.students=o.students;
     if(o.teacher) state.teacher=o.teacher;
     state.settings=mergeSettings(o.settings); ensureAttendance();
@@ -363,10 +394,10 @@ function loadProfile(){
     if(o.setup||(Array.isArray(state.students)&&state.students.length)) state.setup=true;
   }catch(e){}
 }
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify({day:todayKey(),state})); saveProfile(); archive(); }catch(e){} }
+function save(){ Store.set(KEY,JSON.stringify({day:todayKey(),state})); saveProfile(); archive(); }
 function load(){
   try{
-    const raw=localStorage.getItem(KEY); if(!raw) return;
+    const raw=Store.get(KEY); if(!raw) return;
     const o=JSON.parse(raw); if(!o||o.day!==todayKey()) return;
     const d=v=>v?new Date(v):null, s=o.state;
     s.session.startedAt=d(s.session.startedAt); s.session.endedAt=d(s.session.endedAt); s.session.lunchAt=d(s.session.lunchAt);
@@ -399,8 +430,8 @@ const FIREBASE_CONFIG={
 };
 const CCKEY='hifz.guest.classcode';
 let fbApp=null, fbDb=null, fbAuthReady=null, cloudStatus='off';
-function classCode(){ try{ return localStorage.getItem(CCKEY)||''; }catch(e){ return ''; } }
-function setClassCode(code){ try{ if(code) localStorage.setItem(CCKEY,code); else localStorage.removeItem(CCKEY); }catch(e){} }
+function classCode(){ return Store.get(CCKEY)||''; }
+function setClassCode(code){ if(code) Store.set(CCKEY,code); else Store.remove(CCKEY); }
 function genClassCode(){
   const abc='ABCDEFGHJKMNPQRSTUVWXYZ23456789';                // no 0/O/1/I/L look-alikes
   let s=''; for(let i=0;i<10;i++) s+=abc[Math.floor(Math.random()*abc.length)];
@@ -483,8 +514,8 @@ function pullFromCloud(code){
           }
         }
         ensureAttendance(); state.setup=true; setClassCode(code); cloudStatus='synced';
-        localStorage.setItem(PKEY,JSON.stringify({students:state.students,settings:state.settings}));
-        localStorage.setItem(KEY,JSON.stringify({day:todayKey(),state}));
+        Store.set(PKEY,JSON.stringify({students:state.students,settings:state.settings}));
+        Store.set(KEY,JSON.stringify({day:todayKey(),state}));
         closeSheet(); render();
         toast('Class loaded from the cloud');
       }catch(e){ toast('That code loaded, but the data looked invalid.'); }
@@ -771,7 +802,7 @@ function restoreBackup(input){
   r.onload=()=>{
     try{
       const d=JSON.parse(r.result);
-      if(d.profile){ localStorage.setItem(PKEY,JSON.stringify(d.profile)); }
+      if(d.profile){ Store.set(PKEY,JSON.stringify(d.profile)); }
       if(d.history){ writeHistory(d.history); }
       toast('Backup restored · reloading'); setTimeout(()=>location.reload(),700);
     }catch(e){ toast('That file could not be read'); }
@@ -780,7 +811,7 @@ function restoreBackup(input){
 }
 function startFresh(){
   confirmSheet('Clear this class and start over?','The roster, settings and every archived day on this computer are deleted. Download a backup first if you want to keep them.','Delete everything',()=>{
-    try{ localStorage.removeItem(KEY); localStorage.removeItem(PKEY); localStorage.removeItem(HKEY); }catch(e){}
+    Store.remove(KEY); Store.remove(PKEY); Store.remove(HKEY);
     location.reload();
   });
 }
@@ -788,8 +819,8 @@ function startFresh(){
 /* ===== the day archive: every day is snapshotted so reports can look back ===== */
 const HKEY='hifz.tracker.history';
 const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-function readHistory(){ try{ return JSON.parse(localStorage.getItem(HKEY)||'{}'); }catch(e){ return {}; } }
-function writeHistory(h){ try{ localStorage.setItem(HKEY,JSON.stringify(h)); }catch(e){} }
+function readHistory(){ try{ return JSON.parse(Store.get(HKEY)||'{}'); }catch(e){ return {}; } }
+function writeHistory(h){ Store.set(HKEY,JSON.stringify(h)); }
 function hasActivity(){ return state.breaks.length>0 || st()!=='preclass'; }
 function snapshot(){
   return {
@@ -963,7 +994,8 @@ function drawDrawer(){
    <button class="dbtn" onclick="openCloudSync()">${classCode()?`Manage cloud sync<small>${cloudStatusLabel()}</small>`:'Turn on cloud sync<small>Optional — back up this class and use it on another device</small>'}</button>
    <h4>Prototype</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Days are archived on this device as you use the tracker. ${Object.keys(readHistory()).length} day(s) recorded so far.</small>
-   <button class="dbtn" onclick="resetDay()">Reset the day</button>`;
+   <button class="dbtn" onclick="resetDay()">Reset the day</button>
+   <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
 }
 
 /* ===== render ===== */
@@ -1016,8 +1048,11 @@ function tick(){
   const due=st()==='live'&&dueBreak()?dueBreak().kind:''; if(due!==render.nudge) return render();
   const d=new Date(); $('clock').textContent=clockStr(d); $('date').textContent=dateStr(d);
 }
-loadProfile(); load(); render(); setInterval(tick,1000);
-if(!state.setup) openSetup();
+(async function boot(){
+  await Store.hydrate([PKEY,KEY,CCKEY,HKEY]);
+  loadProfile(); load(); render(); setInterval(tick,1000);
+  if(!state.setup) openSetup();
+})();
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
 </body>

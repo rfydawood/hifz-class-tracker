@@ -1,0 +1,10 @@
+{
+  "name": "hifz-class-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Classroom attendance and break tracker for hifz teachers.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "verify": "node scripts/build.mjs --verify"
+  }
+}

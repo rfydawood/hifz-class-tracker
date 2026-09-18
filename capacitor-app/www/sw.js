@@ -1,4 +1,5 @@
-const CACHE = 'hifz-tracker-v3';
+/*BUILD_STAMP*/const APP_BUILD="6a12bff631";
+const CACHE = 'hifz-tracker-' + APP_BUILD;
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -8,6 +9,9 @@ const PRECACHE_URLS = [
   './icons/icon-maskable-192.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
+  './vendor/firebase/firebase-app-compat.js',
+  './vendor/firebase/firebase-auth-compat.js',
+  './vendor/firebase/firebase-firestore-compat.js',
 ];
 
 self.addEventListener('install', (event) => {
