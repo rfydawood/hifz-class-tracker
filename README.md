@@ -17,14 +17,15 @@ A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`c
 
 **Trade-off of going fully native:** unlike the old wrapper, this app's content is bundled at build time, so a code change no longer shows up automatically — it needs a new build pushed to Firebase App Distribution (see "Rebuilding the native app" below). The web app / PWA above is unaffected and still updates instantly.
 
-## Optional cloud sync (class codes)
+## Cloud sync (sync codes)
 
-Off by default — nothing changes unless a teacher turns it on from the teacher menu → **Cloud sync**.
+Every class lives in Firestore from the moment it's set up — this isn't optional anymore (see `IMPLEMENTATION_PLAN.md` Phase 2). The app still works fully offline (Firestore's local cache queues writes and flushes them on reconnect); there just isn't a separate localStorage copy competing with it.
 
-- Turning it on generates a random 10-character **class code** (e.g. `AB3XQ-7KLMN`) and starts backing that class's roster/settings/today's data up to Firestore in the background, in addition to the normal local save.
-- On another device, entering that same code (teacher menu → Cloud sync → "Load a class using that code") pulls the class down — useful if a tablet is lost, reset, or a teacher wants it on a second device.
-- **The code is the only "password."** There's no separate login — anyone who has the exact code can read and write that class's data, the same way anyone with a shared link could. Codes are long, random, and never listable/guessable from outside, but they should still be kept as private as a password. Turning sync off just stops syncing; it doesn't delete the cloud copy.
-- Backend: Firebase project `hifz-class-tracker-dece7`, Firestore (`firestore.rules` in this repo — one document per class code, anonymous-auth-gated, not listable, with a size guard), Anonymous Authentication (silent, just used so Firestore rules can require *some* signed-in request). Both were provisioned via `firebase deploy --only firestore,auth` — see `firebase.json`.
+- Setting up a class creates a private, randomly generated **sync code** (e.g. `AB3XQ-7KLMN`) shown in the teacher menu → **Sync**. This is the class's id in the cloud.
+- On another device, entering that same code (teacher menu → Sync → "Enter your sync code" on first launch, or "Switch to that code" from an existing class) attaches that device to the same live class — changes on either device appear on the other within seconds.
+- **The code is the only "password."** There's no separate login — anyone who has the exact code can read and write that class's data, the same way anyone with a shared link could. Codes are long, random, and never listable/guessable from outside, but they should still be kept as private as a password.
+- Backend: Firebase project `hifz-class-tracker-dece7`, Firestore (`firestore.rules` in this repo — an `orgs/{orgId}` tree per personal account, access gated on a real per-device membership document, not listable), Anonymous Authentication (silent, one identity per device/install — Google Sign-In is a later phase). Both were provisioned via `firebase deploy --only firestore,auth` — see `firebase.json`.
+- Test rule changes against the emulator before deploying: `npm run test:rules`. Test the live sync/offline behavior itself with `npm run test:e2e` (Playwright; starts and stops the Firestore + Auth emulators itself).
 
 ## Repo layout
 
