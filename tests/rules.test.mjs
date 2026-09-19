@@ -107,10 +107,11 @@ test('creating an org doc at an id that already exists is rejected (cannot overw
   await assertFails(db.collection('orgs').doc(ORG_ID).set(orgDoc({ name: 'Hijacked' })));
 });
 
-test('a user who has not joined (no member doc) cannot read or write the org, even knowing the id', async () => {
+test('a user who has not joined can read the bare org doc (to verify a sync code before joining) but not its classroom data', async () => {
   await seedOrgWithMember('uidA');
   const db = testEnv.authenticatedContext('uidB').firestore();
-  await assertFails(db.collection('orgs').doc(ORG_ID).get());
+  // this is how joinByCode() confirms a code is real before writing a member doc
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
   await assertFails(
     db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).get()
   );

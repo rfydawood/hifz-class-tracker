@@ -45,13 +45,18 @@ export async function returnFromBreak(page, studentName) {
 }
 
 export async function openDrawer(page) {
-  await page.locator('.menu-btn[aria-label="Teacher menu"]').click();
+  // idempotent: once open, the drawer's own scrim covers the header's menu
+  // button, so re-clicking it (e.g. from a polling read like
+  // getOtherLongMin) would hang waiting for a covered element.
+  const alreadyOpen = await page.locator('#drawer.show').count();
+  if (!alreadyOpen) await page.locator('.menu-btn[aria-label="Teacher menu"]').click();
 }
 
 export async function addStudentViaDrawer(page, name) {
   await openDrawer(page);
   await page.locator('#newName').fill(name);
   await page.locator('#newName').press('Enter');
+  await page.locator('.dhead .menu-btn').click(); // close the drawer - it intercepts clicks on the grid behind it otherwise
 }
 
 export async function setOtherLongMin(page, minutes) {

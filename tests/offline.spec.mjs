@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import {
   setupNewClass, skipTourIfPresent, joinExistingClass, orgId, tileFor,
-  addStudentViaDrawer, logBreak,
+  addStudentViaDrawer, logBreak, startClass,
 } from './helpers.mjs';
 
 test('mutations made offline apply locally and flush to other devices on reconnect', async ({ browser }) => {
@@ -27,6 +27,7 @@ test('mutations made offline apply locally and flush to other devices on reconne
   // makes this instant.
   await addStudentViaDrawer(a, 'Zayd');
   await expect(tileFor(a, 'Zayd')).toBeVisible();
+  await startClass(a); // breaks can only be logged once class is in session
   await logBreak(a, 'Amina', 'Washroom');
   await expect(tileFor(a, 'Amina')).toHaveClass(/out/);
 

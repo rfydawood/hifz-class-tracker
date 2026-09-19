@@ -31,7 +31,14 @@ service cloud.firestore {
 
     // ---- orgs/{orgId} ----
     match /orgs/{orgId} {
-      allow get: if isMember(orgId);
+      // A device joining by code must be able to check the org exists
+      // *before* it has a member doc for it (see joinByCode() in
+      // index.html) - same trust model the old classes/{code} rules used:
+      // knowing the exact, unguessable id is what "having access" means.
+      // `list` stays denied so orgs can never be enumerated, and every
+      // subcollection below (classes/students/days/breaks - the actual
+      // classroom data) still requires real membership.
+      allow get: if signedIn();
       allow list: if false;
 
       allow create: if signedIn()
