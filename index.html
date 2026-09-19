@@ -287,6 +287,7 @@ input,select{font:inherit;color:inherit}
     </label>
     <div class="setup-actions"><span id="setupCount">0 students</span><button class="btn dark" onclick="finishSetup()">Create my class</button></div>
     <p class="err" id="setupErr"></p>
+    <p class="hint" style="margin-top:14px">Already set up on another device? <a href="#" onclick="event.preventDefault();openJoinPrompt()" style="color:var(--leaf);font-weight:700">Enter your sync code</a> instead.</p>
   </div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
@@ -303,7 +304,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="9f827372cb",APP_BUILD_TIME="2026-09-18T00:51:12.866Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="6863156dac",APP_BUILD_TIME="2026-09-19T03:11:58.282Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -388,7 +389,13 @@ const Store=(function(){
   return {hydrate,get,set,remove,native};
 })();
 
-/* ===== keeps the day alive through a refresh or a closed lid ===== */
+/* ===== legacy local keys - read-only from here on =====
+   Firestore is now the source of truth (IMPLEMENTATION_PLAN.md 2.1); these
+   two keys are never written again, only read once at boot as a same-day
+   fallback so an install that hasn't been online since upgrading still
+   opens straight into its existing class instead of a blank setup screen
+   (see bootstrapOrgFromLocal()). Kept for one release as a safety net, per
+   plan section 4/9 - do not delete them here. */
 const KEY='hifz.guest.day', PKEY='hifz.guest.profile', todayKey=()=>new Date().toDateString();
 function mergeSettings(x){
   const def=state.settings, out=Object.assign({},def,x||{});
@@ -398,8 +405,6 @@ function mergeSettings(x){
   return out;
 }
 function ensureAttendance(){ state.students.forEach(x=>{ if(!state.attendance[x.id]) state.attendance[x.id]={status:'present',at:null,note:''}; }); }
-/* roster edits and rule changes belong to the class, not to one day */
-function saveProfile(){ Store.set(PKEY,JSON.stringify({teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings})); cloudSync(); }
 function loadProfile(){
   try{
     const o=JSON.parse(Store.get(PKEY)||'null'); if(!o) return;
@@ -410,7 +415,6 @@ function loadProfile(){
     if(o.setup||(Array.isArray(state.students)&&state.students.length)) state.setup=true;
   }catch(e){}
 }
-function save(){ Store.set(KEY,JSON.stringify({day:todayKey(),state})); saveProfile(); archive(); }
 function load(){
   try{
     const raw=Store.get(KEY); if(!raw) return;
@@ -428,14 +432,20 @@ function load(){
   }catch(e){}
 }
 
-/* ===== optional cloud sync: opt-in, per-class code, best-effort =====
-   Off by default. Everything above still works with zero internet connection.
-   When a teacher turns this on, save()/saveProfile() also push a copy to
-   Firestore under a private code, so the same class can be pulled up on
-   another device. The code is a shared secret (like a link) - there is no
-   password check on the server, so anyone with the code can read/write that
-   class's data. Codes are long and random enough that guessing one isn't
-   practical, but they should be kept private the way a password would be. */
+/* ===== Firestore: the source of truth (IMPLEMENTATION_PLAN.md section 2) =====
+   Personal accounts are organizations of one (2.2) - there is no Google
+   Sign-In yet (that's Phase 4/2.8), so auth stays anonymous and the org's
+   random id plays the role the old "class code" did: knowing it is what
+   "having access" means (see firestore.rules). A second device "joins" by
+   writing its own membership doc for that org id - same trust boundary as
+   before, now a real record instead of an implicit one.
+
+   Offline persistence (enablePersistence) means normal use never talks to
+   the network directly - reads come from the local cache and writes queue
+   and flush on reconnect automatically. That, plus every mutation below
+   going through a named writer instead of a blanket save(), is what "source
+   of truth" means day to day: there is exactly one place this data lives,
+   and this device's copy of it is a cache, not a second original. */
 const FIREBASE_CONFIG={
   projectId:"hifz-class-tracker-dece7",
   appId:"1:726082000637:web:c4bc54fd73d8853f44d094",
@@ -444,119 +454,285 @@ const FIREBASE_CONFIG={
   authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
   messagingSenderId:"726082000637"
 };
-const CCKEY='hifz.guest.classcode';
-let fbApp=null, fbDb=null, fbAuthReady=null, cloudStatus='off';
-function classCode(){ return Store.get(CCKEY)||''; }
-function setClassCode(code){ if(code) Store.set(CCKEY,code); else Store.remove(CCKEY); }
-function genClassCode(){
+const CLASS_ID='default';                       // one class per personal org - Phase 2 scope
+const SESSION_ORG_KEY='session.orgId', SESSION_CLASS_KEY='session.classId', CACHE_KEY='cache.lastClass';
+const DEFAULT_FLAG_THRESHOLD=2;                  // org.defaults.flagThreshold - only consumed by the Phase 5 admin dashboard, stored now so the schema doesn't need a later migration
+let fbApp=null, fbDb=null, fbUid=null, fbReady=null;
+let ORG_ID=null, TODAY_ID=null, syncStatus='offline';   // offline | connecting | synced | error
+let unsubOrg=null, unsubClass=null, unsubStudents=null, unsubDay=null, unsubBreaks=null;
+
+/* Test hook only (tests/write-count.spec.mjs): every real Firestore write
+   funnels through fsWrite() so a test can assert "zero writes while idle"
+   by diffing this counter, without needing to intercept network traffic. */
+window.__hifzWriteCount=0;
+function fsWrite(p){ window.__hifzWriteCount++; return p; }
+Object.defineProperty(window,'__hifzOrgId',{get:()=>ORG_ID});
+Object.defineProperty(window,'__hifzSyncStatus',{get:()=>syncStatus});
+
+function genSyncCode(){
   const abc='ABCDEFGHJKMNPQRSTUVWXYZ23456789';                // no 0/O/1/I/L look-alikes
   let s=''; for(let i=0;i<10;i++) s+=abc[Math.floor(Math.random()*abc.length)];
   return s.match(/.{1,5}/g).join('-');
 }
-function cloudStatusLabel(){
-  return cloudStatus==='synced'?'Synced just now'
-    :cloudStatus==='connecting'?'Syncing…'
-    :cloudStatus==='error'?'Sync error — this device\'s copy is safe, but it hasn\'t reached the cloud'
+function syncStatusLabel(){
+  return syncStatus==='synced'?'Synced — changes appear on other devices within seconds'
+    :syncStatus==='connecting'?'Connecting…'
+    :syncStatus==='error'?'Offline — saved on this device, will sync once you\'re back online'
     :'Not synced yet';
 }
-function initCloud(){
-  if(fbAuthReady) return fbAuthReady;
-  fbAuthReady=new Promise(resolve=>{
+function academicYearId(d){ const y=d.getFullYear(); return d.getMonth()>=7?`${y}-${y+1}`:`${y-1}-${y}`; }
+function settingsToDefaults(s){ return {startTime:s.startTime,endTime:s.endTime,snack:s.snack,lunch:s.lunch,longMin:s.longMin,limits:s.limits,flagThreshold:DEFAULT_FLAG_THRESHOLD}; }
+function sessionToPlain(s){ return {status:s.status,startedAt:s.startedAt?+s.startedAt:null,endedAt:s.endedAt?+s.endedAt:null,lunchAt:s.lunchAt?+s.lunchAt:null,pauseLabel:s.pauseLabel||null,resumeAt:s.resumeAt||null}; }
+function plainToSession(p){ const d=v=>v?new Date(v):null; return {status:p.status||'preclass',startedAt:d(p.startedAt),endedAt:d(p.endedAt),lunchAt:d(p.lunchAt),pauseLabel:p.pauseLabel||null,resumeAt:p.resumeAt||null}; }
+function plainToAttendance(p){ const out={}; Object.entries(p||{}).forEach(([sid,a])=>{ out[sid]={status:a.status||'present',at:a.at?new Date(a.at):null,note:a.note||''}; }); return out; }
+function fullAttendancePlain(){ const out={}; state.students.forEach(s=>{ const a=state.attendance[s.id]||{status:'present',at:null,note:''}; out[s.id]={status:a.status,at:a.at?+a.at:null,note:a.note||''}; }); return out; }
+function fullRosterPlain(){ return Object.fromEntries(state.students.map(s=>[s.id,s.name])); }
+
+function initFirestore(){
+  if(fbReady) return fbReady;
+  fbReady=(async()=>{
     try{
       fbApp=firebase.initializeApp(FIREBASE_CONFIG);
       fbDb=firebase.firestore(fbApp);
-      firebase.auth(fbApp).signInAnonymously().then(()=>resolve(true)).catch(()=>resolve(false));
-    }catch(e){ resolve(false); }
+      const params=new URLSearchParams(location.search);
+      if(params.get('emulator')){                         // test-only: point at local emulators, never used in production builds
+        fbDb.useEmulator('127.0.0.1',8080);
+        firebase.auth(fbApp).useEmulator('http://127.0.0.1:9099',{disableWarnings:true});
+      }
+      try{ await fbDb.enablePersistence({synchronizeTabs:true}); }
+      catch(e){ /* failed-precondition (another tab) or unimplemented (old browser) - keep going without persistence, per plan 2.1 */ }
+      await firebase.auth(fbApp).setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      const cred=await firebase.auth(fbApp).signInAnonymously();
+      fbUid=cred.user.uid;
+      return true;
+    }catch(e){ return false; }
+  })();
+  return fbReady;
+}
+
+function orgRefFor(code){ return fbDb.collection('orgs').doc(code); }
+function orgRef(){ return orgRefFor(ORG_ID); }
+function classRef(){ return orgRef().collection('classes').doc(CLASS_ID); }
+function dayRef(id){ return classRef().collection('days').doc(id||TODAY_ID); }
+
+/* One-time creation of a brand-new personal org from whatever is currently
+   in `state` (either just-entered setup, or an existing local class being
+   upgraded - see bootstrapOrgFromLocal()). Fire-and-forget from the caller:
+   the UI is already updated optimistically before this resolves. */
+async function bootstrapOrg(){
+  syncStatus='connecting'; render();
+  const ok=await initFirestore();
+  if(!ok){ syncStatus='error'; render(); scheduleBootstrapRetry(); return false; }
+  try{
+    const code=genSyncCode(), now=firebase.firestore.FieldValue.serverTimestamp();
+    const org=orgRefFor(code);
+    await fsWrite(org.set({
+      schemaVersion:3, name:`${state.teacher||'My'}'s Hifz Class`, kind:'personal',
+      activeYearId:academicYearId(new Date()), defaults:settingsToDefaults(state.settings),
+      createdAt:now, updatedAt:now
+    }));
+    await fsWrite(org.collection('members').doc(fbUid).set({
+      email:'', displayName:state.teacher||'', roles:['admin','teacher'], status:'active', joinedAt:now
+    }));
+    await fsWrite(org.collection('classes').doc(CLASS_ID).set({
+      name:`${state.teacher||'My'}'s Hifz Class`, teacherUid:fbUid, settingsOverride:null, status:'active'
+    }));
+    await Promise.all(state.students.map((s,i)=>fsWrite(
+      org.collection('classes').doc(CLASS_ID).collection('students').doc(s.id).set({
+        name:s.name, active:!!s.active, order:i, enrolledFrom:dayId(new Date()), enrolledUntil:null
+      })
+    )));
+    await fsWrite(org.collection('classes').doc(CLASS_ID).collection('days').doc(dayId(new Date())).set({
+      date:dayId(new Date()), yearId:academicYearId(new Date()),
+      session:sessionToPlain(state.session), attendance:fullAttendancePlain(), roster:fullRosterPlain(),
+      updatedAt:now
+    },{merge:true}));
+    ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
+    await attachListeners();
+    return true;
+  }catch(e){ syncStatus='error'; render(); scheduleBootstrapRetry(); return false; }
+}
+/* Covers the one edge case Firebase Auth itself can't queue offline: a
+   brand-new install's very first anonymous sign-in needs one network round
+   trip. If that fails, the class still works locally (state is already
+   updated) and this retries quietly once connectivity returns. */
+function scheduleBootstrapRetry(){
+  if(scheduleBootstrapRetry._armed) return;
+  scheduleBootstrapRetry._armed=true;
+  window.addEventListener('online',function once(){
+    window.removeEventListener('online',once); scheduleBootstrapRetry._armed=false;
+    if(!ORG_ID && state.setup) bootstrapOrg();
   });
-  return fbAuthReady;
 }
-function cloudPayload(){
-  return {
-    profileJSON:JSON.stringify({students:state.students,settings:state.settings}),
-    dayJSON:JSON.stringify({day:todayKey(),state}),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-}
-function cloudSync(){
-  const code=classCode(); if(!code) { cloudStatus='off'; return; }
-  clearTimeout(cloudSync._t);
-  cloudSync._t=setTimeout(()=>{
-    initCloud().then(ok=>{
-      if(!ok){ cloudStatus='error'; return; }
-      cloudStatus='connecting';
-      fbDb.collection('classes').doc(code).set(cloudPayload(),{merge:true})
-        .then(()=>{ cloudStatus='synced'; })
-        .catch(()=>{ cloudStatus='error'; });
-    });
-  },1500);
-}
-function turnOnSync(){
-  setClassCode(genClassCode());
-  cloudStatus='connecting';
-  cloudSync();
-  openCloudSync();
-}
-function turnOffSync(){
-  setClassCode('');
-  cloudStatus='off';
-  toast('Cloud sync turned off. This device keeps its own copy as usual.');
-  closeSheet();
-}
-function pullFromCloud(code){
+/* Phase 2 minimal migration: an install upgrading from before this version
+   has a class in the legacy local keys but no org yet. Upload it once, same
+   codepath as a fresh setup. Full day-archive migration is Phase 3. */
+function bootstrapOrgFromLocal(){ bootstrapOrg(); }
+
+async function joinByCode(code){
   code=(code||'').trim().toUpperCase();
   if(!code) return toast('Type a sync code first.');
-  initCloud().then(ok=>{
-    if(!ok) return toast('Could not connect. Check your internet and try again.');
-    fbDb.collection('classes').doc(code).get().then(doc=>{
-      if(!doc.exists) return toast('No class found with that code.');
-      const data=doc.data();
-      try{
-        if(data.profileJSON){
-          const p=JSON.parse(data.profileJSON);
-          if(Array.isArray(p.students)) state.students=p.students;
-          state.settings=mergeSettings(p.settings);
-        }
-        if(data.dayJSON){
-          const o=JSON.parse(data.dayJSON);
-          if(o&&o.day===todayKey()&&o.state){
-            const d=v=>v?new Date(v):null, s=o.state;
-            s.session.startedAt=d(s.session.startedAt); s.session.endedAt=d(s.session.endedAt); s.session.lunchAt=d(s.session.lunchAt);
-            Object.values(s.attendance).forEach(a=>a.at=d(a.at));
-            Object.values(s.active).forEach(a=>a.startAt=d(a.startAt));
-            s.breaks.forEach(b=>{b.startAt=d(b.startAt); b.endAt=d(b.endAt);});
-            s.log.forEach(l=>l.t=d(l.t));
-            s.settings=mergeSettings(s.settings);
-            s.lastAction=null; Object.assign(state,s);
-          }
-        }
-        ensureAttendance(); state.setup=true; setClassCode(code); cloudStatus='synced';
-        Store.set(PKEY,JSON.stringify({students:state.students,settings:state.settings}));
-        Store.set(KEY,JSON.stringify({day:todayKey(),state}));
-        closeSheet(); render();
-        toast('Class loaded from the cloud');
-      }catch(e){ toast('That code loaded, but the data looked invalid.'); }
-    }).catch(()=>toast('Could not reach the cloud. Check your internet and try again.'));
-  });
+  syncStatus='connecting';
+  const ok=await initFirestore();
+  if(!ok){ syncStatus='error'; return toast('Could not connect. Check your internet and try again.'); }
+  try{
+    const snap=await orgRefFor(code).get();
+    if(!snap.exists){ syncStatus='error'; return toast('No class found with that code.'); }
+    const now=firebase.firestore.FieldValue.serverTimestamp();
+    await fsWrite(orgRefFor(code).collection('members').doc(fbUid).set({
+      email:'', displayName:'', roles:['admin','teacher'], status:'active', joinedAt:now
+    }));
+    ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
+    await attachListeners();
+    state.setup=true; closeSheet(); $('setup').classList.remove('show'); render();
+    toast('Class loaded — this device will stay in sync.');
+  }catch(e){ syncStatus='error'; toast('Could not join with that code.'); }
 }
-function openCloudSync(){
-  closeDrawer();
-  const code=classCode();
-  if(code){
-    sheetHTML('Cloud sync','Lets you pick up this same class on another device of yours.',
-      `<div class="body">
-        <div style="font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:10px">${code}</div>
-        <p style="color:var(--mute);font-size:13px;line-height:1.5;margin-bottom:14px">On another device, open the teacher menu → Cloud sync → enter this code to load this same class there. <b>Keep it private</b> — anyone with this code can see this class's data, so treat it like a password.</p>
-        <p style="font-size:14px;font-weight:700">Status: ${cloudStatusLabel()}</p>
-       </div>
-       <div class="actions"><button class="btn ghost" onclick="turnOffSync()">Turn off sync</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
-  } else {
-    sheetHTML('Cloud sync','Optional. Keeps an online backup of this class and lets you pick it up on another device (helpful if this tablet is ever lost, reset, or replaced). Nothing changes unless you choose one of these.',
-      `<div class="body">
-        <button class="dbtn leaf" onclick="turnOnSync()">Turn on sync for this class<small>Creates a private code for this device's data</small></button>
-        <div class="note"><input id="pullCode" placeholder="Or type an existing sync code"></div>
-        <button class="btn ghost" style="margin-top:10px;width:100%" onclick="pullFromCloud(($('pullCode')||{}).value)">Load a class using that code</button>
-       </div>`);
+
+function detachListeners(){ [unsubOrg,unsubClass,unsubStudents,unsubDay,unsubBreaks].forEach(u=>u&&u()); unsubOrg=unsubClass=unsubStudents=unsubDay=unsubBreaks=null; }
+async function attachToOrg(orgId){
+  syncStatus='connecting'; render();
+  const ok=await initFirestore();
+  if(!ok){
+    // offline on boot: keep whatever the local cache painted and retry once
+    // back online - do NOT fall back to setup just because we can't reach
+    // the network yet (plan 2.1: the app must keep working offline).
+    ORG_ID=orgId; syncStatus='error'; render(); scheduleBootstrapRetry(); return;
   }
+  try{
+    const snap=await orgRefFor(orgId).get();
+    if(!snap.exists){
+      // a genuinely stale/deleted org id - this is the "never crash" case
+      // from plan 2.9, not the offline case above.
+      Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
+      syncStatus='offline'; return openSetup();
+    }
+  }catch(e){
+    // couldn't verify existence (e.g. offline-but-not-yet-cached) - assume
+    // it's still good and let the realtime listeners recover once connected.
+  }
+  ORG_ID=orgId;
+  await attachListeners();
+}
+async function attachListeners(){
+  detachListeners();
+  const org=orgRef(), cls=classRef();
+  unsubOrg=org.onSnapshot(snap=>{
+    if(!snap.exists||snap.metadata.hasPendingWrites) return;
+    const d=snap.data(); if(d.defaults) state.settings=mergeSettings(d.defaults);
+    render();
+  },()=>{ syncStatus='error'; render(); });
+  unsubClass=cls.onSnapshot(snap=>{
+    if(!snap.exists||snap.metadata.hasPendingWrites) return;
+    render();
+  },()=>{});
+  unsubStudents=cls.collection('students').onSnapshot(qs=>{
+    if(qs.metadata.hasPendingWrites) return;
+    const list=[]; qs.forEach(doc=>list.push(Object.assign({id:doc.id},doc.data())));
+    list.sort((a,b)=>(a.order||0)-(b.order||0));
+    state.students=list.map(s=>({id:s.id,name:s.name,active:s.active!==false}));
+    ensureAttendance(); render();
+  },()=>{});
+  attachDayListeners();
+  syncStatus='synced'; render();
+}
+function attachDayListeners(){
+  if(unsubDay) unsubDay(); if(unsubBreaks) unsubBreaks();
+  TODAY_ID=dayId(new Date());
+  const d=dayRef(TODAY_ID);
+  unsubDay=d.onSnapshot(snap=>{
+    if(snap.metadata.hasPendingWrites||!snap.exists) return;
+    const data=snap.data();
+    if(data.session) state.session=plainToSession(data.session);
+    if(data.attendance) state.attendance=plainToAttendance(data.attendance);
+    ensureAttendance(); render();
+  },()=>{});
+  unsubBreaks=d.collection('breaks').onSnapshot(qs=>{
+    if(qs.metadata.hasPendingWrites) return;
+    const active={}, done=[];
+    qs.forEach(doc=>{
+      const b=doc.data(), r=RSN(b.reason);
+      if(b.endAt==null){ active[b.sid]={reason:b.reason,label:r.label,startAt:new Date(b.startAt),note:'',allowMs:b.allowMs||0,assignedMin:b.assignedMin||null,overTrip:!!b.overTrip,_id:doc.id}; }
+      else{ done.push({sid:b.sid,reason:b.reason,label:r.label,startAt:new Date(b.startAt),endAt:new Date(b.endAt),dur:b.dur,allowMs:b.allowMs||0,assignedMin:b.assignedMin||null,over:b.over||0,overTrip:!!b.overTrip,flag:!!b.flag,note:'',_id:doc.id}); }
+    });
+    done.sort((a,b)=>a.startAt-b.startAt);
+    state.active=active; state.breaks=done; render();
+  },()=>{});
+}
+
+/* ===== writers: the only functions allowed to touch Firestore =====
+   Each maps to one real user action (plan 2.4). Discrete events (attendance,
+   break start/stop, session changes, roster edits) write immediately.
+   Settings debounce ~700ms since a teacher taps through several fields in a
+   row. Never called from render() or tick(). */
+function writeSettings(){
+  if(!ORG_ID) return;
+  clearTimeout(writeSettings._t);
+  writeSettings._t=setTimeout(()=>{
+    fsWrite(orgRef().set({defaults:settingsToDefaults(state.settings),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(()=>{});
+  },700);
+}
+function writeRosterStudent(s){
+  if(!ORG_ID) return;
+  const order=Math.max(0,state.students.findIndex(x=>x.id===s.id));
+  fsWrite(classRef().collection('students').doc(s.id).set({
+    name:s.name, active:!!s.active, order, enrolledFrom:dayId(new Date()), enrolledUntil:null
+  },{merge:true})).catch(()=>{});
+}
+function writeDay(patch){
+  if(!ORG_ID) return;
+  fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId:academicYearId(new Date()),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true})).catch(()=>{});
+}
+function writeSessionAndAttendance(){ writeDay({session:sessionToPlain(state.session),attendance:fullAttendancePlain(),roster:fullRosterPlain()}); }
+function writeAttendance(sid){
+  const a=state.attendance[sid];
+  writeDay({attendance:{[sid]:{status:a.status,at:a.at?+a.at:null,note:a.note||''}},roster:{[sid]:nameOf(sid)}});
+}
+function breakDocId(sid,startAt){ return `${sid}_${+startAt}`; }
+function writeBreakStart(sid){
+  if(!ORG_ID) return;
+  const a=state.active[sid]; if(!a) return;
+  const id=breakDocId(sid,a.startAt); a._id=id;
+  fsWrite(dayRef().collection('breaks').doc(id).set({
+    sid, reason:a.reason, startAt:+a.startAt, endAt:null, dur:null, over:null, flag:null,
+    overTrip:!!a.overTrip, assignedMin:a.assignedMin||null
+  })).catch(()=>{});
+}
+function writeBreakEnd(rec){
+  if(!ORG_ID) return;
+  const id=rec._id||breakDocId(rec.sid,rec.startAt);
+  fsWrite(dayRef().collection('breaks').doc(id).set({
+    sid:rec.sid, reason:rec.reason, startAt:+rec.startAt, endAt:+rec.endAt, dur:rec.dur,
+    over:rec.over||0, flag:!!rec.flag, overTrip:!!rec.overTrip, assignedMin:rec.assignedMin||null
+  })).catch(()=>{});
+}
+function writeBreakCancel(id){
+  if(!ORG_ID||!id) return;
+  fsWrite(dayRef().collection('breaks').doc(id).delete()).catch(()=>{});
+}
+
+function openSyncInfo(){
+  closeDrawer();
+  if(!ORG_ID){
+    return sheetHTML('Sync','Still connecting this class to the cloud — try again in a moment.',
+      `<div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+  }
+  sheetHTML('Sync code','Use this code on another device (teacher menu → Sync → enter this code below) to see this exact class live there.',
+    `<div class="body">
+      <div style="font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:10px">${ORG_ID}</div>
+      <p style="color:var(--mute);font-size:13px;line-height:1.5;margin-bottom:14px"><b>Keep it private</b> — anyone with this code can see and change this class's data, so treat it like a password.</p>
+      <p style="font-size:14px;font-weight:700">Status: ${syncStatusLabel()}</p>
+      <div class="note"><input id="joinCode" placeholder="Or enter a different sync code to switch classes"></div>
+     </div>
+     <div class="actions"><button class="btn ghost" onclick="joinByCode(($('joinCode')||{}).value)">Switch to that code</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+function openJoinPrompt(){
+  // .setup sits above .scrim (z-index 80 vs 20), so the sheet would render
+  // invisibly behind it if left showing - hide it first, restore it on Cancel.
+  $('setup').classList.remove('show');
+  sheetHTML('Enter your sync code','Type the code shown on your other device\'s teacher menu → Sync.',
+    `<div class="body"><div class="note"><input id="joinCode2" placeholder="e.g. AB3XQ-7KLMN" autocapitalize="characters"></div></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet();$('setup').classList.add('show')">Cancel</button><button class="btn dark" onclick="joinByCode(($('joinCode2')||{}).value)">Load my class</button></div>`);
 }
 
 function toast(msg,undoable){
@@ -618,6 +794,7 @@ function saveBreakEdits(sid){
 function cancelBreak(sid){
   confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Cancel break',()=>{
     logIt(`<b>${nameOf(sid)}</b>'s break cancelled`);
+    writeBreakCancel(state.active[sid]._id);
     delete state.active[sid]; closeSheet(); toast(`${nameOf(sid)}'s break cancelled`,true); render();
   });
 }
@@ -629,7 +806,7 @@ function tap(sid){
     const prev={...a};
     if(a.status==='absent'){ a.status='present'; a.at=null; a.note=''; logIt(`<b>${nameOf(sid)}</b> re-activated before class`); toast(`${nameOf(sid)} marked present`,true); }
     else { a.status='absent'; a.at=null; a.note='Deactivated before class'; logIt(`<b>${nameOf(sid)}</b> deactivated (not here)`); toast(`${nameOf(sid)} marked not here`,true); }
-    state.lastAction={type:'att',sid,prev}; return render();
+    state.lastAction={type:'att',sid,prev}; writeAttendance(sid); return render();
   }
   if(s==='ended') return toast('Class has ended for today.');
   if(s==='lunch') return toast(`${state.session.pauseLabel||'Break'}: individual breaks are paused.`);
@@ -637,7 +814,7 @@ function tap(sid){
     const prev={...a}, now=new Date();
     a.status='tardy'; a.at=now; a.note=`Arrived ${clockStr(now)}, ${Math.max(1,Math.round((now-state.session.startedAt)/60000))} min after start`;
     logIt(`<b>${nameOf(sid)}</b> activated, marked tardy at ${clockStr(now)}`);
-    state.lastAction={type:'att',sid,prev}; toast(`${nameOf(sid)} is here · tardy, ${clockStr(now)}`,true); return render();
+    state.lastAction={type:'att',sid,prev}; writeAttendance(sid); toast(`${nameOf(sid)} is here · tardy, ${clockStr(now)}`,true); return render();
   }
   openReason(sid);                                          // present -> break
 }
@@ -646,13 +823,13 @@ function markLeft(sid){
   if(state.active[sid]) ret(sid,true);
   a.status='absent'; a.at=now; a.note=`Left at ${clockStr(now)}`;
   logIt(`<b>${nameOf(sid)}</b> left for the day at ${clockStr(now)}`);
-  state.lastAction={type:'att',sid,prev}; closeSheet(); toast(`${nameOf(sid)} left for the day`,true); render();
+  state.lastAction={type:'att',sid,prev}; writeAttendance(sid); closeSheet(); toast(`${nameOf(sid)} left for the day`,true); render();
 }
 function checkout(sid,key,note,assignedMin){
   const r=RSN(key), lim=LIMIT(key), overTrip=!!(lim&&tripsUsed(sid,key)>=lim.trips);
   state.active[sid]={reason:key,label:r.label,startAt:new Date(),note:note||'',allowMs:capMs(key,assignedMin),assignedMin:assignedMin||null,overTrip};
   logIt(`<b>${nameOf(sid)}</b> out · ${r.label}${assignedMin?` (${assignedMin} min assigned)`:''}${overTrip?' · past the daily limit':''}`);
-  state.lastAction={type:'checkout',sid}; closeSheet();
+  state.lastAction={type:'checkout',sid}; writeBreakStart(sid); closeSheet();
   toast(overTrip?`${nameOf(sid)} out for ${r.label.toLowerCase()} · past the daily limit`:`${nameOf(sid)} out for ${r.label.toLowerCase()}`,true);
   render();
 }
@@ -660,9 +837,9 @@ function ret(sid,silent){
   const a=state.active[sid]; if(!a) return;
   const dur=Date.now()-a.startAt, over=a.allowMs?Math.max(0,dur-a.allowMs):0;
   const rec={sid,reason:a.reason,label:a.label,startAt:a.startAt,endAt:new Date(),dur,
-             allowMs:a.allowMs,assignedMin:a.assignedMin||null,over,overTrip:!!a.overTrip,note:a.note||''};
+             allowMs:a.allowMs,assignedMin:a.assignedMin||null,over,overTrip:!!a.overTrip,note:a.note||'',_id:a._id};
   rec.flag=over>0||rec.overTrip;
-  state.breaks.push(rec); delete state.active[sid];
+  state.breaks.push(rec); delete state.active[sid]; writeBreakEnd(rec);
   logIt(`<b>${nameOf(sid)}</b> back after ${fmtDur(dur)}${over?` · ${fmtDur(over)} over the ${a.label.toLowerCase()} limit`:''}${rec.overTrip?' · past the daily limit':''}`);
   state.lastAction={type:'return',sid,rec,prev:a}; closeSheet();
   if(!silent) toast(rec.flag?`${nameOf(sid)} back after ${fmtDur(dur)} · flagged`:`${nameOf(sid)} back after ${fmtDur(dur)}`,true);
@@ -676,27 +853,32 @@ function doStart(){
   state.students.forEach(s=>{ const a=att(s.id); if(a.status==='present'){ a.at=now; } });
   const abs=roster().filter(s=>att(s.id).status==='absent').length;
   logIt(`Class started · ${roster().length-abs} present, ${abs} not here`);
-  closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
+  writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
 }
 function endClass(){
   confirmSheet('End class for today?','Open breaks will be closed. Students still deactivated stay marked absent.','End class',()=>{
     Object.keys(state.active).forEach(sid=>ret(sid,true));
-    state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended'); closeSheet(); closeDrawer(); toast('Class ended'); render();
+    state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended');
+    writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast('Class ended'); render();
   },'warn');
 }
 function startPause(kind,resumeAt){
   confirmSheet(`Start ${kind.toLowerCase()} for the whole class?`,'Open breaks are closed and individual timers stop. This time is not counted against anyone.',`Start ${kind.toLowerCase()}`,()=>{
     Object.keys(state.active).forEach(sid=>ret(sid,true));
     state.session.status='lunch'; state.session.lunchAt=new Date(); state.session.pauseLabel=kind; state.session.resumeAt=resumeAt||null;
-    logIt(`${kind} started`); closeSheet(); closeDrawer(); toast(`${kind} started`); render();
+    logIt(`${kind} started`); writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast(`${kind} started`); render();
   });
 }
 function endPause(){
   const k=state.session.pauseLabel||'Break';
   state.session.status='live'; state.session.lunchAt=null; state.session.pauseLabel=null; state.session.resumeAt=null;
-  logIt(`${k} ended`); closeDrawer(); toast('Back in class'); render();
+  logIt(`${k} ended`); writeSessionAndAttendance(); closeDrawer(); toast('Back in class'); render();
 }
-function resetDay(){ state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null}; state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''}); state.active={}; state.breaks=[]; state.log=[]; closeDrawer(); render(); }
+/* Prototype/dev tool (see the drawer label) - resets this device's view of
+   today instantly. It does not delete any break documents already written
+   to Firestore for today; those are harmless leftover test data, consistent
+   with the rules never allowing bulk delete (plan 9, "do not delete data"). */
+function resetDay(){ state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null}; state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''}); state.active={}; state.breaks=[]; state.log=[]; writeSessionAndAttendance(); closeDrawer(); render(); }
 
 /* ===== sheets ===== */
 function sheetHTML(title,sub,body,extra){
@@ -737,7 +919,7 @@ function openAttendanceReview(){
     <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row"><b>${s.name}</b><span class="time">${a.note||(a.at?clockStr(a.at):'')}</span><div class="seg">${['present','tardy','absent'].map(k=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${k}</button>`).join('')}</div></div>`}).join('')}</div></div>
     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
-function setStatus(sid,k){ const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); } render(); openAttendanceReview(); }
+function setStatus(sid,k){ const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); writeAttendance(sid); } render(); openAttendanceReview(); }
 
 function openDaySummary(){
   closeDrawer();
@@ -781,7 +963,7 @@ function finishSetup(){
   state.teacher=name;
   state.students=setupStudents.map((n,i)=>({id:'s'+i,name:n,active:true}));
   state.attendance={}; ensureAttendance();
-  state.setup=true; saveProfile();
+  state.setup=true; bootstrapOrg();
   $('setupErr').textContent=''; $('setup').classList.remove('show');
   render(); startTour();
 }
@@ -818,15 +1000,22 @@ function restoreBackup(input){
   r.onload=()=>{
     try{
       const d=JSON.parse(r.result);
-      if(d.profile){ Store.set(PKEY,JSON.stringify(d.profile)); }
+      if(d.profile){
+        if(Array.isArray(d.profile.students)) state.students=d.profile.students;
+        if(d.profile.teacher) state.teacher=d.profile.teacher;
+        state.settings=mergeSettings(d.profile.settings); ensureAttendance();
+        state.students.forEach(writeRosterStudent); writeSettings();
+      }
       if(d.history){ writeHistory(d.history); }
-      toast('Backup restored · reloading'); setTimeout(()=>location.reload(),700);
+      toast('Backup restored'); render();
     }catch(e){ toast('That file could not be read'); }
   };
   r.readAsText(f); input.value='';
 }
 function startFresh(){
-  confirmSheet('Clear this class and start over?','The roster, settings and every archived day on this computer are deleted. Download a backup first if you want to keep them.','Delete everything',()=>{
+  confirmSheet('Stop syncing this class on this device?','This device stops following this class online and forgets its local copy. Nothing already saved to the cloud is deleted - use a sync code to bring it back. Download a backup first if you want a local copy.','Disconnect this device',()=>{
+    detachListeners();
+    Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
     Store.remove(KEY); Store.remove(PKEY); Store.remove(HKEY);
     location.reload();
   });
@@ -961,18 +1150,19 @@ function exportCSV(){
 function addStudent(){
   const el=$('newName'), n=(el.value||'').replace(/[<>"'`]/g,'').trim(); if(!n) return;
   const id='s'+Date.now(), started=st()!=='preclass';
-  state.students.push({id,name:n,active:true});
+  const s={id,name:n,active:true};
+  state.students.push(s);
   state.attendance[id]={status:started?'absent':'present',at:null,note:started?'Added after class started':''};
-  el.value=''; logIt(`<b>${n}</b> added to the class list`); render(); drawDrawer();
+  el.value=''; logIt(`<b>${n}</b> added to the class list`); writeRosterStudent(s); render(); drawDrawer();
 }
 function archiveStudent(sid){
   const s=state.students.find(x=>x.id===sid); if(!s) return;
   if(state.active[sid]) ret(sid,true);
-  s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); render(); drawDrawer(); toast(`${s.name} removed from the list`);
+  s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); writeRosterStudent(s); render(); drawDrawer(); toast(`${s.name} removed from the list`);
 }
 function restoreStudent(sid){
   const s=state.students.find(x=>x.id===sid); if(!s) return;
-  s.active=true; logIt(`<b>${s.name}</b> put back on the class list`); render(); drawDrawer();
+  s.active=true; logIt(`<b>${s.name}</b> put back on the class list`); writeRosterStudent(s); render(); drawDrawer();
 }
 
 /* ===== drawer ===== */
@@ -996,18 +1186,18 @@ function drawDrawer(){
    ${state.students.some(x=>!x.active)?`${state.students.filter(x=>!x.active).map(x=>`<div class="rrow"><b>${x.name}</b><small>removed</small><button class="back" onclick="restoreStudent('${x.id}')">Put back</button></div>`).join('')}`:''}
    <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>
    <h4>Settings</h4>
-   <div class="field"><div>Class hours<small>Monday to Friday</small></div><span class="two"><input type="time" value="${set.startTime}" onchange="state.settings.startTime=this.value;render();drawDrawer()"><input type="time" value="${set.endTime}" onchange="state.settings.endTime=this.value;render();drawDrawer()"></span></div>
-   <div class="field"><div>Snack break<small>School-wide</small></div><span class="two"><input type="time" value="${set.snack.start}" onchange="state.settings.snack.start=this.value;render();drawDrawer()"><input type="time" value="${set.snack.end}" onchange="state.settings.snack.end=this.value;render();drawDrawer()"></span></div>
-   <div class="field"><div>Lunch and recess<small>School-wide</small></div><span class="two"><input type="time" value="${set.lunch.start}" onchange="state.settings.lunch.start=this.value;render();drawDrawer()"><input type="time" value="${set.lunch.end}" onchange="state.settings.lunch.end=this.value;render();drawDrawer()"></span></div>
+   <div class="field"><div>Class hours<small>Monday to Friday</small></div><span class="two"><input type="time" value="${set.startTime}" onchange="state.settings.startTime=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.endTime}" onchange="state.settings.endTime=this.value;writeSettings();render();drawDrawer()"></span></div>
+   <div class="field"><div>Snack break<small>School-wide</small></div><span class="two"><input type="time" value="${set.snack.start}" onchange="state.settings.snack.start=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.snack.end}" onchange="state.settings.snack.end=this.value;writeSettings();render();drawDrawer()"></span></div>
+   <div class="field"><div>Lunch and recess<small>School-wide</small></div><span class="two"><input type="time" value="${set.lunch.start}" onchange="state.settings.lunch.start=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.lunch.end}" onchange="state.settings.lunch.end=this.value;writeSettings();render();drawDrawer()"></span></div>
    <h4>Break limits</h4>
    ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
-     <select onchange="state.settings.limits.${k}.min=+this.value;render();drawDrawer()">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
-     <select onchange="state.settings.limits.${k}.trips=+this.value;render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
-   <div class="field"><div>Other<small>No trip cap; timer turns red after</small></div><select onchange="state.settings.longMin=+this.value;render();drawDrawer()">${[5,8,10,15,20].map(m=>`<option ${set.longMin===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select></div>
+     <select onchange="state.settings.limits.${k}.min=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
+     <select onchange="state.settings.limits.${k}.trips=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
+   <div class="field"><div>Other<small>No trip cap; timer turns red after</small></div><select onchange="state.settings.longMin=+this.value;writeSettings();render();drawDrawer()">${[5,8,10,15,20].map(m=>`<option ${set.longMin===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select></div>
    <h4>Today's log</h4>
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
-   <h4>Cloud sync</h4>
-   <button class="dbtn" onclick="openCloudSync()">${classCode()?`Manage cloud sync<small>${cloudStatusLabel()}</small>`:'Turn on cloud sync<small>Optional — back up this class and use it on another device</small>'}</button>
+   <h4>Sync</h4>
+   <button class="dbtn" onclick="openSyncInfo()">${ORG_ID?`This device is synced<small>${syncStatusLabel()}</small>`:'Connecting…<small>This class will be available on other devices shortly</small>'}</button>
    <h4>Prototype</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Days are archived on this device as you use the tracker. ${Object.keys(readHistory()).length} day(s) recorded so far.</small>
    <button class="dbtn" onclick="resetDay()">Reset the day</button>
@@ -1058,7 +1248,46 @@ function render(){
   $('outList').classList.toggle('compact',outEntries.length>3);
   document.querySelector('.stage').classList.toggle('no-out',outEntries.length===0);
   fitGrid();
-  tick(); save();
+  tick(); archive(); cacheLastClass();
+}
+/* Local-only instant-paint cache (plan 2.9) - never a source of truth, just
+   lets boot() paint something real before Firestore's listeners answer.
+   Cheap localStorage/Preferences write, not a Firestore write, so it has no
+   bearing on the "zero writes while idle" rule. */
+function cacheLastClass(){
+  try{
+    Store.set(CACHE_KEY,JSON.stringify({
+      teacher:state.teacher, students:state.students, settings:state.settings,
+      session:sessionToPlain(state.session), attendance:fullAttendancePlain(),
+      active:Object.fromEntries(Object.entries(state.active).map(([sid,a])=>[sid,Object.assign({},a,{startAt:+a.startAt})])),
+      breaks:state.breaks.map(b=>Object.assign({},b,{startAt:+b.startAt,endAt:b.endAt?+b.endAt:null}))
+    }));
+  }catch(e){}
+}
+function loadFromCache(){
+  try{
+    const raw=Store.get(CACHE_KEY); if(!raw) return false;
+    const c=JSON.parse(raw);
+    if(c.teacher) state.teacher=c.teacher;
+    if(Array.isArray(c.students)) state.students=c.students;
+    state.settings=mergeSettings(c.settings);
+    if(c.session) state.session=plainToSession(c.session);
+    if(c.attendance) state.attendance=plainToAttendance(c.attendance);
+    ensureAttendance();
+    if(c.active){ const out={}; Object.entries(c.active).forEach(([sid,a])=>{ out[sid]=Object.assign({},a,{startAt:new Date(a.startAt)}); }); state.active=out; }
+    if(Array.isArray(c.breaks)) state.breaks=c.breaks.map(b=>Object.assign({},b,{startAt:new Date(b.startAt),endAt:b.endAt?new Date(b.endAt):null}));
+    state.setup=true;
+    return true;
+  }catch(e){ return false; }
+}
+/* Same local reset resetDay() does, without the Firestore write - the new
+   day's doc doesn't exist yet and will be created lazily by whichever
+   writer fires first (see IMPLEMENTATION_PLAN.md 11, "day rollover at
+   midnight: the today-listener must re-subscribe when the date changes"). */
+function resetLocalDayState(){
+  state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
+  state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''});
+  state.active={}; state.breaks=[]; state.log=[];
 }
 /* Picks the grid shape that makes the whole roster fit the space this device
    actually has. Depends on both the box and the class size, so it cannot be
@@ -1108,16 +1337,30 @@ function fitGrid(){
 let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(fitGrid,120); });
 addEventListener('orientationchange',()=>setTimeout(fitGrid,250));
 function tick(){
+  if(ORG_ID && TODAY_ID && dayId(new Date())!==TODAY_ID){ resetLocalDayState(); attachDayListeners(); return render(); }
   const now=Date.now();
   document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
   document.querySelectorAll('[data-long]').forEach(el=>{const lim=+el.dataset.lim||0; el.classList.toggle('long',lim>0&&now-(+el.dataset.long)>lim);});
   const due=st()==='live'&&dueBreak()?dueBreak().kind:''; if(due!==render.nudge) return render();
   const d=new Date(); $('clock').textContent=clockStr(d); $('date').textContent=dateStr(d);
 }
+/* Boot sequence per IMPLEMENTATION_PLAN.md 2.9: read session -> paint from
+   the local cache (or, for an install upgrading from before Firestore, the
+   legacy keys) -> await auth -> attach listeners -> render as data arrives.
+   A stored orgId that no longer exists must never crash - it just falls
+   back to the setup screen. */
 (async function boot(){
-  await Store.hydrate([PKEY,KEY,CCKEY,HKEY]);
-  loadProfile(); load(); render(); setInterval(tick,1000);
-  if(!state.setup) openSetup();
+  await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY]);
+  if(!loadFromCache()){ loadProfile(); load(); }
+  render(); setInterval(tick,1000);
+  const sessionOrgId=Store.get(SESSION_ORG_KEY);
+  if(sessionOrgId){
+    await attachToOrg(sessionOrgId);
+  } else if(state.setup){
+    bootstrapOrgFromLocal();                    // pre-Phase-2 install: has a class locally, no org yet
+  } else {
+    openSetup();
+  }
 })();
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
