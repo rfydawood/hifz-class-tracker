@@ -6,5 +6,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "verify": "node scripts/build.mjs --verify"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "^1.63.0"
   }
 }

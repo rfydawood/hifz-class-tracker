@@ -1,25 +1,116 @@
 rules_version = '2';
 
-// Data model: one document per class, keyed by a random "class code" the
-// teacher generates in the app (see index.html's cloud-sync code). There is
-// no password check beyond the code itself - the code IS the secret, like an
-// unguessable link. Anyone who is signed in (anonymous auth is enough) and
-// knows the exact code can read/write that one document. Codes are never
-// listable, so they can't be discovered by browsing.
+// Data model (see IMPLEMENTATION_PLAN.md section 2.2 and 6).
+//
+// Personal accounts are organizations with one member (Phase 2 scope - see
+// plan section 2.2, "do not build two models"). There is no Google Sign-In
+// yet (that is Phase 4 / plan section 2.8), so auth is still anonymous.
+// orgId plays the same role the old "class code" did: a long, random,
+// never-listed id. Knowing it is what "having access" means, exactly like
+// the blob-based rules this file replaces. What's new is that *joining* an
+// org from a second device now happens explicitly, by creating a `members`
+// document for that device's own anonymous uid - so rules can key
+// read/write off real membership instead of "anyone who can reach this doc
+// at all". Admin/teacher role separation and invites are Phase 4 - every
+// member created in this phase is ['admin','teacher'], which is correct for
+// a one-person org and forward-compatible with the org schema.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /classes/{classCode} {
-      allow get: if request.auth != null;
 
-      allow create, update: if request.auth != null
-        && request.resource.data.keys().hasOnly(['profileJSON', 'dayJSON', 'updatedAt'])
-        && (!('profileJSON' in request.resource.data) ||
-            (request.resource.data.profileJSON is string && request.resource.data.profileJSON.size() < 500000))
-        && (!('dayJSON' in request.resource.data) ||
-            (request.resource.data.dayJSON is string && request.resource.data.dayJSON.size() < 500000));
+    function signedIn() { return request.auth != null; }
 
-      // Class codes can never be listed or deleted through the client.
-      allow list, delete: if false;
+    function isMember(orgId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function isNewOrgId(orgId) {
+      return !exists(/databases/$(database)/documents/orgs/$(orgId));
+    }
+
+    // ---- orgs/{orgId} ----
+    match /orgs/{orgId} {
+      allow get: if isMember(orgId);
+      allow list: if false;
+
+      allow create: if signedIn()
+        && isNewOrgId(orgId)
+        && request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','createdAt','updatedAt'])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.kind == 'personal'
+        && request.resource.data.name is string && request.resource.data.name.size() < 200
+        && request.resource.data.activeYearId is string;
+
+      allow update: if isMember(orgId)
+        && request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','createdAt','updatedAt'])
+        && request.resource.data.kind == resource.data.kind
+        && request.resource.data.name is string && request.resource.data.name.size() < 200;
+
+      allow delete: if false;
+
+      // ---- orgs/{orgId}/members/{uid} ----
+      // Phase 2: personal orgs only. A device "joins" by writing its own
+      // uid's member doc once it knows the orgId - same trust boundary as
+      // the old class code (know the id => full access), just modeled as a
+      // real membership record instead of an implicit one. A member may
+      // only ever create/update *their own* doc, never anyone else's.
+      match /members/{uid} {
+        allow get: if signedIn() && request.auth.uid == uid;
+        allow list: if false;
+
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt'])
+          && request.resource.data.roles is list
+          && request.resource.data.roles.hasOnly(['admin','teacher'])
+          && request.resource.data.status == 'active';
+
+        allow update: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt'])
+          && request.resource.data.roles is list
+          && request.resource.data.roles.hasOnly(['admin','teacher']);
+
+        allow delete: if false;
+      }
+
+      // ---- orgs/{orgId}/classes/{classId} ----
+      match /classes/{classId} {
+        allow get, list: if isMember(orgId);
+
+        allow create, update: if isMember(orgId)
+          && request.resource.data.keys().hasOnly(['name','teacherUid','settingsOverride','status'])
+          && request.resource.data.name is string && request.resource.data.name.size() < 200
+          && request.resource.data.status in ['active','archived'];
+
+        allow delete: if false;
+
+        // ---- .../students/{studentId} ----
+        match /students/{studentId} {
+          allow get, list: if isMember(orgId);
+          allow create, update: if isMember(orgId)
+            && request.resource.data.keys().hasOnly(['name','active','order','enrolledFrom','enrolledUntil'])
+            && request.resource.data.name is string && request.resource.data.name.size() < 200
+            && request.resource.data.active is bool;
+          allow delete: if false;
+        }
+
+        // ---- .../days/{date} ----
+        match /days/{date} {
+          allow get, list: if isMember(orgId);
+          allow create, update: if isMember(orgId)
+            && request.resource.data.keys().hasOnly(['date','yearId','session','attendance','roster','summary','updatedAt'])
+            && request.resource.data.date is string;
+          allow delete: if false;
+
+          // ---- .../days/{date}/breaks/{breakId} ----
+          match /breaks/{breakId} {
+            allow get, list: if isMember(orgId);
+            allow create, update: if isMember(orgId)
+              && request.resource.data.keys().hasOnly(['sid','reason','startAt','endAt','dur','over','flag','overTrip','assignedMin']);
+            allow delete: if false;
+          }
+        }
+      }
     }
 
     // Everything else is closed by default.

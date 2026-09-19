@@ -1,0 +1,194 @@
+// Firestore security rules tests, run against the local emulator - never
+// against production. See IMPLEMENTATION_PLAN.md section 6 and 8.
+//
+// Start the emulator first:  firebase emulators:start --only firestore
+// Then run:                  node --test tests/rules.test.mjs
+//
+// Phase 2 scope: personal orgs only (one member, roles ['admin','teacher']).
+// Full admin/teacher separation and invites are Phase 4 and are not tested
+// here because they don't exist yet.
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import {
+  initializeTestEnvironment,
+  assertSucceeds,
+  assertFails,
+} from '@firebase/rules-unit-testing';
+
+const PROJECT_ID = 'hifz-rules-test';
+let testEnv;
+
+test.before(async () => {
+  testEnv = await initializeTestEnvironment({
+    projectId: PROJECT_ID,
+    firestore: {
+      rules: readFileSync('firestore.rules', 'utf8'),
+      host: '127.0.0.1',
+      port: 8080,
+    },
+  });
+});
+
+test.after(async () => {
+  await testEnv.cleanup();
+});
+
+test.beforeEach(async () => {
+  await testEnv.clearFirestore();
+});
+
+const ORG_ID = 'AB3XQ-7KLMN';
+const CLASS_ID = 'default';
+
+function orgDoc(overrides = {}) {
+  return {
+    schemaVersion: 3,
+    name: "Ustadh Bilal's Hifz Class",
+    kind: 'personal',
+    activeYearId: '2025-2026',
+    defaults: { startTime: '08:00', endTime: '15:30' },
+    createdAt: null,
+    updatedAt: null,
+    ...overrides,
+  };
+}
+function memberDoc(overrides = {}) {
+  return {
+    email: '',
+    displayName: 'Ustadh Bilal',
+    roles: ['admin', 'teacher'],
+    status: 'active',
+    joinedAt: null,
+    ...overrides,
+  };
+}
+function classDoc(overrides = {}) {
+  return { name: 'My Class', teacherUid: 'uidA', settingsOverride: null, status: 'active', ...overrides };
+}
+
+async function seedOrgWithMember(uid) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await db.collection('orgs').doc(ORG_ID).set(orgDoc());
+    await db.collection('orgs').doc(ORG_ID).collection('members').doc(uid).set(memberDoc());
+    await db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).set(classDoc({ teacherUid: uid }));
+  });
+}
+
+test('unauthenticated user cannot read an org', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.unauthenticatedContext().firestore();
+  await assertFails(db.collection('orgs').doc(ORG_ID).get());
+});
+
+test('unauthenticated user cannot create an org', async () => {
+  const db = testEnv.unauthenticatedContext().firestore();
+  await assertFails(db.collection('orgs').doc(ORG_ID).set(orgDoc()));
+});
+
+test('a fresh authenticated user can create a brand-new org and join it as a member', async () => {
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).set(orgDoc()));
+  await assertSucceeds(
+    db.collection('orgs').doc(ORG_ID).collection('members').doc('uidA').set(memberDoc())
+  );
+  // now a member: can read the org and write the class doc
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
+  await assertSucceeds(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).set(classDoc({ teacherUid: 'uidA' }))
+  );
+});
+
+test('creating an org doc at an id that already exists is rejected (cannot overwrite someone else\'s org via create)', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidB').firestore();
+  await assertFails(db.collection('orgs').doc(ORG_ID).set(orgDoc({ name: 'Hijacked' })));
+});
+
+test('a user who has not joined (no member doc) cannot read or write the org, even knowing the id', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidB').firestore();
+  await assertFails(db.collection('orgs').doc(ORG_ID).get());
+  await assertFails(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).get()
+  );
+  await assertFails(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+      .set(classDoc({ teacherUid: 'uidB' }))
+  );
+});
+
+test('a second device joining with the same org id (its own uid) gains real access - this is how cross-device sync attaches', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidB').firestore();
+  await assertSucceeds(
+    db.collection('orgs').doc(ORG_ID).collection('members').doc('uidB').set(memberDoc({ displayName: 'Second device' }))
+  );
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
+  await assertSucceeds(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('students').doc('s1')
+      .set({ name: 'Amina', active: true, order: 0, enrolledFrom: '2025-09-01', enrolledUntil: null })
+  );
+});
+
+test('a member cannot create a member doc for someone else\'s uid', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  await assertFails(
+    db.collection('orgs').doc(ORG_ID).collection('members').doc('uidB').set(memberDoc())
+  );
+});
+
+test('members cannot be listed', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  await assertFails(db.collection('orgs').doc(ORG_ID).collection('members').get());
+});
+
+test('orgs cannot be listed', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  await assertFails(db.collection('orgs').get());
+});
+
+test('a member can write students, day docs and break docs; shape violations are rejected', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const cls = db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID);
+
+  await assertSucceeds(
+    cls.collection('students').doc('s1').set({ name: 'Amina', active: true, order: 0, enrolledFrom: '2025-09-01', enrolledUntil: null })
+  );
+  await assertFails(
+    cls.collection('students').doc('s1').set({ name: 'Amina', active: true, order: 0, extraField: 'nope' })
+  );
+
+  await assertSucceeds(
+    cls.collection('days').doc('2026-09-18').set({
+      date: '2026-09-18', yearId: '2025-2026',
+      session: { status: 'live', startedAt: null, endedAt: null, lunchAt: null, pauseLabel: null, resumeAt: null },
+      attendance: {}, roster: { s1: 'Amina' }, summary: {}, updatedAt: null,
+    })
+  );
+
+  await assertSucceeds(
+    cls.collection('days').doc('2026-09-18').collection('breaks').doc('b1').set({
+      sid: 's1', reason: 'washroom', startAt: null, endAt: null, dur: null, over: null, flag: null, overTrip: false, assignedMin: null,
+    })
+  );
+  await assertFails(
+    cls.collection('days').doc('2026-09-18').collection('breaks').doc('b2').set({
+      sid: 's1', reason: 'washroom', notAField: true,
+    })
+  );
+});
+
+test('org update rejects an attempt to switch kind away from personal', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  await assertFails(
+    db.collection('orgs').doc(ORG_ID).set(orgDoc({ kind: 'organization' }))
+  );
+});
