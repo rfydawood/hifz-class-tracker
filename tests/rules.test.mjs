@@ -185,6 +185,28 @@ test('a member can write students, day docs and break docs; shape violations are
   );
 });
 
+test('a member can delete an open (not-yet-returned) break doc - this is how a cancelled break is discarded', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const breakRef = db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+    .collection('days').doc('2026-09-18').collection('breaks').doc('b1');
+  await assertSucceeds(breakRef.set({ sid: 's1', reason: 'washroom', startAt: 1, endAt: null, dur: null, over: null, flag: null, overTrip: false, assignedMin: null }));
+  await assertSucceeds(breakRef.delete());
+});
+
+test('a non-member cannot delete a break doc', async () => {
+  await seedOrgWithMember('uidA');
+  const admin = testEnv.authenticatedContext('uidA').firestore();
+  const breakRef = admin.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+    .collection('days').doc('2026-09-18').collection('breaks').doc('b1');
+  await breakRef.set({ sid: 's1', reason: 'washroom', startAt: 1, endAt: null, dur: null, over: null, flag: null, overTrip: false, assignedMin: null });
+  const outsider = testEnv.authenticatedContext('uidB').firestore();
+  await assertFails(
+    outsider.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+      .collection('days').doc('2026-09-18').collection('breaks').doc('b1').delete()
+  );
+});
+
 test('org update rejects an attempt to switch kind away from personal', async () => {
   await seedOrgWithMember('uidA');
   const db = testEnv.authenticatedContext('uidA').firestore();
