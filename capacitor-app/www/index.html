@@ -314,7 +314,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5c7967bc3e",APP_BUILD_TIME="2026-09-20T10:09:16.590Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="7995c6ad15",APP_BUILD_TIME="2026-09-20T10:18:50.866Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1019,6 +1019,17 @@ function resetDay(){ state.session={status:'preclass',startedAt:null,endedAt:nul
 
 /* ===== sheets ===== */
 function sheetHTML(title,sub,body,extra){
+  // Toggling 'show' off before back on (even synchronously, same tick, no
+  // visible flicker) is deliberate: replacing #sheet's content while the
+  // scrim was already showing from a PRIOR sheetHTML() call - the reason
+  // sheet's "Assigned"/"Other" buttons chaining straight into
+  // openMinutesSheet() is the case that surfaced it - could leave an
+  // unrelated absolutely-positioned sibling (the teacher drawer) 64px out
+  // of position for as long as the new sheet stayed open. Root cause not
+  // fully understood (isolated CSS containment and forced reflows didn't
+  // fix it; this remove-then-add did, reliably, across many repros), but
+  // the fix has no visible cost, so it stays even without a full explanation.
+  $('scrim').classList.remove('show');
   $('sheet').innerHTML=`<div class="sheet-head"><div><h3>${title}</h3>${sub?`<p>${sub}</p>`:''}</div>${extra||''}<button class="x" aria-label="Close" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}`;
   $('scrim').classList.add('show');
 }
