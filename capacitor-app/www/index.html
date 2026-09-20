@@ -28,18 +28,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 input,select{font:inherit;color:inherit}
 
 .app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;position:relative}
-.top{display:flex;align-items:center;gap:clamp(5px,1vw,10px) clamp(7px,1.2vw,12px);flex-wrap:wrap;padding:clamp(5px,1.1vh,10px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
-.title-wrap{flex:1 1 auto;min-width:0}
-.top h1{font-size:clamp(15px,2.1vw,22px);font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top .sub{font-size:clamp(10px,1.4vw,13px);color:#A6BFC7;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.when{margin-left:auto;display:flex;align-items:baseline;gap:8px}
-.top .clock{font-size:clamp(17px,2.6vw,26px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
-.top .date{font-size:clamp(10px,1.4vw,14px);font-weight:700;white-space:nowrap;color:#A6BFC7;line-height:1}
-.pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);white-space:nowrap}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(5px,1.1vh,10px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
+.top-left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;min-height:0}
+.top h1{font-size:clamp(18px,2.9vw,23px);font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
+.top-row2{display:flex;align-items:center;gap:8px;min-width:0}
+.top .sub{flex:1 1 auto;min-width:0;font-size:clamp(10px,1.4vw,13px);color:#A6BFC7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-right{flex:none;display:flex;align-items:center;gap:10px}
+.when{display:flex;flex-direction:column;align-items:flex-end;gap:1px;line-height:1}
+.top .clock{font-size:clamp(24px,7.5vw,34px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.top .date{font-size:clamp(12px,3.4vw,16px);font-weight:700;white-space:nowrap;color:#A6BFC7;line-height:1.2}
+.pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);white-space:nowrap;flex:none}
 .pill b{font-size:13px}
 .pill.out{background:var(--gold);color:var(--ink)}
 .pill.absent{background:rgba(255,255,255,.08);color:#BDCED4}
-.start-btn{background:var(--leaf);color:#fff;padding:8px 13px;border-radius:11px;font-weight:800;font-size:14px;white-space:nowrap}
+.start-btn{background:var(--leaf);color:#fff;padding:8px 13px;border-radius:11px;font-weight:800;font-size:14px;white-space:nowrap;flex:none}
 .start-btn.end{background:var(--ember)}
 .start-btn.lunch{background:var(--gold);color:var(--ink)}
 .menu-btn{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.12);display:grid;place-items:center;flex:none}
@@ -110,9 +112,11 @@ input,select{font:inherit;color:inherit}
 .reason .cap{font-size:12px;font-weight:700;color:var(--mute)}
 .reason.capped{border-color:var(--ember);background:var(--ember-soft)}
 .reason.capped .cap{color:var(--ember)}
-.mins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.mins button{border:2px solid var(--line);border-radius:16px;padding:22px 10px;font-size:20px;font-weight:800;background:var(--card)}
-.mins button:active{border-color:var(--gold);background:var(--gold-soft)}
+.stepper{display:flex;align-items:stretch;justify-content:center;gap:14px}
+.step-btn{width:68px;height:68px;border-radius:18px;border:2px solid var(--line);background:var(--card);font-size:34px;font-weight:800;color:var(--ink);display:grid;place-items:center;flex:none;line-height:1}
+.step-btn:active{border-color:var(--gold);background:var(--gold-soft)}
+.step-num{width:120px;text-align:center;font-size:42px;font-weight:800;border:2px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
+.step-num:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .reason:active{border-color:var(--gold);background:var(--gold-soft)}
 .reason svg{width:40px;height:40px;stroke:var(--ink);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .reason{position:relative}
@@ -168,8 +172,8 @@ input,select{font:inherit;color:inherit}
 .toast.show{display:flex}
 .toast button{color:var(--gold);font-weight:800;padding:4px 6px}
 
-.drawer{position:absolute;top:0;right:0;bottom:0;width:380px;background:var(--card);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .2s ease;z-index:25;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(31,46,54,.15)}
-.drawer.show{transform:none}
+.drawer{position:absolute;top:0;left:100%;bottom:0;width:380px;background:var(--card);border-left:1px solid var(--line);transition:left .2s ease;z-index:25;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(31,46,54,.15)}
+.drawer.show{left:calc(100% - 380px)}
 .drawer .dhead{display:flex;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
 .drawer .dhead h3{font-size:18px;font-weight:800}
 .drawer .dbody{flex:1;overflow:auto;padding:16px 20px}
@@ -250,13 +254,20 @@ input,select{font:inherit;color:inherit}
 
 <div class="app">
   <header class="top">
-    <div class="title-wrap"><h1 id="title">Hifz Class</h1><div class="sub" id="sub"></div></div>
-    <span class="pill">In class <b id="cIn">0</b></span>
-    <span class="pill out">Out <b id="cOut">0</b></span>
-    <span class="pill absent">Not here <b id="cAbs">0</b></span>
-    <div class="when"><div class="date" id="date"></div><div class="clock" id="clock"></div></div>
-    <button class="start-btn" id="mainBtn" onclick="mainAction()"></button>
-    <button class="menu-btn" aria-label="Teacher menu" onclick="openDrawer()"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="top-left">
+      <h1 id="title">Hifz Class</h1>
+      <div class="top-row2">
+        <span class="pill">In class <b id="cIn">0</b></span>
+        <span class="pill out">Out <b id="cOut">0</b></span>
+        <span class="pill absent">Not here <b id="cAbs">0</b></span>
+        <div class="sub" id="sub"></div>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="when"><div class="date" id="date"></div><div class="clock" id="clock"></div></div>
+      <button class="start-btn" id="mainBtn" onclick="mainAction()"></button>
+      <button class="menu-btn" aria-label="Teacher menu" onclick="openDrawer()"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
   </header>
   <div id="banner"></div>
   <main class="stage">
@@ -304,7 +315,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="cc9cfd2d8b",APP_BUILD_TIME="2026-09-20T05:15:18.319Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="2c78a49786",APP_BUILD_TIME="2026-09-20T08:27:03.458Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -319,7 +330,7 @@ const state={
     startTime:'08:00', endTime:'15:30',
     snack:{start:'10:10',end:'10:20'}, lunch:{start:'12:05',end:'14:05'},
     longMin:10,                                   // fallback alert for Other
-    limits:{washroom:{min:5,trips:2}, water:{min:1,trips:2}, wudhu:{min:2,trips:2}}
+    limits:{washroom:{min:7,trips:2}, water:{min:1,trips:2}, wudhu:{min:2,trips:2}}
   },
   session:{status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null}, // preclass | live | paused | ended
   // attendance: sid -> {status:'present'|'absent'|'tardy', at:Date|null, note}
@@ -337,7 +348,7 @@ const nameOf=sid=>(state.students.find(s=>s.id===sid)||{}).name||'';
 const roster=()=>state.students.filter(s=>s.active);            // kept in the teacher's roll order
 const RSN=k=>REASONS.find(r=>r.key===k)||{key:k,label:k};
 const LIMIT=k=>state.settings.limits[k]||null;
-const capMs=(k,assignedMin)=>k==='assigned'?Math.max(1,assignedMin||0)*60000:(LIMIT(k)?LIMIT(k).min*60000:state.settings.longMin*60000);
+const capMs=(k,assignedMin)=>(k==='assigned'||k==='other')?Math.max(1,assignedMin||0)*60000:(LIMIT(k)?LIMIT(k).min*60000:state.settings.longMin*60000);
 const tripsUsed=(sid,k)=>state.breaks.filter(b=>b.sid===sid&&b.reason===k).length+(((state.active[sid]||{}).reason===k)?1:0);
 const flagsOf=sid=>state.breaks.filter(b=>b.sid===sid&&b.flag).length;
 const isLong=a=>!!a.allowMs&&Date.now()-a.startAt>a.allowMs;
@@ -369,13 +380,12 @@ const Store=(function(){
   const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences);
   const Prefs=native?window.Capacitor.Plugins.Preferences:null;
   const cache={};
-  const source={};                    // diagnostic only - see openDiagnostics()
   async function hydrate(keys){
     await Promise.all(keys.map(async k=>{
       if(native){
         try{
           const r=await Prefs.get({key:k});
-          if(r&&r.value!=null){ cache[k]=r.value; source[k]='preferences'; return; }
+          if(r&&r.value!=null){ cache[k]=r.value; return; }
         }catch(e){}
         // Preferences has nothing for this key. Before this device ever had
         // the Preferences plugin (pre-Phase-1 native builds), everything was
@@ -388,11 +398,10 @@ const Store=(function(){
         let fallback=null;
         try{ fallback=localStorage.getItem(k); }catch(e){}
         cache[k]=fallback;
-        source[k]=fallback!=null?'localStorage-fallback':'empty';
         if(fallback!=null){ try{ await Prefs.set({key:k,value:fallback}); }catch(e){} }
         return;
       }
-      try{ cache[k]=localStorage.getItem(k); source[k]=cache[k]!=null?'localStorage':'empty'; }catch(e){ cache[k]=null; source[k]='empty'; }
+      try{ cache[k]=localStorage.getItem(k); }catch(e){ cache[k]=null; }
     }));
   }
   function get(key){ return Object.prototype.hasOwnProperty.call(cache,key) ? cache[key] : (()=>{ try{ return localStorage.getItem(key); }catch(e){ return null; } })(); }
@@ -406,7 +415,7 @@ const Store=(function(){
     if(native){ Prefs.remove({key}).catch(()=>{}); return; }
     try{ localStorage.removeItem(key); }catch(e){}
   }
-  return {hydrate,get,set,remove,native,sourceOf:k=>source[k]||'(not hydrated)'};
+  return {hydrate,get,set,remove,native};
 })();
 
 /* ===== legacy local keys - read-only from here on =====
@@ -855,89 +864,6 @@ function openSyncInfo(){
      <div class="actions"><button class="btn ghost" onclick="joinByCode(($('joinCode')||{}).value)">Switch to that code</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
 
-/* ===== TEMPORARY diagnostics (investigating missing tablet history) =====
-   Read-only - nothing here writes or changes anything. Remove this whole
-   section, its drawer entry, and openDiagnostics() once the missing-history
-   issue is confirmed fixed. Only shown on native, since that's the only
-   place this bug can occur (see Store.hydrate()'s native fallback path and
-   MIGRATION_FLAG_KEY's history above). */
-/* Parses a raw hifz.tracker.history JSON string (however it was obtained -
-   never via Store, so this can't hide which physical source it came from)
-   into day/break counts and the earliest/latest date present. */
-function summarizeHistoryJSON(raw){
-  try{
-    const h=JSON.parse(raw||'{}');
-    const ids=Object.keys(h).sort();
-    return {
-      days:ids.length,
-      breaks:ids.reduce((n,id)=>n+(((h[id]||{}).breaks||[]).length),0),
-      earliest:ids[0]||'—', latest:ids[ids.length-1]||'—'
-    };
-  }catch(e){ return {days:0,breaks:0,earliest:'—',latest:'—',error:String((e&&e.message)||e)}; }
-}
-async function openDiagnostics(){
-  closeDrawer();
-  sheetHTML('Diagnostics (temporary)','Read-only - investigating missing history on native devices. This section will be removed once resolved.',
-    `<div class="body"><div class="empty"><b>Loading…</b></div></div>`);
-  const h=readHistory();
-  const localDayCount=Object.keys(h).length;
-  const localBreakCount=Object.values(h).reduce((n,d)=>n+((d.breaks||[]).length),0);
-  let failures={};
-  try{ failures=JSON.parse(Store.get(MIGRATION_FAILURES_KEY)||'{}'); }catch(e){}
-  const failureEntries=Object.entries(failures);
-  let remoteDays=0, remoteBreaks=0, remoteErr='';
-  try{
-    const all=await fetchAllDays();
-    remoteDays=Object.keys(all).length;
-    remoteBreaks=Object.values(all).reduce((n,d)=>n+((d.breaks||[]).length),0);
-  }catch(e){ remoteErr=String((e&&e.message)||e); }
-
-  // Read BOTH physical sources directly, bypassing Store entirely - Store's
-  // hydrate() picks one or the other, which is exactly what's in question.
-  let rawLocalStorage=null;
-  try{ rawLocalStorage=localStorage.getItem(HKEY); }catch(e){}
-  const lsSummary=summarizeHistoryJSON(rawLocalStorage);
-  let rawPrefs=null, prefsErr='';
-  if(Store.native){
-    try{ const r=await window.Capacitor.Plugins.Preferences.get({key:HKEY}); rawPrefs=(r&&r.value!=null)?r.value:null; }
-    catch(e){ prefsErr=String((e&&e.message)||e); }
-  }
-  const prefsSummary=summarizeHistoryJSON(rawPrefs);
-
-  const row=(k,v)=>`<div class="row"><b>${k}</b><span class="time">${v}</span></div>`;
-  sheetHTML('Diagnostics (temporary)','Read-only - investigating missing history on native devices. This section will be removed once resolved.',
-    `<div class="body"><div class="rowlist">
-      ${row('window.location.origin',location.origin)}
-      ${row('Store.native',Store.native)}
-      ${row('hifz.tracker.history source (via Store)',Store.sourceOf(HKEY))}
-      ${row('Local legacy days readable (via Store)',localDayCount)}
-      ${row('Local legacy breaks readable (via Store)',localBreakCount)}
-      ${row('Migration flag ('+MIGRATION_FLAG_KEY+')',Store.get(MIGRATION_FLAG_KEY)||'(unset)')}
-      ${row('Firestore day docs visible',remoteDays+(remoteErr?` (error: ${remoteErr})`:''))}
-      ${row('Firestore breaks visible',remoteBreaks)}
-     </div>
-     <h4 class="rh">Raw localStorage['hifz.tracker.history'] (independent of Store)</h4>
-     <div class="rowlist">
-      ${row('Days',lsSummary.days)}
-      ${row('Breaks',lsSummary.breaks)}
-      ${row('Earliest → latest',lsSummary.earliest+' → '+lsSummary.latest)}
-      ${lsSummary.error?row('Parse error',lsSummary.error):''}
-     </div>
-     <h4 class="rh">Raw Capacitor Preferences['hifz.tracker.history'] (independent of Store)</h4>
-     <div class="rowlist">
-      ${Store.native?`
-        ${row('Days',prefsSummary.days)}
-        ${row('Breaks',prefsSummary.breaks)}
-        ${row('Earliest → latest',prefsSummary.earliest+' → '+prefsSummary.latest)}
-        ${prefsErr?row('Read error',prefsErr):''}
-      `:row('N/A','running on web, no Preferences plugin')}
-     </div>
-     <h4 class="rh">Per-day migration failures (${failureEntries.length})</h4>
-     <div class="rowlist">${failureEntries.length?failureEntries.map(([id,msg])=>row(id,msg)).join(''):row('None recorded','')}</div>
-     </div>
-     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
-}
-
 function openJoinPrompt(){
   // .setup sits above .scrim (z-index 80 vs 20), so the sheet would render
   // invisibly behind it if left showing - hide it first, restore it on Cancel.
@@ -1040,7 +966,8 @@ function markLeft(sid){
 function checkout(sid,key,note,assignedMin){
   const r=RSN(key), lim=LIMIT(key), overTrip=!!(lim&&tripsUsed(sid,key)>=lim.trips);
   state.active[sid]={reason:key,label:r.label,startAt:new Date(),note:note||'',allowMs:capMs(key,assignedMin),assignedMin:assignedMin||null,overTrip};
-  logIt(`<b>${nameOf(sid)}</b> out · ${r.label}${assignedMin?` (${assignedMin} min assigned)`:''}${overTrip?' · past the daily limit':''}`);
+  const durNote=!assignedMin?'':key==='assigned'?` (${assignedMin} min assigned)`:` (~${assignedMin} min expected)`;
+  logIt(`<b>${nameOf(sid)}</b> out · ${r.label}${durNote}${overTrip?' · past the daily limit':''}`);
   state.lastAction={type:'checkout',sid}; writeBreakStart(sid); closeSheet();
   toast(overTrip?`${nameOf(sid)} out for ${r.label.toLowerCase()} · past the daily limit`:`${nameOf(sid)} out for ${r.label.toLowerCase()}`,true);
   render();
@@ -1105,19 +1032,52 @@ function openReason(sid){
     `<div class="body"><div class="reasons">${REASONS.map(r=>{
        const lim=LIMIT(r.key), used=tripsUsed(sid,r.key), capped=!!(lim&&used>=lim.trips);
        const cap = r.key==='assigned' ? 'you set the minutes'
+                 : r.key==='other' ? 'you set the expected time'
                  : lim ? (capped?`${used} of ${lim.trips} used`:`${used} of ${lim.trips} · ${lim.min} min each`)
                  : `alert after ${state.settings.longMin} min`;
-       const act = r.key==='assigned' ? `openAssign('${sid}')` : `checkout('${sid}','${r.key}',($('rnote')||{}).value)`;
+       const act = (r.key==='assigned'||r.key==='other') ? `openMinutesSheet('${sid}','${r.key}')` : `checkout('${sid}','${r.key}',($('rnote')||{}).value)`;
        return `<button class="reason ${capped?'capped':''}" onclick="${act}"><i class="rdot ${r.key}"></i>${r.icon}${r.label}<span class="cap">${capped?'over daily limit':cap}</span></button>`;
      }).join('')}</div>
-     <div class="note"><input id="rnote" placeholder="Optional short note (for Other)"></div>
+     <div class="note"><input id="rnote" placeholder="Optional short note"></div>
      <button class="leftday" onclick="markLeft('${sid}')">${nameOf(sid)} left for the day</button></div>`, dots);
 }
-function openAssign(sid){
-  sheetHTML(`How long is ${nameOf(sid)} assigned for?`,'That time is excused. Anything past it is flagged and counted against the student.',
-   `<div class="body"><div class="mins">${[2,5,10,15,20,30].map(m=>`<button onclick="checkout('${sid}','assigned',($('anote')||{}).value,${m})">${m} min</button>`).join('')}</div>
-    <div class="note"><input id="anote" placeholder="What is the task? (optional)"></div>
-    <div class="actions"><button class="btn ghost" onclick="openReason('${sid}')">Back</button></div></div>`);
+/* Shared by "Assigned" and "Other" - both let the teacher set an expected
+   duration 1-10 min (prefilled 2) with the same stepper, but the two reasons
+   mean different things and must read differently: Assigned is excused time
+   the teacher granted (nothing counts against the student until they run
+   over); Other is ordinary time out of class that still counts toward
+   out-of-class totals - setting a duration here only sets the expectation
+   and the flag threshold, it does not excuse anything. Only the
+   duration-setting mechanism is shared, never the semantics. */
+function openMinutesSheet(sid,key){
+  const assigned=key==='assigned';
+  const title=assigned?`How long is ${nameOf(sid)} assigned for?`:`About how long will ${nameOf(sid)} be out?`;
+  const sub=assigned
+    ?'That time is excused. Anything past it is flagged and counted against the student.'
+    :'This sets an expected time - it does not excuse the time. Like any other break, it still counts toward time out of class, and running over it is flagged.';
+  sheetHTML(title,sub,
+   `<div class="body">
+      <div class="stepper">
+        <button class="step-btn" onclick="stepMinutes(-1)" aria-label="Fewer minutes">−</button>
+        <input id="minInput" class="step-num" type="text" inputmode="numeric" pattern="[0-9]*" value="2"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,2)" onblur="clampMinutesInput()">
+        <button class="step-btn" onclick="stepMinutes(1)" aria-label="More minutes">+</button>
+      </div>
+      <div class="note" style="margin-top:14px"><input id="anote" placeholder="${assigned?'What is the task? (optional)':'Optional short note'}"></div>
+      <button class="btn dark" style="width:100%;margin-top:16px" onclick="confirmMinutes('${sid}','${key}')">Start ${nameOf(sid)}'s break</button>
+      <div class="actions"><button class="btn ghost" onclick="openReason('${sid}')">Back</button></div>
+    </div>`);
+}
+/* If the Android number keyboard covers the Start button in landscape on
+   the real tablet when the number is tapped, add `readonly` to #minInput
+   above - the +/- buttons keep working, only direct typing stops. That is
+   the whole fallback; nothing else needs to change. */
+function clampMin(v){ v=parseInt(v,10); if(!Number.isFinite(v)) v=2; return Math.min(10,Math.max(1,v)); }
+function stepMinutes(delta){ const el=$('minInput'); if(!el) return; el.value=clampMin((parseInt(el.value,10)||0)+delta); }
+function clampMinutesInput(){ const el=$('minInput'); if(!el) return; el.value=clampMin(el.value); }
+function confirmMinutes(sid,key){
+  clampMinutesInput();
+  checkout(sid,key,($('anote')||{}).value,clampMin(($('minInput')||{}).value));
 }
 function confirmSheet(title,sub,label,fn,kind){
   confirmSheet.fn=fn;
@@ -1465,7 +1425,6 @@ function drawDrawer(){
    <h4>Prototype</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day</button>
-   ${Store.native?`<button class="dbtn ember" onclick="openDiagnostics()">Diagnostics (temporary)<small>Investigating missing tablet history - remove once fixed</small></button>`:''}
    <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
 }
 
