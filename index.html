@@ -304,7 +304,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5c22a53616",APP_BUILD_TIME="2026-09-20T04:19:07.425Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="d4d6984528",APP_BUILD_TIME="2026-09-20T04:59:23.009Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -369,12 +369,13 @@ const Store=(function(){
   const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences);
   const Prefs=native?window.Capacitor.Plugins.Preferences:null;
   const cache={};
+  const source={};                    // diagnostic only - see openDiagnostics()
   async function hydrate(keys){
     await Promise.all(keys.map(async k=>{
       if(native){
         try{
           const r=await Prefs.get({key:k});
-          if(r&&r.value!=null){ cache[k]=r.value; return; }
+          if(r&&r.value!=null){ cache[k]=r.value; source[k]='preferences'; return; }
         }catch(e){}
         // Preferences has nothing for this key. Before this device ever had
         // the Preferences plugin (pre-Phase-1 native builds), everything was
@@ -387,10 +388,11 @@ const Store=(function(){
         let fallback=null;
         try{ fallback=localStorage.getItem(k); }catch(e){}
         cache[k]=fallback;
+        source[k]=fallback!=null?'localStorage-fallback':'empty';
         if(fallback!=null){ try{ await Prefs.set({key:k,value:fallback}); }catch(e){} }
         return;
       }
-      try{ cache[k]=localStorage.getItem(k); }catch(e){ cache[k]=null; }
+      try{ cache[k]=localStorage.getItem(k); source[k]=cache[k]!=null?'localStorage':'empty'; }catch(e){ cache[k]=null; source[k]='empty'; }
     }));
   }
   function get(key){ return Object.prototype.hasOwnProperty.call(cache,key) ? cache[key] : (()=>{ try{ return localStorage.getItem(key); }catch(e){ return null; } })(); }
@@ -404,7 +406,7 @@ const Store=(function(){
     if(native){ Prefs.remove({key}).catch(()=>{}); return; }
     try{ localStorage.removeItem(key); }catch(e){}
   }
-  return {hydrate,get,set,remove,native};
+  return {hydrate,get,set,remove,native,sourceOf:k=>source[k]||'(not hydrated)'};
 })();
 
 /* ===== legacy local keys - read-only from here on =====
@@ -764,14 +766,28 @@ function writeBreakCancel(id){
    fixed and HKEY is actually visible. Do not rename it again without the
    same reasoning - each rename is a one-time "everyone re-migrates" event. */
 const MIGRATION_FLAG_KEY='migration.legacyHistoryDone.v2';
+const MIGRATION_FAILURES_KEY='migration.failures';
 window.__hifzMigrationDone=false;
+/* Each day is its own try/catch - a bug or a transient failure on one date
+   must never take the rest of the archive down with it (the original bug:
+   one throw inside the loop hit the OUTER try/catch, which aborted every
+   day after it and left the flag unset, so the very next boot walked into
+   the exact same failing day first and aborted again - the run could never
+   get past it). Failures are recorded (date + message), not swallowed, and
+   the global flag is only ever set to done when EVERY day succeeded, so a
+   run with failures naturally retries on the next boot - already-migrated
+   days are cheap no-ops (mergeDayIntoFirestoreIfMissing's existence check
+   skips them immediately), so this is safe to repeat. */
 async function migrateLegacyHistoryIfNeeded(){
   if(Store.get(MIGRATION_FLAG_KEY)==='1'||!ORG_ID){ window.__hifzMigrationDone=true; return; }
-  try{
-    const h=readHistory();
-    for(const id of Object.keys(h)) await mergeDayIntoFirestoreIfMissing(id,h[id]);
-    Store.set(MIGRATION_FLAG_KEY,'1');
-  }catch(e){ /* best-effort: leave the flag unset so a later boot retries the whole thing */ }
+  const h=readHistory();
+  const failures={};
+  for(const id of Object.keys(h)){
+    try{ await mergeDayIntoFirestoreIfMissing(id,h[id]); }
+    catch(e){ failures[id]=String((e&&e.message)||e); }
+  }
+  Store.set(MIGRATION_FAILURES_KEY,JSON.stringify(failures));
+  if(Object.keys(failures).length===0) Store.set(MIGRATION_FLAG_KEY,'1');
   window.__hifzMigrationDone=true;
 }
 /* Shared by migration above and restoreBackup() below - both are "I have a
@@ -838,6 +854,47 @@ function openSyncInfo(){
      </div>
      <div class="actions"><button class="btn ghost" onclick="joinByCode(($('joinCode')||{}).value)">Switch to that code</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
+
+/* ===== TEMPORARY diagnostics (investigating missing tablet history) =====
+   Read-only - nothing here writes or changes anything. Remove this whole
+   section, its drawer entry, and openDiagnostics() once the missing-history
+   issue is confirmed fixed. Only shown on native, since that's the only
+   place this bug can occur (see Store.hydrate()'s native fallback path and
+   MIGRATION_FLAG_KEY's history above). */
+async function openDiagnostics(){
+  closeDrawer();
+  sheetHTML('Diagnostics (temporary)','Read-only - investigating missing history on native devices. This section will be removed once resolved.',
+    `<div class="body"><div class="empty"><b>Loading…</b></div></div>`);
+  const h=readHistory();
+  const localDayCount=Object.keys(h).length;
+  const localBreakCount=Object.values(h).reduce((n,d)=>n+((d.breaks||[]).length),0);
+  let failures={};
+  try{ failures=JSON.parse(Store.get(MIGRATION_FAILURES_KEY)||'{}'); }catch(e){}
+  const failureEntries=Object.entries(failures);
+  let remoteDays=0, remoteBreaks=0, remoteErr='';
+  try{
+    const all=await fetchAllDays();
+    remoteDays=Object.keys(all).length;
+    remoteBreaks=Object.values(all).reduce((n,d)=>n+((d.breaks||[]).length),0);
+  }catch(e){ remoteErr=String((e&&e.message)||e); }
+  const row=(k,v)=>`<div class="row"><b>${k}</b><span class="time">${v}</span></div>`;
+  sheetHTML('Diagnostics (temporary)','Read-only - investigating missing history on native devices. This section will be removed once resolved.',
+    `<div class="body"><div class="rowlist">
+      ${row('window.location.origin',location.origin)}
+      ${row('Store.native',Store.native)}
+      ${row('hifz.tracker.history source',Store.sourceOf(HKEY))}
+      ${row('Local legacy days readable',localDayCount)}
+      ${row('Local legacy breaks readable',localBreakCount)}
+      ${row('Migration flag ('+MIGRATION_FLAG_KEY+')',Store.get(MIGRATION_FLAG_KEY)||'(unset)')}
+      ${row('Firestore day docs visible',remoteDays+(remoteErr?` (error: ${remoteErr})`:''))}
+      ${row('Firestore breaks visible',remoteBreaks)}
+     </div>
+     <h4 class="rh">Per-day migration failures (${failureEntries.length})</h4>
+     <div class="rowlist">${failureEntries.length?failureEntries.map(([id,msg])=>row(id,msg)).join(''):row('None recorded','')}</div>
+     </div>
+     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+
 function openJoinPrompt(){
   // .setup sits above .scrim (z-index 80 vs 20), so the sheet would render
   // invisibly behind it if left showing - hide it first, restore it on Cancel.
@@ -1365,6 +1422,7 @@ function drawDrawer(){
    <h4>Prototype</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day</button>
+   ${Store.native?`<button class="dbtn ember" onclick="openDiagnostics()">Diagnostics (temporary)<small>Investigating missing tablet history - remove once fixed</small></button>`:''}
    <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
 }
 
@@ -1520,7 +1578,7 @@ function tick(){
    A stored orgId that no longer exists must never crash - it just falls
    back to the setup screen. */
 (async function boot(){
-  await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY]);
+  await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY]);
   if(!loadFromCache()){ loadProfile(); load(); }
   render(); setInterval(tick,1000);
   const sessionOrgId=Store.get(SESSION_ORG_KEY);
