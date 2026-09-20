@@ -304,7 +304,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="d4d6984528",APP_BUILD_TIME="2026-09-20T04:59:23.009Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="cc9cfd2d8b",APP_BUILD_TIME="2026-09-20T05:15:18.319Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -861,6 +861,20 @@ function openSyncInfo(){
    issue is confirmed fixed. Only shown on native, since that's the only
    place this bug can occur (see Store.hydrate()'s native fallback path and
    MIGRATION_FLAG_KEY's history above). */
+/* Parses a raw hifz.tracker.history JSON string (however it was obtained -
+   never via Store, so this can't hide which physical source it came from)
+   into day/break counts and the earliest/latest date present. */
+function summarizeHistoryJSON(raw){
+  try{
+    const h=JSON.parse(raw||'{}');
+    const ids=Object.keys(h).sort();
+    return {
+      days:ids.length,
+      breaks:ids.reduce((n,id)=>n+(((h[id]||{}).breaks||[]).length),0),
+      earliest:ids[0]||'—', latest:ids[ids.length-1]||'—'
+    };
+  }catch(e){ return {days:0,breaks:0,earliest:'—',latest:'—',error:String((e&&e.message)||e)}; }
+}
 async function openDiagnostics(){
   closeDrawer();
   sheetHTML('Diagnostics (temporary)','Read-only - investigating missing history on native devices. This section will be removed once resolved.',
@@ -877,17 +891,46 @@ async function openDiagnostics(){
     remoteDays=Object.keys(all).length;
     remoteBreaks=Object.values(all).reduce((n,d)=>n+((d.breaks||[]).length),0);
   }catch(e){ remoteErr=String((e&&e.message)||e); }
+
+  // Read BOTH physical sources directly, bypassing Store entirely - Store's
+  // hydrate() picks one or the other, which is exactly what's in question.
+  let rawLocalStorage=null;
+  try{ rawLocalStorage=localStorage.getItem(HKEY); }catch(e){}
+  const lsSummary=summarizeHistoryJSON(rawLocalStorage);
+  let rawPrefs=null, prefsErr='';
+  if(Store.native){
+    try{ const r=await window.Capacitor.Plugins.Preferences.get({key:HKEY}); rawPrefs=(r&&r.value!=null)?r.value:null; }
+    catch(e){ prefsErr=String((e&&e.message)||e); }
+  }
+  const prefsSummary=summarizeHistoryJSON(rawPrefs);
+
   const row=(k,v)=>`<div class="row"><b>${k}</b><span class="time">${v}</span></div>`;
   sheetHTML('Diagnostics (temporary)','Read-only - investigating missing history on native devices. This section will be removed once resolved.',
     `<div class="body"><div class="rowlist">
       ${row('window.location.origin',location.origin)}
       ${row('Store.native',Store.native)}
-      ${row('hifz.tracker.history source',Store.sourceOf(HKEY))}
-      ${row('Local legacy days readable',localDayCount)}
-      ${row('Local legacy breaks readable',localBreakCount)}
+      ${row('hifz.tracker.history source (via Store)',Store.sourceOf(HKEY))}
+      ${row('Local legacy days readable (via Store)',localDayCount)}
+      ${row('Local legacy breaks readable (via Store)',localBreakCount)}
       ${row('Migration flag ('+MIGRATION_FLAG_KEY+')',Store.get(MIGRATION_FLAG_KEY)||'(unset)')}
       ${row('Firestore day docs visible',remoteDays+(remoteErr?` (error: ${remoteErr})`:''))}
       ${row('Firestore breaks visible',remoteBreaks)}
+     </div>
+     <h4 class="rh">Raw localStorage['hifz.tracker.history'] (independent of Store)</h4>
+     <div class="rowlist">
+      ${row('Days',lsSummary.days)}
+      ${row('Breaks',lsSummary.breaks)}
+      ${row('Earliest → latest',lsSummary.earliest+' → '+lsSummary.latest)}
+      ${lsSummary.error?row('Parse error',lsSummary.error):''}
+     </div>
+     <h4 class="rh">Raw Capacitor Preferences['hifz.tracker.history'] (independent of Store)</h4>
+     <div class="rowlist">
+      ${Store.native?`
+        ${row('Days',prefsSummary.days)}
+        ${row('Breaks',prefsSummary.breaks)}
+        ${row('Earliest → latest',prefsSummary.earliest+' → '+prefsSummary.latest)}
+        ${prefsErr?row('Read error',prefsErr):''}
+      `:row('N/A','running on web, no Preferences plugin')}
      </div>
      <h4 class="rh">Per-day migration failures (${failureEntries.length})</h4>
      <div class="rowlist">${failureEntries.length?failureEntries.map(([id,msg])=>row(id,msg)).join(''):row('None recorded','')}</div>
