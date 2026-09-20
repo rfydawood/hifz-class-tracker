@@ -77,6 +77,32 @@ export function resetWriteCount(page) {
   return page.evaluate(() => { window.__hifzWriteCount = 0; });
 }
 
+// Simulates a native Android device whose Capacitor Preferences store is
+// empty (e.g. nothing has ever been written there for legacy keys), so
+// Store.hydrate()'s native path is exercised - it must fall back to
+// localStorage instead of silently treating an empty Preferences read as
+// "there is no data" (the bug: pre-Phase-1 native builds wrote straight to
+// localStorage, before the Preferences plugin was ever wired up).
+export function mockNativePlatform(context) {
+  return context.addInitScript(() => {
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      Plugins: {
+        Preferences: {
+          _store: {},
+          async get({ key }) { return { value: Object.prototype.hasOwnProperty.call(this._store, key) ? this._store[key] : null }; },
+          async set({ key, value }) { this._store[key] = value; },
+          async remove({ key }) { delete this._store[key]; },
+        },
+      },
+    };
+  });
+}
+
+export function readMockPreference(page, key) {
+  return page.evaluate((key) => window.Capacitor.Plugins.Preferences._store[key] ?? null, key);
+}
+
 // ---- Phase 3: migration test helpers ----
 
 // day id N days before "now" in the page's own clock/timezone, computed via

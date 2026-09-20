@@ -304,7 +304,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="acee62ed73",APP_BUILD_TIME="2026-09-20T03:44:37.612Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5c22a53616",APP_BUILD_TIME="2026-09-20T04:19:07.425Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -371,7 +371,25 @@ const Store=(function(){
   const cache={};
   async function hydrate(keys){
     await Promise.all(keys.map(async k=>{
-      if(native){ try{ const r=await Prefs.get({key:k}); cache[k]=(r&&r.value!=null)?r.value:null; return; }catch(e){} }
+      if(native){
+        try{
+          const r=await Prefs.get({key:k});
+          if(r&&r.value!=null){ cache[k]=r.value; return; }
+        }catch(e){}
+        // Preferences has nothing for this key. Before this device ever had
+        // the Preferences plugin (pre-Phase-1 native builds), everything was
+        // written straight to the WebView's own localStorage - that data is
+        // still sitting there, just invisible to Prefs.get(). Fall back to
+        // it, and promote it into Preferences once so it's durable from here
+        // on. Never delete the localStorage copy - it's harmless once
+        // promoted, and it's exactly the kind of local safety net the rest
+        // of this app relies on (see the "legacy local keys" note below).
+        let fallback=null;
+        try{ fallback=localStorage.getItem(k); }catch(e){}
+        cache[k]=fallback;
+        if(fallback!=null){ try{ await Prefs.set({key:k,value:fallback}); }catch(e){} }
+        return;
+      }
       try{ cache[k]=localStorage.getItem(k); }catch(e){ cache[k]=null; }
     }));
   }
@@ -731,8 +749,21 @@ function writeBreakCancel(id){
    Runs once per device (MIGRATION_FLAG_KEY guards it), after this device
    has real listeners attached to an org - never blocks boot, never retries
    in a tight loop, and never touches HKEY itself (read-only forever after,
-   same as PKEY/KEY - see the "legacy local keys" note near the top). */
-const MIGRATION_FLAG_KEY='migration.legacyHistoryDone';
+   same as PKEY/KEY - see the "legacy local keys" note near the top).
+
+   The ".v2" is deliberate, not decoration: the first shipped version of this
+   flag was missing from boot()'s Store.hydrate() list, so on native it was
+   read via Store.get()'s raw-localStorage fallback (always empty, since
+   set() on native writes to Preferences, not localStorage) while being
+   *written* to Preferences successfully. Combined with the hydrate() bug
+   above - which made HKEY itself read as empty on native - affected devices
+   already durably recorded "done" in Preferences against a wrongly-empty
+   history. Fixing hydrate() alone would make that stale done-flag readable
+   again and permanently skip the real migration. The new key name forces
+   every existing install to run this once more, now that both bugs are
+   fixed and HKEY is actually visible. Do not rename it again without the
+   same reasoning - each rename is a one-time "everyone re-migrates" event. */
+const MIGRATION_FLAG_KEY='migration.legacyHistoryDone.v2';
 window.__hifzMigrationDone=false;
 async function migrateLegacyHistoryIfNeeded(){
   if(Store.get(MIGRATION_FLAG_KEY)==='1'||!ORG_ID){ window.__hifzMigrationDone=true; return; }
@@ -1489,7 +1520,7 @@ function tick(){
    A stored orgId that no longer exists must never crash - it just falls
    back to the setup screen. */
 (async function boot(){
-  await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY]);
+  await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY]);
   if(!loadFromCache()){ loadProfile(); load(); }
   render(); setInterval(tick,1000);
   const sessionOrgId=Store.get(SESSION_ORG_KEY);
