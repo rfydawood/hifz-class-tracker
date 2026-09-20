@@ -16,6 +16,8 @@ import {
   assertSucceeds,
   assertFails,
 } from '@firebase/rules-unit-testing';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
 const PROJECT_ID = 'hifz-rules-test';
 let testEnv;
@@ -214,4 +216,76 @@ test('org update rejects an attempt to switch kind away from personal', async ()
   await assertFails(
     db.collection('orgs').doc(ORG_ID).set(orgDoc({ kind: 'organization' }))
   );
+});
+
+// ---- Phase 3: reports read a bounded date range of day docs, and
+// backupAll() reads the whole days collection unbounded. Neither is a new
+// rule - both are `list` queries against days/{date}, already covered by
+// the existing `allow get, list: if isMember(orgId)`. These tests prove
+// that's actually true rather than assuming it from reading the rule.
+
+async function seedDay(uid, id, extra = {}) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+      .collection('days').doc(id).set({ date: id, yearId: '2025-2026', attendance: {}, roster: {}, ...extra });
+  });
+}
+
+test('a member can range-query days by document id (what reportDays() does) and gets only matching dates', async () => {
+  await seedOrgWithMember('uidA');
+  await seedDay('uidA', '2025-09-10');
+  await seedDay('uidA', '2025-09-15');
+  await seedDay('uidA', '2025-10-01'); // outside the range below
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const fp = firebase.firestore.FieldPath.documentId();
+  const qs = await assertSucceeds(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('days')
+      .where(fp, '>=', '2025-09-01')
+      .where(fp, '<=', '2025-09-30')
+      .get()
+  );
+  assert.deepEqual(qs.docs.map((d) => d.id).sort(), ['2025-09-10', '2025-09-15']);
+});
+
+test('a non-member cannot list/range-query days at all', async () => {
+  await seedOrgWithMember('uidA');
+  await seedDay('uidA', '2025-09-10');
+  const db = testEnv.authenticatedContext('uidB').firestore();
+  await assertFails(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('days').get()
+  );
+});
+
+test('a member can list the whole days collection unbounded (what backupAll() does)', async () => {
+  await seedOrgWithMember('uidA');
+  await seedDay('uidA', '2025-09-10');
+  await seedDay('uidA', '2025-10-01');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const qs = await assertSucceeds(
+    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('days').get()
+  );
+  assert.equal(qs.docs.length, 2);
+});
+
+test('migration\'s "read then conditionally create" pattern works inside a transaction for a member, and is denied for a non-member', async () => {
+  await seedOrgWithMember('uidA');
+  const member = testEnv.authenticatedContext('uidA').firestore();
+  const memberRef = member.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+    .collection('days').doc('2025-09-11');
+  await assertSucceeds(member.runTransaction(async (tx) => {
+    const snap = await tx.get(memberRef);
+    if (!snap.exists) {
+      tx.set(memberRef, { date: '2025-09-11', yearId: '2025-2026', attendance: {}, roster: {} });
+    }
+  }));
+
+  const outsider = testEnv.authenticatedContext('uidB').firestore();
+  const outsiderRef = outsider.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
+    .collection('days').doc('2025-09-12');
+  await assertFails(outsider.runTransaction(async (tx) => {
+    const snap = await tx.get(outsiderRef);
+    if (!snap.exists) {
+      tx.set(outsiderRef, { date: '2025-09-12', yearId: '2025-2026', attendance: {}, roster: {} });
+    }
+  }));
 });

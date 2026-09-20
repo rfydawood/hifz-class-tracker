@@ -76,3 +76,46 @@ export function writeCount(page) {
 export function resetWriteCount(page) {
   return page.evaluate(() => { window.__hifzWriteCount = 0; });
 }
+
+// ---- Phase 3: migration test helpers ----
+
+// day id N days before "now" in the page's own clock/timezone, computed via
+// the app's own dayId() so it's guaranteed to match what the app itself
+// would call that date.
+export function dayIdBack(page, n) {
+  return page.evaluate((n) => dayId(new Date(Date.now() - n * 86400000)), n);
+}
+
+export function seedFirestoreDay(page, id, attendance, breaksArr) {
+  return page.evaluate(
+    ([id, attendance, breaksArr]) => window.__hifzTestSeedDay(id, attendance, breaksArr),
+    [id, attendance, breaksArr]
+  );
+}
+
+export function readFirestoreDay(page, id) {
+  return page.evaluate((id) => window.__hifzTestReadDay(id), id);
+}
+
+export async function waitForMigration(page) {
+  await page.waitForFunction(() => window.__hifzMigrationDone === true, null, { timeout: 20000 });
+}
+
+// Injects legacy localStorage history (as if this device had been running
+// the tracker before it ever synced) before the app's own boot script runs,
+// so migrateLegacyHistoryIfNeeded() finds it on first load.
+export function seedLegacyLocalHistory(context, historyMap) {
+  return context.addInitScript((history) => {
+    localStorage.setItem('hifz.tracker.history', JSON.stringify(history));
+  }, historyMap);
+}
+
+export async function openDayReport(page, offsetBack) {
+  await openDrawer(page);
+  await page.locator('.dbtn', { hasText: 'Reports' }).click();
+  await page.locator('.rnav').waitFor();
+  for (let i = 0; i < offsetBack; i++) {
+    await page.locator('.rnav button').first().click();
+    await page.locator('.rnav').waitFor();
+  }
+}

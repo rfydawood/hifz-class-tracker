@@ -304,7 +304,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="9b81a229c0",APP_BUILD_TIME="2026-09-19T03:39:50.947Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="acee62ed73",APP_BUILD_TIME="2026-09-20T03:44:37.612Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -635,6 +635,7 @@ async function attachListeners(){
   },()=>{});
   attachDayListeners();
   syncStatus='synced'; render();
+  migrateLegacyHistoryIfNeeded();
 }
 function attachDayListeners(){
   if(unsubDay) unsubDay(); if(unsubBreaks) unsubBreaks();
@@ -710,6 +711,86 @@ function writeBreakCancel(id){
   if(!ORG_ID||!id) return;
   fsWrite(dayRef().collection('breaks').doc(id).delete()).catch(()=>{});
 }
+
+/* ===== legacy local-history migration (Phase 3, plan section 4) =====
+   Every device that ever ran this app pre-Firestore (or ran Phase 2, which
+   still wrote local history alongside the day docs) has its own
+   `hifz.tracker.history` (HKEY) of days that may or may not already be in
+   Firestore - written by this same device before it had an org, or by a
+   completely different device. Two devices can hold DIFFERENT subsets.
+
+   The rule: Firestore's day doc for a date, if one already exists, always
+   wins - this device's local copy of that same date is left untouched (it
+   is never deleted, so nothing is lost even if it's skipped). Only dates
+   Firestore doesn't have yet get uploaded. That is what makes this a merge
+   instead of a replace, and safe to run from any number of devices in any
+   order. A transaction closes the one real race (two devices migrating the
+   same missing date at the same moment) by making "check, then write"
+   atomic per day.
+
+   Runs once per device (MIGRATION_FLAG_KEY guards it), after this device
+   has real listeners attached to an org - never blocks boot, never retries
+   in a tight loop, and never touches HKEY itself (read-only forever after,
+   same as PKEY/KEY - see the "legacy local keys" note near the top). */
+const MIGRATION_FLAG_KEY='migration.legacyHistoryDone';
+window.__hifzMigrationDone=false;
+async function migrateLegacyHistoryIfNeeded(){
+  if(Store.get(MIGRATION_FLAG_KEY)==='1'||!ORG_ID){ window.__hifzMigrationDone=true; return; }
+  try{
+    const h=readHistory();
+    for(const id of Object.keys(h)) await mergeDayIntoFirestoreIfMissing(id,h[id]);
+    Store.set(MIGRATION_FLAG_KEY,'1');
+  }catch(e){ /* best-effort: leave the flag unset so a later boot retries the whole thing */ }
+  window.__hifzMigrationDone=true;
+}
+/* Shared by migration above and restoreBackup() below - both are "I have a
+   day snapshot from somewhere else, make sure Firestore has it" and both
+   need the same non-destructive rule: an existing Firestore day always
+   wins, never overwritten. */
+async function mergeDayIntoFirestoreIfMissing(id,snap){
+  const dRef=classRef().collection('days').doc(id);
+  await fbDb.runTransaction(async tx=>{
+    const existing=await tx.get(dRef);
+    if(existing.exists) return;                          // Firestore already has this date - never overwrite it
+    const dateObj=new Date(id+'T00:00:00');
+    tx.set(dRef,{
+      date:id, yearId:academicYearId(dateObj),
+      session:{status:'ended',startedAt:snap.startedAt||null,endedAt:snap.endedAt||null,lunchAt:null,pauseLabel:null,resumeAt:null},
+      attendance:Object.fromEntries(Object.entries(snap.att||{}).map(([sid,a])=>[sid,{status:a.status,at:null,note:a.note||''}])),
+      roster:snap.names||{},
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    (snap.breaks||[]).forEach((b,i)=>{
+      tx.set(dRef.collection('breaks').doc('legacy'+i),{
+        sid:b.sid, reason:b.reason, startAt:null, endAt:null, dur:b.dur||0,
+        over:b.over||0, flag:!!b.flag, overTrip:!!b.overTrip, assignedMin:b.assignedMin||null
+      });
+    });
+  });
+}
+
+/* Test-only (tests/*.spec.mjs): writes a day doc + its breaks directly,
+   simulating "another device already recorded this day via normal Phase 2
+   use" - exercises the real writer path and real rules, never used by any
+   production UI. */
+window.__hifzTestSeedDay=async function(id,attendance,breaksArr){
+  if(!ORG_ID) return false;
+  const ref=dayRef(id);
+  await ref.set({
+    date:id, yearId:academicYearId(new Date(id+'T00:00:00')),
+    session:{status:'ended',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null},
+    attendance:attendance||{}, roster:fullRosterPlain(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  await Promise.all((breaksArr||[]).map((b,i)=>ref.collection('breaks').doc('seed'+i).set(b)));
+  return true;
+};
+window.__hifzTestReadDay=async function(id){
+  if(!ORG_ID) return null;
+  const snap=await dayRef(id).get();
+  if(!snap.exists) return null;
+  const breaksQs=await dayRef(id).collection('breaks').get();
+  return {data:snap.data(), breaks:breaksQs.docs.map(d=>d.data())};
+};
 
 function openSyncInfo(){
   closeDrawer();
@@ -986,8 +1067,16 @@ function drawTour(){
       ${tourI?`<button class="btn ghost" onclick="tourStep(-1)">Back</button>`:''}
       <button class="btn dark" onclick="tourStep(1)">${last?'Start using it':'Next'}</button></div>`;
 }
-function backupAll(){
-  const data={saved:new Date().toISOString(),profile:{teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings},history:readHistory()};
+/* The escape hatch if sync misbehaves (plan 5) - exports everything
+   Firestore has for this class, not just what this device happens to hold
+   locally, since Firestore is the merged, authoritative copy across every
+   device by now (Phase 3). Falls back to this device's local HKEY entries
+   for any date Firestore doesn't have (e.g. offline, or not yet migrated). */
+async function backupAll(){
+  const remote=await fetchAllDays();
+  const history=Object.assign({},readHistory(),remote);
+  if(hasActivity()) history[dayId(new Date())]=snapshot();
+  const data={saved:new Date().toISOString(),profile:{teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings},history};
   try{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
@@ -997,7 +1086,7 @@ function backupAll(){
 function restoreBackup(input){
   const f=input.files&&input.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=()=>{
+  r.onload=async()=>{
     try{
       const d=JSON.parse(r.result);
       if(d.profile){
@@ -1006,7 +1095,10 @@ function restoreBackup(input){
         state.settings=mergeSettings(d.profile.settings); ensureAttendance();
         state.students.forEach(writeRosterStudent); writeSettings();
       }
-      if(d.history){ writeHistory(d.history); }
+      if(d.history){
+        writeHistory(Object.assign({},readHistory(),d.history));      // keep a local copy too, same safety-net spirit as HKEY elsewhere
+        if(ORG_ID) for(const id of Object.keys(d.history)) await mergeDayIntoFirestoreIfMissing(id,d.history[id]);
+      }
       toast('Backup restored'); render();
     }catch(e){ toast('That file could not be read'); }
   };
@@ -1021,7 +1113,13 @@ function startFresh(){
   });
 }
 
-/* ===== the day archive: every day is snapshotted so reports can look back ===== */
+/* ===== legacy local history (HKEY) - read-only from here on =====
+   Firestore day docs are the source of truth for reports now (Phase 3).
+   HKEY is kept only as: (a) the migration source in migrateLegacyHistoryIfNeeded()
+   above, and (b) a same-day live fallback (snapshot()/hasActivity() below,
+   built straight from `state`, not from HKEY - "today" is always shown live
+   rather than round-tripping to Firestore for a day that's still changing).
+   Nothing writes to HKEY going forward; it is never deleted either (plan 9). */
 const HKEY='hifz.tracker.history';
 const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 function readHistory(){ try{ return JSON.parse(Store.get(HKEY)||'{}'); }catch(e){ return {}; } }
@@ -1037,9 +1135,42 @@ function snapshot(){
     breaks:state.breaks.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null}))
   };
 }
-function archive(){ if(!hasActivity()) return; const h=readHistory(); h[dayId(new Date())]=snapshot(); writeHistory(h); }
 
-/* ===== reports ===== */
+/* ===== reports: read from Firestore day docs (plan 2.3 - a bounded get()
+   over a date range, never a listener, so a month view is at most ~31 day
+   reads + their breaks, served from cache when offline) ===== */
+function dayDocToSnapshot(data,breaksArr){
+  return {
+    date:data.date,
+    startedAt:(data.session&&data.session.startedAt)||null,
+    endedAt:(data.session&&data.session.endedAt)||null,
+    names:data.roster||{},
+    att:Object.fromEntries(Object.entries(data.attendance||{}).map(([id,a])=>[id,{status:a.status,note:a.note||''}])),
+    breaks:breaksArr.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null}))
+  };
+}
+async function daysQueryToMap(query){
+  const qs=await query.get();
+  const out={};
+  await Promise.all(qs.docs.map(async doc=>{
+    const breaksQs=await doc.ref.collection('breaks').get();
+    out[doc.id]=dayDocToSnapshot(doc.data(),breaksQs.docs.map(b=>b.data()));
+  }));
+  return out;
+}
+async function fetchDayRange(startId,endId){
+  if(!ORG_ID) return {};
+  const fp=firebase.firestore.FieldPath.documentId();
+  return daysQueryToMap(classRef().collection('days').where(fp,'>=',startId).where(fp,'<=',endId));
+}
+/* Unbounded on purpose - backupAll() is a one-time, user-initiated export,
+   not a listener or something that runs on a schedule, so a full history
+   read here doesn't fight the "bounded get() over a date range" rule that
+   applies to reports (plan 2.3). */
+async function fetchAllDays(){
+  if(!ORG_ID) return {};
+  return daysQueryToMap(classRef().collection('days'));
+}
 const rpt={scope:'class',sid:null,kind:'day',offset:0};
 function periodDays(kind,offset){
   const now=new Date(); let start,end,label;
@@ -1054,9 +1185,10 @@ function periodDays(kind,offset){
   while(c<=end){ ids.push(dayId(c)); c.setDate(c.getDate()+1); }
   return {ids,label};
 }
-function reportDays(){
-  const {ids,label}=periodDays(rpt.kind,rpt.offset), h=readHistory(), tid=dayId(new Date());
-  const days=ids.map(id=>(id===tid&&hasActivity())?snapshot():h[id]).filter(Boolean);
+async function reportDays(){
+  const {ids,label}=periodDays(rpt.kind,rpt.offset), tid=dayId(new Date());
+  const remote=ids.length?await fetchDayRange(ids[0],ids[ids.length-1]):{};
+  const days=ids.map(id=>(id===tid&&hasActivity())?snapshot():remote[id]).filter(Boolean);
   return {days,label};
 }
 function agg(days,sid){
@@ -1074,9 +1206,10 @@ function agg(days,sid){
   return {per,out};
 }
 function setReport(k,v){ if(k==='kind'){ rpt.kind=v; rpt.offset=0; } else if(k==='scope'){ rpt.scope=v; } else if(k==='sid'){ rpt.sid=v; } else if(k==='offset'){ rpt.offset+=v; } openReports(); }
-function openReports(){
+async function openReports(){
   closeDrawer();
-  const {days,label}=reportDays();
+  sheetHTML('Reports','',`<div class="body"><div class="empty"><b>Loading…</b></div></div>`);
+  const {days,label}=await reportDays();
   const sid = rpt.scope==='student' ? (rpt.sid||(roster()[0]||{}).id) : null;
   if(sid) rpt.sid=sid;
   const {per,out}=agg(days,sid);
@@ -1133,8 +1266,8 @@ function openReports(){
     <div class="body">${days.length?`${bars}${detail}`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div>
     <div class="actions"><button class="btn ghost" onclick="exportCSV()">Export CSV</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
-function exportCSV(){
-  const {days,label}=reportDays();
+async function exportCSV(){
+  const {days,label}=await reportDays();
   const rows=[['date','student','reason','minutes','allowed_minutes','minutes_over','flagged','past_daily_limit']];
   days.forEach(d=>(d.breaks||[]).forEach(b=>rows.push([d.date,(d.names||{})[b.sid]||b.sid,b.reason,(b.dur/60000).toFixed(1),b.assignedMin||'',((b.over||0)/60000).toFixed(1),b.flag?'yes':'no',b.overTrip?'yes':'no'])));
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -1199,7 +1332,7 @@ function drawDrawer(){
    <h4>Sync</h4>
    <button class="dbtn" onclick="openSyncInfo()">${ORG_ID?`This device is synced<small>${syncStatusLabel()}</small>`:'Connecting…<small>This class will be available on other devices shortly</small>'}</button>
    <h4>Prototype</h4>
-   <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Days are archived on this device as you use the tracker. ${Object.keys(readHistory()).length} day(s) recorded so far.</small>
+   <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day</button>
    <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
 }
@@ -1254,7 +1387,7 @@ function render(){
   // in `state` correctly but never reach the screen until the drawer was
   // closed and reopened.
   if($('drawer').classList.contains('show')) drawDrawer();
-  tick(); archive(); cacheLastClass();
+  tick(); cacheLastClass();
 }
 /* Local-only instant-paint cache (plan 2.9) - never a source of truth, just
    lets boot() paint something real before Firestore's listeners answer.
