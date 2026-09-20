@@ -28,16 +28,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 input,select{font:inherit;color:inherit}
 
 .app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;position:relative}
-.top{display:flex;align-items:flex-start;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(5px,1.1vh,10px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
+.top{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(14px,3.6vh,22px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
 .top-left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;min-height:0}
 .top h1{font-size:clamp(18px,2.9vw,23px);font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
-.top-row2{display:flex;align-items:center;gap:8px;min-width:0}
+.top-row2{display:flex;align-items:center;gap:6px;min-width:0}
 .top .sub{flex:1 1 auto;min-width:0;font-size:clamp(10px,1.4vw,13px);color:#A6BFC7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top-right{flex:none;display:flex;align-items:center;gap:10px}
 .when{display:flex;flex-direction:column;align-items:flex-end;gap:1px;line-height:1}
 .top .clock{font-size:clamp(24px,7.5vw,34px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
 .top .date{font-size:clamp(12px,3.4vw,16px);font-weight:700;white-space:nowrap;color:#A6BFC7;line-height:1.2}
-.pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);white-space:nowrap;flex:none}
+.pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);white-space:nowrap;flex:none}
 .pill b{font-size:13px}
 .pill.out{background:var(--gold);color:var(--ink)}
 .pill.absent{background:rgba(255,255,255,.08);color:#BDCED4}
@@ -115,8 +115,7 @@ input,select{font:inherit;color:inherit}
 .stepper{display:flex;align-items:stretch;justify-content:center;gap:14px}
 .step-btn{width:68px;height:68px;border-radius:18px;border:2px solid var(--line);background:var(--card);font-size:34px;font-weight:800;color:var(--ink);display:grid;place-items:center;flex:none;line-height:1}
 .step-btn:active{border-color:var(--gold);background:var(--gold-soft)}
-.step-num{width:120px;text-align:center;font-size:42px;font-weight:800;border:2px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
-.step-num:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.step-num{width:120px;height:68px;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:800;border:2px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
 .reason:active{border-color:var(--gold);background:var(--gold-soft)}
 .reason svg{width:40px;height:40px;stroke:var(--ink);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .reason{position:relative}
@@ -315,7 +314,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="2c78a49786",APP_BUILD_TIME="2026-09-20T08:27:03.458Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5c7967bc3e",APP_BUILD_TIME="2026-09-20T10:09:16.590Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -363,7 +362,7 @@ function dueBreak(){
 }
 function nextUp(){
   const S=state.settings,n=nowMin();
-  const items=[[toMin(S.snack.start),'snack break '+hm(S.snack.start)],[toMin(S.lunch.start),'lunch '+hm(S.lunch.start)],[toMin(S.endTime),'end of class '+hm(S.endTime)]];
+  const items=[[toMin(S.snack.start),'snack '+hm(S.snack.start)],[toMin(S.lunch.start),'lunch '+hm(S.lunch.start)],[toMin(S.endTime),'ends '+hm(S.endTime)]];
   const nx=items.find(i=>i[0]>n); return nx?nx[1]:'';
 }
 const att=sid=>state.attendance[sid];
@@ -891,8 +890,8 @@ function editBreak(sid){
   const now=Date.now(), elapsed=now-o.startAt, hours=Math.floor(elapsed/3600000), mins=Math.floor((elapsed%3600000)/60000), secs=Math.floor((elapsed%60000)/1000);
   const stStart=new Date(o.startAt), stEnd=new Date(now);
   const timeStr=(d)=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  const h=sheetHTML(`
-    <div style="font-weight:600;margin-bottom:14px">${nameOf(sid)} is out for ${o.label}</div>
+  sheetHTML(`${nameOf(sid)} is out for ${o.label}`,'',
+   `<div class="body">
     <div style="display:flex;gap:12px;margin-bottom:16px">
       <div style="flex:1">
         <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Left at</div>
@@ -903,7 +902,7 @@ function editBreak(sid){
         <input id="endTime" type="time" value="${timeStr(stEnd)}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
       </div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--bg);border-radius:8px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--paper);border-radius:8px">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500">Elapsed</div>
         <div style="font-size:18px;font-weight:600;color:var(--leaf)">${hours}h ${mins}m ${secs}s</div>
@@ -913,12 +912,11 @@ function editBreak(sid){
         <div style="font-size:15px;font-weight:600">${o.allowMs?fmtDur(o.allowMs):'unlimited'}</div>
       </div>
     </div>
-    <div class="confirmSheet">
+    <div class="actions">
       <button class="btn dark" onclick="saveBreakEdits('${sid}')">Return ${nameOf(sid)}</button>
       <button class="btn ghost" onclick="cancelBreak('${sid}')">Cancel break</button>
     </div>
-  `);
-  openSheet(h);
+   </div>`);
 }
 function saveBreakEdits(sid){
   const o=state.active[sid]; if(!o) return closeSheet();
@@ -930,11 +928,11 @@ function saveBreakEdits(sid){
   o.startAt=stStart; ret(sid);
 }
 function cancelBreak(sid){
-  confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Cancel break',()=>{
+  confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Delete break',()=>{
     logIt(`<b>${nameOf(sid)}</b>'s break cancelled`);
     writeBreakCancel(state.active[sid]._id);
     delete state.active[sid]; closeSheet(); toast(`${nameOf(sid)}'s break cancelled`,true); render();
-  });
+  },'warn','Keep the break');
 }
 
 function tap(sid){
@@ -1049,8 +1047,17 @@ function openReason(sid){
    out-of-class totals - setting a duration here only sets the expectation
    and the flag threshold, it does not excuse anything. Only the
    duration-setting mechanism is shared, never the semantics. */
+/* Display-only stepper - no input element, so nothing in this sheet can
+   summon a keyboard (on the real tablet, the Android keyboard covering
+   the Start button was the whole reason the old typeable version got
+   pulled). currentMinutes is a plain module var, not an <input>.value,
+   reset each time the sheet opens. The Start button sits right after the
+   stepper, before the optional note field, so even if a future field adds
+   a keyboard risk of its own, the primary action stays reachable above it. */
+let currentMinutes=2;
 function openMinutesSheet(sid,key){
   const assigned=key==='assigned';
+  currentMinutes=2;
   const title=assigned?`How long is ${nameOf(sid)} assigned for?`:`About how long will ${nameOf(sid)} be out?`;
   const sub=assigned
     ?'That time is excused. Anything past it is flagged and counted against the student.'
@@ -1059,29 +1066,25 @@ function openMinutesSheet(sid,key){
    `<div class="body">
       <div class="stepper">
         <button class="step-btn" onclick="stepMinutes(-1)" aria-label="Fewer minutes">−</button>
-        <input id="minInput" class="step-num" type="text" inputmode="numeric" pattern="[0-9]*" value="2"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,2)" onblur="clampMinutesInput()">
+        <span id="minDisplay" class="step-num">2</span>
         <button class="step-btn" onclick="stepMinutes(1)" aria-label="More minutes">+</button>
       </div>
-      <div class="note" style="margin-top:14px"><input id="anote" placeholder="${assigned?'What is the task? (optional)':'Optional short note'}"></div>
       <button class="btn dark" style="width:100%;margin-top:16px" onclick="confirmMinutes('${sid}','${key}')">Start ${nameOf(sid)}'s break</button>
+      <div class="note" style="margin-top:14px"><input id="anote" placeholder="${assigned?'What is the task? (optional)':'Optional short note'}"></div>
       <div class="actions"><button class="btn ghost" onclick="openReason('${sid}')">Back</button></div>
     </div>`);
 }
-/* If the Android number keyboard covers the Start button in landscape on
-   the real tablet when the number is tapped, add `readonly` to #minInput
-   above - the +/- buttons keep working, only direct typing stops. That is
-   the whole fallback; nothing else needs to change. */
 function clampMin(v){ v=parseInt(v,10); if(!Number.isFinite(v)) v=2; return Math.min(10,Math.max(1,v)); }
-function stepMinutes(delta){ const el=$('minInput'); if(!el) return; el.value=clampMin((parseInt(el.value,10)||0)+delta); }
-function clampMinutesInput(){ const el=$('minInput'); if(!el) return; el.value=clampMin(el.value); }
-function confirmMinutes(sid,key){
-  clampMinutesInput();
-  checkout(sid,key,($('anote')||{}).value,clampMin(($('minInput')||{}).value));
+function stepMinutes(delta){
+  currentMinutes=clampMin(currentMinutes+delta);
+  const el=$('minDisplay'); if(el) el.textContent=currentMinutes;
 }
-function confirmSheet(title,sub,label,fn,kind){
+function confirmMinutes(sid,key){
+  checkout(sid,key,($('anote')||{}).value,currentMinutes);
+}
+function confirmSheet(title,sub,label,fn,kind,dismissLabel){
   confirmSheet.fn=fn;
-  sheetHTML(title,sub,`<div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn ${kind==='warn'?'warn':'dark'}" onclick="confirmSheet.fn()">${label}</button></div>`);
+  sheetHTML(title,sub,`<div class="actions"><button class="btn ghost" onclick="closeSheet()">${dismissLabel||'Cancel'}</button><button class="btn ${kind==='warn'?'warn':'dark'}" onclick="confirmSheet.fn()">${label}</button></div>`);
 }
 function openAttendanceReview(){
   closeDrawer();
@@ -1417,7 +1420,6 @@ function drawDrawer(){
    ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
      <select onchange="state.settings.limits.${k}.min=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
      <select onchange="state.settings.limits.${k}.trips=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
-   <div class="field"><div>Other<small>No trip cap; timer turns red after</small></div><select onchange="state.settings.longMin=+this.value;writeSettings();render();drawDrawer()">${[5,8,10,15,20].map(m=>`<option ${set.longMin===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select></div>
    <h4>Today's log</h4>
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
    <h4>Sync</h4>
@@ -1436,8 +1438,8 @@ function render(){
   $('cIn').textContent=list.length-outs-abs; $('cOut').textContent=outs; $('cAbs').textContent=abs;
   $('title').textContent = state.teacher ? `${state.teacher}'s Hifz Class` : 'Hifz Class';
   const nx=nextUp();
-  $('sub').textContent= s==='preclass'?`Before class · scheduled ${hm(state.settings.startTime)} to ${hm(state.settings.endTime)}`
-    : s==='live'?`In session since ${clockStr(state.session.startedAt)}${nx?` · next: ${nx}`:''}`
+  $('sub').textContent= s==='preclass'?`Before class · ${hm(state.settings.startTime)}-${hm(state.settings.endTime)}`
+    : s==='live'?`Since ${clockStr(state.session.startedAt)}${nx?` · next ${nx}`:''}`
     : s==='lunch'?`${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}`
     : `Ended ${clockStr(state.session.endedAt)}`;
 

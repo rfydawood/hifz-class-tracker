@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 import {
   setupNewClass, skipTourIfPresent, joinExistingClass, orgId, tileFor,
   startClass, logBreak, returnFromBreak, addStudentViaDrawer,
-  setOtherLongMin, getOtherLongMin,
+  setWashroomLimit, getWashroomLimit,
 } from './helpers.mjs';
 
 test('two devices on the same class converge within seconds', async ({ browser }) => {
@@ -46,8 +46,8 @@ test('two devices on the same class converge within seconds', async ({ browser }
   await expect(tileFor(b, 'Amina')).not.toHaveClass(/out/, { timeout: 10000 });
 
   // settings change: A changes a break rule, B's drawer reflects it
-  await setOtherLongMin(a, 15);
-  await expect.poll(() => getOtherLongMin(b), { timeout: 10000 }).toBe('15');
+  await setWashroomLimit(a, 3);
+  await expect.poll(() => getWashroomLimit(b), { timeout: 10000 }).toBe('3');
 
   await ctxA.close();
   await ctxB.close();

@@ -59,14 +59,14 @@ export async function addStudentViaDrawer(page, name) {
   await page.locator('.dhead .menu-btn').click(); // close the drawer - it intercepts clicks on the grid behind it otherwise
 }
 
-export async function setOtherLongMin(page, minutes) {
+export async function setWashroomLimit(page, minutes) {
   await openDrawer(page);
-  await page.locator('.field', { hasText: 'Other' }).locator('select').selectOption(String(minutes));
+  await page.locator('.field', { hasText: 'Washroom' }).locator('select').first().selectOption(String(minutes));
 }
 
-export async function getOtherLongMin(page) {
+export async function getWashroomLimit(page) {
   await openDrawer(page);
-  return page.locator('.field', { hasText: 'Other' }).locator('select').inputValue();
+  return page.locator('.field', { hasText: 'Washroom' }).locator('select').first().inputValue();
 }
 
 export function writeCount(page) {
