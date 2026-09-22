@@ -12,7 +12,11 @@
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:background">@null</item>
+        <!-- Was @null, which left the window with no background at all: for the
+             ~2s between the splash closing and the web view painting, the screen
+             went white. This is html,body's colour in index.html, so that gap now
+             just looks like the app loading. -->
+        <item name="android:background">#E3EAEC</item>
     </style>
 
 
