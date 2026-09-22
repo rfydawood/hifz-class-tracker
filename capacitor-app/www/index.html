@@ -167,7 +167,12 @@ input,select{font:inherit;color:inherit}
 .summary .t{background:var(--gold-soft);color:#6B4B0C}
 .summary .a{background:var(--ember-soft);color:var(--ember)}
 
-.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap}
+.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap;pointer-events:none}
+/* A full roster reaches the bottom of the screen, so the toast always sits
+   over a student's tile. It stays where it is - that's where the eye goes -
+   but it must not eat the tap meant for the name underneath it. Only Undo
+   takes clicks. */
+.toast button{pointer-events:auto}
 .toast.show{display:flex}
 .toast button{color:var(--gold);font-weight:800;padding:4px 6px}
 
@@ -342,7 +347,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="1fc3d917d4",APP_BUILD_TIME="2026-09-22T01:51:15.992Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="82daf317a0",APP_BUILD_TIME="2026-09-22T02:41:17.222Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -916,7 +921,10 @@ function openJoinPrompt(){
 
 function toast(msg,undoable){
   $('toastMsg').textContent=msg; $('toastUndo').style.display=undoable?'inline':'none';
-  $('toast').classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>$('toast').classList.remove('show'),4500);
+  $('toast').classList.add('show'); clearTimeout(toast.t);
+  // An undoable toast has to outlast the teacher noticing the mistake; a plain
+  // confirmation has done its job as soon as it's read.
+  toast.t=setTimeout(()=>$('toast').classList.remove('show'),undoable?4500:2500);
 }
 function undo(){
   const a=state.lastAction; if(!a) return;
@@ -929,7 +937,7 @@ function undo(){
 /* ===== the tile tap: one gesture, context decides ===== */
 function editBreak(sid){
   const o=state.active[sid]; if(!o) return;
-  const now=Date.now(), elapsed=now-o.startAt, hours=Math.floor(elapsed/3600000), mins=Math.floor((elapsed%3600000)/60000), secs=Math.floor((elapsed%60000)/1000);
+  const now=Date.now(), elapsed=now-o.startAt;
   const stStart=new Date(o.startAt), stEnd=new Date(now);
   const timeStr=(d)=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   sheetHTML(`${nameOf(sid)} is out for ${o.label}`,'',
@@ -937,17 +945,17 @@ function editBreak(sid){
     <div style="display:flex;gap:12px;margin-bottom:16px">
       <div style="flex:1">
         <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Left at</div>
-        <input id="startTime" type="time" value="${timeStr(stStart)}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+        <input id="startTime" type="time" value="${timeStr(stStart)}" data-last="${timeStr(stStart)}" oninput="recalcElapsed()" onchange="keepTime(this)" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
       </div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Return at (now)</div>
-        <input id="endTime" type="time" value="${timeStr(stEnd)}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+        <input id="endTime" type="time" value="${timeStr(stEnd)}" data-last="${timeStr(stEnd)}" oninput="recalcElapsed()" onchange="keepTime(this)" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--paper);border-radius:8px">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500">Elapsed</div>
-        <div style="font-size:18px;font-weight:600;color:var(--leaf)">${hours}h ${mins}m ${secs}s</div>
+        <div id="elapsedVal" data-allow="${o.allowMs||0}" style="font-size:18px;font-weight:600;color:${o.allowMs&&elapsed>o.allowMs?'var(--ember)':'var(--leaf)'}">${fmtDur(elapsed)}</div>
       </div>
       <div style="flex:1;text-align:right">
         <div style="font-size:12px;color:var(--mute)">Allowed</div>
@@ -960,14 +968,35 @@ function editBreak(sid){
     </div>
    </div>`);
 }
+/* Both fields are read back here. "Return at" used to be read and then
+   dropped on the floor - ret() always ended the break at Date.now() - so a
+   corrected return time changed nothing and the recorded length was wrong. */
+function editedTimes(){
+  const st=$('startTime'), en=$('endTime');
+  if(!st||!en||!st.value||!en.value) return null;
+  const d=new Date(), mk=v=>{ const [h,m]=v.split(':'); return new Date(d.getFullYear(),d.getMonth(),d.getDate(),+h,+m); };
+  return {start:mk(st.value),end:mk(en.value)};
+}
+/* Elapsed is what the teacher is actually deciding on, so it has to answer
+   while they are still dragging the clock, not after they commit. */
+function recalcElapsed(){
+  const box=$('elapsedVal'); if(!box) return;
+  const t=editedTimes();
+  if(!t) return box.textContent='—';
+  const ms=t.end-t.start, allow=+box.dataset.allow||0;
+  box.textContent = ms<0 ? 'return is before the start' : fmtDur(ms);
+  box.style.color = (ms<0||(allow&&ms>allow)) ? 'var(--ember)' : 'var(--leaf)';
+}
+/* Android's clock picker has a CLEAR button that empties the field outright,
+   and a blank time is not a correction - it is a dead end the teacher cannot
+   type their way out of on a tablet. Put the last good value back. */
+function keepTime(el){ if(!el.value) el.value=el.dataset.last||''; else el.dataset.last=el.value; recalcElapsed(); }
 function saveBreakEdits(sid){
   const o=state.active[sid]; if(!o) return closeSheet();
-  const startTime=$('startTime').value, endTime=$('endTime').value;
-  if(!startTime||!endTime) return toast('Please set both times.');
-  const [sh,sm]=startTime.split(':'), [eh,em]=endTime.split(':');
-  const now=new Date(), stStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),+sh,+sm), stEnd=new Date(now.getFullYear(),now.getMonth(),now.getDate(),+eh,+em);
-  if(stStart>stEnd) return toast('Start time cannot be after end time.');
-  o.startAt=stStart; ret(sid);
+  const t=editedTimes();
+  if(!t) return toast('Please set both times.');
+  if(t.start>t.end) return toast('Return time cannot be before the time they left.');
+  o.startAt=t.start; ret(sid,false,t.end);
 }
 function cancelBreak(sid){
   confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Delete break',()=>{
@@ -1012,10 +1041,15 @@ function checkout(sid,key,note,assignedMin){
   toast(overTrip?`${nameOf(sid)} out for ${r.label.toLowerCase()} · past the daily limit`:`${nameOf(sid)} out for ${r.label.toLowerCase()}`,true);
   render();
 }
-function ret(sid,silent){
+/* endAt defaults to right now - a teacher tapping "Back in" is recording a
+   return that is happening in front of them. It is passed explicitly only when
+   the teacher corrected the time in the break editor, which used to be read
+   and then silently discarded. */
+function ret(sid,silent,endAt){
   const a=state.active[sid]; if(!a) return;
-  const dur=Date.now()-a.startAt, over=a.allowMs?Math.max(0,dur-a.allowMs):0;
-  const rec={sid,reason:a.reason,label:a.label,startAt:a.startAt,endAt:new Date(),dur,
+  const end=endAt||new Date();
+  const dur=Math.max(0,end-a.startAt), over=a.allowMs?Math.max(0,dur-a.allowMs):0;
+  const rec={sid,reason:a.reason,label:a.label,startAt:a.startAt,endAt:end,dur,
              allowMs:a.allowMs,assignedMin:a.assignedMin||null,over,overTrip:!!a.overTrip,note:a.note||'',_id:a._id};
   rec.flag=over>0||rec.overTrip;
   state.breaks.push(rec); delete state.active[sid]; writeBreakEnd(rec);
@@ -1089,7 +1123,7 @@ function openReason(sid){
        const act = (r.key==='assigned'||r.key==='other') ? `openMinutesSheet('${sid}','${r.key}')` : `checkout('${sid}','${r.key}',($('rnote')||{}).value)`;
        return `<button class="reason ${capped?'capped':''}" onclick="${act}"><i class="rdot ${r.key}"></i>${r.icon}${r.label}<span class="cap">${capped?'over daily limit':cap}</span></button>`;
      }).join('')}</div>
-     <div class="note"><input id="rnote" placeholder="Optional short note"></div>
+     <div class="note"><input id="rnote" placeholder="Optional short note" onfocus="keepVisible(this)"></div>
      <button class="leftday" onclick="markLeft('${sid}')">${nameOf(sid)} left for the day</button></div>`, dots);
 }
 /* Shared by "Assigned" and "Other" - both let the teacher set an expected
@@ -1123,9 +1157,16 @@ function openMinutesSheet(sid,key){
         <button class="step-btn" onclick="stepMinutes(1)" aria-label="More minutes">+</button>
       </div>
       <button class="btn dark" style="width:100%;margin-top:16px" onclick="confirmMinutes('${sid}','${key}')">Start ${nameOf(sid)}'s break</button>
-      <div class="note" style="margin-top:14px"><input id="anote" placeholder="${assigned?'What is the task? (optional)':'Optional short note'}"></div>
+      <div class="note" style="margin-top:14px"><input id="anote" placeholder="${assigned?'What is the task? (optional)':'Optional short note'}" onfocus="keepVisible(this)"></div>
       <div class="actions"><button class="btn ghost" onclick="openReason('${sid}')">Back</button></div>
     </div>`);
+}
+/* The Android keyboard takes roughly half a landscape tablet's height. With
+   adjustResize set in the manifest the sheet gets the space that's left, but
+   the field being typed into can still be below the fold - so scroll it back
+   into view once the keyboard has finished animating in. */
+function keepVisible(el){
+  setTimeout(()=>{ try{ el.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} },320);
 }
 function clampMin(v){ v=parseInt(v,10); if(!Number.isFinite(v)) v=2; return Math.min(10,Math.max(1,v)); }
 function stepMinutes(delta){
@@ -1367,7 +1408,7 @@ async function openReports(){
     const avg=q.trips?q.mins/q.trips:0;
     const cap=lim?` · limit ${lim.min} min`:'';
     return `<div class="stat"><b>${r.label}</b><div class="bar"><i class="${r.key}" style="width:${Math.round(q.mins/maxMins*100)}%"></i></div>
-      <span class="v">${q.trips} trip${q.trips===1?'':'s'} · ${r1(q.mins)} min${q.trips?` · avg ${avg.toFixed(1)}`:''}${cap}${q.flags?` · <em>⚑ ${q.flags}</em>`:''}</span></div>`;
+      <span class="v">${q.trips} trip${q.trips===1?'':'s'} · ${r1(q.mins)} min${q.trips?` · avg ${avg.toFixed(1)} min`:''}${cap}${q.flags?` · <em>⚑ ${q.flags}</em>`:''}</span></div>`;
   }).join('');
 
   let detail;
@@ -1387,7 +1428,9 @@ async function openReports(){
     const top=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
     detail=`<h4 class="rh">Flags by student</h4><div class="rowlist">${top.length?top.map(([id,n])=>{
       const mins=r1(days.reduce((x,d)=>x+(d.breaks||[]).filter(b=>b.sid===id).reduce((y,b)=>y+(b.over||0),0),0)/60000);
-      return `<div class="row"><b>${nameFor(id)}</b><span class="time">${n} flagged break${n===1?'':'s'}</span><span class="time flag">${mins?`${mins} min over`:''}</span>
+      // A break is flagged for running long OR for being one trip too many. With
+      // no minutes shown, a trip-cap flag reads as a flag for nothing at all.
+      return `<div class="row"><b>${nameFor(id)}</b><span class="time">${n} flagged break${n===1?'':'s'}</span><span class="time flag">${mins?`${mins} min over`:'past trip limit'}</span>
         <button class="btn ghost" style="padding:7px 11px;font-size:13px" onclick="rpt.scope='student';setReport('sid','${id}')">Open</button></div>`;
     }).join(''):'<div class="row"><b>No flags in this period</b></div>'}</div>`;
   }
