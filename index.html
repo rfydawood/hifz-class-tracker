@@ -243,10 +243,38 @@ input,select{font:inherit;color:inherit}
 .tour-steps i.on{background:var(--leaf)}
 .tour-actions{display:flex;gap:10px;align-items:center}
 .tour-actions .skip{color:var(--mute);font-weight:700;font-size:14px;margin-right:auto}
+.rcols{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
 .rh{font-size:13px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px}
 .log{font-size:13px;color:var(--mute);line-height:1.5}
 .log div{padding:6px 0;border-bottom:1px solid var(--line)}
 .log b{color:var(--ink)}
+/* Landscape on a tablet leaves a sheet barely 500px tall, and the reports
+   sheet spends most of that on its own title, tabs and big stat chips - the
+   teacher was left scrolling a 70px window over 800px of report, or turning
+   the tablet on its side to read it. Short screens have width to spare, so
+   trade some: wider sheet, tighter chrome, two columns of content. */
+@media (max-height:760px) and (min-width:820px){
+  .sheet{max-width:1060px;padding:16px 20px 18px}
+  .sheet h3{font-size:20px}
+  .sheet p{font-size:14px;margin-top:2px}
+  .sheet .x{width:38px;height:38px}
+  .sheet .body{margin-top:10px}
+  .actions{margin-top:12px}
+  .rctl{padding-bottom:10px;flex-wrap:nowrap}
+  .rnav b{min-width:120px}
+  .chips{padding-bottom:10px;flex-wrap:nowrap;gap:8px}
+  .chip{min-width:0;padding:7px 10px;font-size:11px}
+  .chip b{font-size:17px;margin-top:0}
+  .rcols{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0 26px;align-items:start}
+  .rcols>div>.rh:first-child{margin-top:0}
+  .stat{padding:7px 0;font-size:13px}
+  .stat>b{width:78px}
+  .stat .v{width:168px;font-size:12px}
+  .rowlist{gap:6px}
+  .row{padding:7px 11px;gap:8px}
+  .row b{font-size:14px}
+  .row .time{min-width:0;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -314,7 +342,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="7995c6ad15",APP_BUILD_TIME="2026-09-20T10:18:50.866Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="1fc3d917d4",APP_BUILD_TIME="2026-09-22T01:51:15.992Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -484,9 +512,16 @@ const FIREBASE_CONFIG={
 };
 const CLASS_ID='default';                       // one class per personal org - Phase 2 scope
 const SESSION_ORG_KEY='session.orgId', SESSION_CLASS_KEY='session.classId', CACHE_KEY='cache.lastClass';
+const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const DEFAULT_FLAG_THRESHOLD=2;                  // org.defaults.flagThreshold - only consumed by the Phase 5 admin dashboard, stored now so the schema doesn't need a later migration
 let fbApp=null, fbDb=null, fbUid=null, fbReady=null;
 let ORG_ID=null, TODAY_ID=null, syncStatus='offline';   // offline | connecting | synced | error
+/* Which calendar day the session/attendance/breaks currently in memory belong
+   to. A day's state must never outlive its day: the instant-paint cache has no
+   server round-trip to correct it, so without this the app reopens the next
+   morning still showing yesterday's ended class and yesterday's absent/tardy
+   marks. Set wherever day state is established; checked every tick. */
+let DAY_STATE_ID=null;
 let unsubOrg=null, unsubClass=null, unsubStudents=null, unsubDay=null, unsubBreaks=null;
 
 /* Test hook only (tests/write-count.spec.mjs): every real Firestore write
@@ -670,7 +705,14 @@ function attachDayListeners(){
   TODAY_ID=dayId(new Date());
   const d=dayRef(TODAY_ID);
   unsubDay=d.onSnapshot(snap=>{
-    if(snap.metadata.hasPendingWrites||!snap.exists) return;
+    if(snap.metadata.hasPendingWrites) return;
+    if(!snap.exists){
+      // Nothing recorded today, so anything on screen came from an older day.
+      // Only trust this from the server: offline, "missing" just means we have
+      // not heard back yet, and wiping a real in-progress day would be worse.
+      if(!snap.metadata.fromCache && dayStateIsDirty()){ resetLocalDayState(); render(); }
+      return;
+    }
     const data=snap.data();
     if(data.session) state.session=plainToSession(data.session);
     if(data.attendance) state.attendance=plainToAttendance(data.attendance);
@@ -1226,7 +1268,6 @@ function startFresh(){
    rather than round-tripping to Firestore for a day that's still changing).
    Nothing writes to HKEY going forward; it is never deleted either (plan 9). */
 const HKEY='hifz.tracker.history';
-const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 function readHistory(){ try{ return JSON.parse(Store.get(HKEY)||'{}'); }catch(e){ return {}; } }
 function writeHistory(h){ Store.set(HKEY,JSON.stringify(h)); }
 function hasActivity(){ return state.breaks.length>0 || st()!=='preclass'; }
@@ -1368,7 +1409,7 @@ async function openReports(){
       ${sid?`<div class="chip">Tardy days<b>${out.att.tardy}</b></div><div class="chip">Absent days<b>${out.att.absent}</b></div>`
            :`<div class="chip">Tardy marks<b>${out.att.tardy}</b></div><div class="chip">Absences<b>${out.att.absent}</b></div>`}
     </div>
-    <div class="body">${days.length?`${bars}${detail}`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div>
+    <div class="body">${days.length?`<div class="rcols"><div>${bars}</div><div>${detail}</div></div>`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div>
     <div class="actions"><button class="btn ghost" onclick="exportCSV()">Export CSV</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
 async function exportCSV(){
@@ -1435,9 +1476,9 @@ function drawDrawer(){
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
    <h4>Sync</h4>
    <button class="dbtn" onclick="openSyncInfo()">${ORG_ID?`This device is synced<small>${syncStatusLabel()}</small>`:'Connecting…<small>This class will be available on other devices shortly</small>'}</button>
-   <h4>Prototype</h4>
+   <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
-   <button class="dbtn" onclick="resetDay()">Reset the day</button>
+   <button class="dbtn" onclick="resetDay()">Reset the day<small>Clears today's attendance and starts the day over</small></button>
    <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
 }
 
@@ -1500,6 +1541,7 @@ function render(){
 function cacheLastClass(){
   try{
     Store.set(CACHE_KEY,JSON.stringify({
+      day:dayId(new Date()),
       teacher:state.teacher, students:state.students, settings:state.settings,
       session:sessionToPlain(state.session), attendance:fullAttendancePlain(),
       active:Object.fromEntries(Object.entries(state.active).map(([sid,a])=>[sid,Object.assign({},a,{startAt:+a.startAt})])),
@@ -1514,20 +1556,38 @@ function loadFromCache(){
     if(c.teacher) state.teacher=c.teacher;
     if(Array.isArray(c.students)) state.students=c.students;
     state.settings=mergeSettings(c.settings);
-    if(c.session) state.session=plainToSession(c.session);
-    if(c.attendance) state.attendance=plainToAttendance(c.attendance);
+    // The roster and the rules belong to the class and paint on any day. The
+    // session, attendance and breaks belong to one day - an older cache of them
+    // is yesterday's news, so start the new day clean and let today's Firestore
+    // doc (or the teacher) fill it in. A cache written before this stamp existed
+    // has no `day`, so it is treated as older: safe in the direction that matters.
+    DAY_STATE_ID=dayId(new Date());
+    if(c.day===DAY_STATE_ID){
+      if(c.session) state.session=plainToSession(c.session);
+      if(c.attendance) state.attendance=plainToAttendance(c.attendance);
+      if(c.active){ const out={}; Object.entries(c.active).forEach(([sid,a])=>{ out[sid]=Object.assign({},a,{startAt:new Date(a.startAt)}); }); state.active=out; }
+      if(Array.isArray(c.breaks)) state.breaks=c.breaks.map(b=>Object.assign({},b,{startAt:new Date(b.startAt),endAt:b.endAt?new Date(b.endAt):null}));
+    } else {
+      resetLocalDayState();
+    }
     ensureAttendance();
-    if(c.active){ const out={}; Object.entries(c.active).forEach(([sid,a])=>{ out[sid]=Object.assign({},a,{startAt:new Date(a.startAt)}); }); state.active=out; }
-    if(Array.isArray(c.breaks)) state.breaks=c.breaks.map(b=>Object.assign({},b,{startAt:new Date(b.startAt),endAt:b.endAt?new Date(b.endAt):null}));
     state.setup=true;
     return true;
   }catch(e){ return false; }
+}
+/* Is anything on screen the record of a day that has actually happened? Used
+   to decide whether a day worth clearing is showing at all, so a clean board
+   never causes a pointless reset and re-render. */
+function dayStateIsDirty(){
+  return st()!=='preclass' || state.breaks.length>0 || Object.keys(state.active).length>0
+      || Object.values(state.attendance).some(a=>a&&a.status!=='present');
 }
 /* Same local reset resetDay() does, without the Firestore write - the new
    day's doc doesn't exist yet and will be created lazily by whichever
    writer fires first (see IMPLEMENTATION_PLAN.md 11, "day rollover at
    midnight: the today-listener must re-subscribe when the date changes"). */
 function resetLocalDayState(){
+  DAY_STATE_ID=dayId(new Date());
   state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
   state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''});
   state.active={}; state.breaks=[]; state.log=[];
@@ -1580,7 +1640,9 @@ function fitGrid(){
 let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(fitGrid,120); });
 addEventListener('orientationchange',()=>setTimeout(fitGrid,250));
 function tick(){
-  if(ORG_ID && TODAY_ID && dayId(new Date())!==TODAY_ID){ resetLocalDayState(); attachDayListeners(); return render(); }
+  if(DAY_STATE_ID && dayId(new Date())!==DAY_STATE_ID){   // left open past midnight
+    resetLocalDayState(); if(ORG_ID) attachDayListeners(); return render();
+  }
   const now=Date.now();
   document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
   document.querySelectorAll('[data-long]').forEach(el=>{const lim=+el.dataset.lim||0; el.classList.toggle('long',lim>0&&now-(+el.dataset.long)>lim);});
@@ -1594,7 +1656,7 @@ function tick(){
    back to the setup screen. */
 (async function boot(){
   await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY]);
-  if(!loadFromCache()){ loadProfile(); load(); }
+  if(!loadFromCache()){ loadProfile(); load(); DAY_STATE_ID=dayId(new Date()); }
   render(); setInterval(tick,1000);
   const sessionOrgId=Store.get(SESSION_ORG_KEY);
   if(sessionOrgId){
