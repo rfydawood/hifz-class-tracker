@@ -27,7 +27,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-a
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 input,select{font:inherit;color:inherit}
 
-.app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;position:relative}
+/* overflow:clip, not just hidden. The teacher drawer waits off the right edge
+   (left:100%), which gives .app 40-odd px of sideways scroll room - and
+   'hidden' still lets the browser scroll that room programmatically. A tap
+   landing during a sheet's slide-in did exactly that: the whole app slid
+   left and the drawer peeked in from the edge. clip removes the scroll room
+   itself. 'hidden' stays first for any engine too old to know clip. */
+.app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;overflow:clip;position:relative}
 .top{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(14px,3.6vh,22px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
 .top-left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;min-height:0}
 .top h1{font-size:clamp(18px,2.9vw,23px);font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
@@ -70,7 +76,6 @@ input,select{font:inherit;color:inherit}
   /* nobody out: the header pill already says so, so give the space to the roster */
   .stage.no-out{grid-template-rows:1fr}
   .stage.no-out>.panel:last-child{display:none}
-  .top .date{display:none}
 }
 .tile .name{font-size:var(--name,16px);font-weight:800;line-height:1.15;letter-spacing:-.01em;overflow-wrap:break-word}
 .tile .state{font-size:var(--sub,12px);font-weight:600;margin-top:auto;padding-top:3px;color:var(--mute);font-variant-numeric:tabular-nums}
@@ -112,7 +117,8 @@ input,select{font:inherit;color:inherit}
 .empty{padding:26px 18px;text-align:center;color:var(--mute);font-size:14px;line-height:1.5}
 .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
 
-.reasons{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.reasons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.reason .cap{overflow-wrap:anywhere;text-align:center}
 .reason{border:2px solid var(--line);border-radius:18px;padding:20px 12px;font-size:19px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:9px;background:var(--card)}
 .reason .cap{font-size:12px;font-weight:700;color:var(--mute)}
 .reason.capped{border-color:var(--ember);background:var(--ember-soft)}
@@ -272,7 +278,7 @@ input,select{font:inherit;color:inherit}
   .sheet .x{width:38px;height:38px}
   .sheet .body{margin-top:10px}
   .actions{margin-top:12px}
-  .rctl{padding-bottom:10px;flex-wrap:nowrap}
+  .rctl{padding-bottom:10px}
   .rnav b{min-width:120px}
   .chips{padding-bottom:10px;flex-wrap:nowrap;gap:8px}
   .chip{min-width:0;padding:7px 10px;font-size:11px}
@@ -286,6 +292,44 @@ input,select{font:inherit;color:inherit}
   .row{padding:7px 11px;gap:8px}
   .row b{font-size:14px}
   .row .time{min-width:0;font-size:12px}
+}
+/* ===== Narrow screens: a tablet held upright, or a small one either way =====
+   Everything above was laid out for a wide landscape screen. None of these
+   rules can reach a wide screen, so landscape stays exactly as it was. */
+/* Header in two rows instead of one squeezed row: the class name and the
+   buttons on top, the counts with the date and time beneath. On one row an
+   upright tablet cut the name to "Hafiz Abdur Rafaye's ..." and dropped the
+   date. fitHeader() decides - upright, or a name too long for one row - so it
+   follows the teacher's name and screen rather than one fixed width.
+   display:contents lets the two existing header blocks share one grid, so the
+   markup (and the one-row layout built on it) stays exactly as it was. */
+.top.stacked{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"title btn menu" "stats when when";column-gap:10px;row-gap:8px;align-items:center;padding-top:12px;padding-bottom:12px}
+.top.stacked .top-left,.top.stacked .top-right{display:contents}
+.top.stacked h1{grid-area:title;font-size:clamp(19px,3.6vw,24px);white-space:normal;text-overflow:clip;overflow-wrap:anywhere;text-wrap:balance}
+.top.stacked .start-btn{grid-area:btn}
+.top.stacked .menu-btn{grid-area:menu}
+.top.stacked .top-row2{grid-area:stats;flex-wrap:wrap;row-gap:5px;align-self:end}
+.top.stacked .sub{flex:1 0 100%;white-space:normal;overflow:visible;text-overflow:clip;font-size:12px}
+.top.stacked .when{grid-area:when;align-self:end}
+@media (max-width:860px){
+  /* These only take effect when something would otherwise not fit, so a
+     screen where everything already fits looks exactly as before. */
+  .banner{flex-wrap:wrap;row-gap:8px}
+  .summary{flex-wrap:wrap}
+  .summary div{white-space:nowrap;gap:8px}      /* wrap whole counts, never "Left / early" inside one */
+}
+@media (max-width:700px){
+  /* List rows: name on its own line, the details beneath. As one line these
+     ran off the right edge and the list scrolled sideways. */
+  .row{flex-wrap:wrap;row-gap:4px}
+  .row b{flex:1 1 60%;min-width:0}
+  .row .time{min-width:0;text-align:left}
+  .dsrow b{flex-basis:100%}
+  .dsrow .time{flex:0 1 auto}
+  .dsrow .time.flag{margin-left:auto}
+  /* attendance: the four choices get their own full-width line */
+  .atrow .seg{flex:1 0 100%;display:flex}
+  .atrow .seg button{flex:1;text-align:center;padding-left:6px;padding-right:6px}
 }
 </style>
 </head>
@@ -354,7 +398,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5694535ada",APP_BUILD_TIME="2026-09-23T01:33:36.070Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="3fee2df593",APP_BUILD_TIME="2026-09-23T05:02:57.692Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1112,16 +1156,12 @@ function resetDay(){ state.session={status:'preclass',startedAt:null,endedAt:nul
 
 /* ===== sheets ===== */
 function sheetHTML(title,sub,body,extra){
-  // Toggling 'show' off before back on (even synchronously, same tick, no
-  // visible flicker) is deliberate: replacing #sheet's content while the
-  // scrim was already showing from a PRIOR sheetHTML() call - the reason
-  // sheet's "Assigned"/"Other" buttons chaining straight into
-  // openMinutesSheet() is the case that surfaced it - could leave an
-  // unrelated absolutely-positioned sibling (the teacher drawer) 64px out
-  // of position for as long as the new sheet stayed open. Root cause not
-  // fully understood (isolated CSS containment and forced reflows didn't
-  // fix it; this remove-then-add did, reliably, across many repros), but
-  // the fix has no visible cost, so it stays even without a full explanation.
+  // Toggling 'show' off before back on restarts the sheet's slide-in. It was
+  // added to stop the teacher drawer appearing ~40-64px out of position when
+  // "Assigned"/"Other" chained into openMinutesSheet(). The actual cause was
+  // .app being scrolled sideways (see the overflow:clip note on .app), which
+  // this only made less likely; clip is the fix. Kept because re-running the
+  // slide-in on a new sheet is still the right behaviour.
   $('scrim').classList.remove('show');
   $('sheet').innerHTML=`<div class="sheet-head"><div><h3>${title}</h3>${sub?`<p>${sub}</p>`:''}</div>${extra||''}<button class="x" aria-label="Close" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}`;
   $('scrim').classList.add('show');
@@ -1202,7 +1242,7 @@ function openAttendanceReview(){
   const list=roster(), c={present:0,tardy:0,absent:0,left:0}; list.forEach(s=>c[att(s.id).status]++);
   sheetHTML("Today's attendance",'Tardy times were recorded when you marked the student in. Change anything that needs correcting.',
    `<div class="summary"><div class="p">Present <b>${c.present}</b></div><div class="t">Tardy <b>${c.tardy}</b></div><div class="g">Left early <b>${c.left}</b></div><div class="a">Absent <b>${c.absent}</b></div></div>
-    <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row"><b>${s.name}</b><span class="time">${a.note||(a.at?clockStr(a.at):'')}</span><div class="seg">${[['present','present'],['tardy','tardy'],['left','left early'],['absent','absent']].map(([k,lbl])=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${lbl}</button>`).join('')}</div></div>`}).join('')}</div></div>
+    <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row atrow"><b>${s.name}</b><span class="time">${a.note||(a.at?clockStr(a.at):'')}</span><div class="seg">${[['present','present'],['tardy','tardy'],['left','left early'],['absent','absent']].map(([k,lbl])=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${lbl}</button>`).join('')}</div></div>`}).join('')}</div></div>
     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
 function setStatus(sid,k){ const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); writeAttendance(sid); } render(); openAttendanceReview(); }
@@ -1222,7 +1262,7 @@ function openDaySummary(){
       const status=a.status==='present'?'Present':a.status==='tardy'?`Tardy, in at ${clockStr(a.at)}`:a.status==='left'?`Left early, ${clockStr(a.at)}`:(a.note||'Not here');
       const btxt=bs.length?`${bs.length} break${bs.length>1?'s':''} · ${mins} min out`:'No breaks';
       const ftxt=fl?`⚑ ${fl} flagged${overMin?` · ${overMin} min over`:''}`:'';
-      return `<div class="row"><b>${s.name}</b><span class="time">${status}</span><span class="time">${btxt}</span><span class="time flag">${ftxt}</span></div>`;
+      return `<div class="row dsrow"><b>${s.name}</b><span class="time">${status}</span><span class="time">${btxt}</span><span class="time flag">${ftxt}</span></div>`;
     }).join('')}</div></div>
     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
@@ -1587,6 +1627,7 @@ function render(){
     :`<div class="empty"><b>Everyone is in class</b>Log a break and the timer appears here.</div>`;
   $('outList').classList.toggle('compact',outEntries.length>3);
   document.querySelector('.stage').classList.toggle('no-out',outEntries.length===0);
+  fitHeader();                                  // after every header text is set - it measures them
   fitGrid();
   // the drawer only rebuilds its HTML when explicitly told to (drawDrawer()
   // calls after a button action) - without this, a remote change arriving
@@ -1699,8 +1740,43 @@ function fitGrid(){
     apply(--px);
   }                   // drop the redundant "In class" line when short
 }
-let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(fitGrid,120); });
-addEventListener('orientationchange',()=>setTimeout(fitGrid,250));
+/* One row or two for the header - see the .top.stacked CSS. Upright tablets
+   always get two (there is height to spare and a width that cannot hold name,
+   date, clock and buttons side by side). Otherwise it is one row unless the
+   class name, or the line under the counts, will not fit on it - measured,
+   not guessed, since it depends on the teacher's name, the class times and
+   the font the device actually rendered. That line changes through the day
+   ("Since 8:33 AM · next snack 10:10 AM", later "... next ends 3:30 PM"), so
+   the check uses the longest version it could show today, never the one on
+   screen right now - otherwise the header would flip between one row and two
+   mid-lesson and the whole roster would jump. */
+function fitHeader(){
+  const top=document.querySelector('.top'), h1=$('title'), sub=$('sub'); if(!top||!h1||!sub) return;
+  const S=state.settings, late='12:59 PM';                  // the widest time a clock can show
+  const longest=[`Before class · ${hm(S.startTime)}-${hm(S.endTime)}`, `Since ${late} · next snack ${hm(S.snack.start)}`,
+    `Since ${late} · next lunch ${hm(S.lunch.start)}`, `Since ${late} · next ends ${hm(S.endTime)}`,
+    `Lunch and recess since ${late}`, `Snack break since ${late}`];
+  const key=`${h1.textContent}|${innerWidth}x${innerHeight}|${longest.join('|')}`;
+  if(fitHeader.key===key) return; fitHeader.key=key;
+  const upright=innerHeight>innerWidth && innerWidth<=860;
+  top.classList.remove('stacked');
+  // The main button reads Start class / End class / End break / Start again
+  // through the day; measure with the widest so a state change can't flip it.
+  const mb=$('mainBtn'), label=mb.textContent;
+  let widest=label, ww=0;
+  for(const t of ['Start class','End class','End break','Start again']){ mb.textContent=t; if(mb.offsetWidth>ww){ ww=mb.offsetWidth; widest=t; } }
+  mb.textContent=widest;
+  let stack=upright || h1.scrollWidth>h1.clientWidth+1;
+  if(!stack){
+    const shown=sub.textContent;
+    for(const t of longest){ sub.textContent=t; if(sub.scrollWidth>sub.clientWidth+1){ stack=true; break; } }
+    sub.textContent=shown;
+  }
+  mb.textContent=label;
+  top.classList.toggle('stacked', stack);
+}
+let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(()=>{ fitHeader(); fitGrid(); },120); });
+addEventListener('orientationchange',()=>setTimeout(()=>{ fitHeader(); fitGrid(); },250));
 function tick(){
   if(DAY_STATE_ID && dayId(new Date())!==DAY_STATE_ID){   // left open past midnight
     resetLocalDayState(); if(ORG_ID) attachDayListeners(); return render();
