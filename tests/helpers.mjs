@@ -34,9 +34,18 @@ export async function startClass(page) {
   await page.locator('#mainBtn').click();
 }
 
-export async function logBreak(page, studentName, reasonLabel) {
+// Every break type opens the minutes stepper (3.6); Start takes its default.
+export async function logBreak(page, studentName, reasonLabel, minutes) {
   await tileFor(page, studentName).click();
   await page.locator('.reason', { hasText: reasonLabel }).first().click();
+  if (minutes != null) {
+    for (let i = 0; i < 12; i++) {
+      const now = +(await page.locator('#minDisplay').textContent());
+      if (now === minutes) break;
+      await page.getByRole('button', { name: now < minutes ? 'More minutes' : 'Fewer minutes' }).click();
+    }
+  }
+  await page.getByRole('button', { name: `Start ${studentName}'s break` }).click();
 }
 
 export async function returnFromBreak(page, studentName) {
