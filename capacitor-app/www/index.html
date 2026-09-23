@@ -398,7 +398,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="3fee2df593",APP_BUILD_TIME="2026-09-23T05:02:57.692Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="3ecc32367c",APP_BUILD_TIME="2026-09-23T05:03:18.175Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -667,6 +667,7 @@ async function bootstrapOrg(){
       updatedAt:now
     },{merge:true}));
     ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
+    sendHeld();
     await attachListeners();
     return true;
   }catch(e){ syncStatus='error'; render(); scheduleBootstrapRetry(); return false; }
@@ -701,6 +702,7 @@ async function joinByCode(code){
     await fsWrite(orgRefFor(code).collection('members').doc(fbUid).set({
       email:'', displayName:'', roles:['admin','teacher'], status:'active', joinedAt:now
     }));
+    held=[];                                    // anything unsent belonged to this device's previous class, never the one being joined
     ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
     await attachListeners();
     state.setup=true; closeSheet(); $('setup').classList.remove('show'); render();
@@ -731,6 +733,7 @@ async function attachToOrg(orgId){
     // it's still good and let the realtime listeners recover once connected.
   }
   ORG_ID=orgId;
+  sendHeld();
   await attachListeners();
 }
 async function attachListeners(){
@@ -787,28 +790,49 @@ function attachDayListeners(){
   },()=>{});
 }
 
+/* ===== changes made before the connection is ready are held, not dropped =====
+   The class's cloud id (ORG_ID) is only known after sign-in plus a server
+   round trip - on EVERY app open, and for several round trips when a class is
+   first created. Every writer used to start `if(!ORG_ID) return;`, so a tap in
+   that window changed the screen and was never saved. Worse, the listeners
+   then attached, read the cloud's version (which never got the change) and
+   replaced the screen with it: the break vanished from both. On weak
+   classroom wifi that window is seconds.
+   Now each writer packages its change at the moment of the tap and hands it to
+   send(). Connected: it goes straight out. Not yet: it waits in `held`, and
+   sendHeld() releases everything in tap order the moment the id is known -
+   before the listeners attach, so their first answer already includes it.
+   Waiting for fbUid too means nothing is ever sent without a signed-in user,
+   which the rules would reject. */
+let held=[];
+function send(commit){ if(ORG_ID&&fbUid) return commit(); held.push(commit); }
+function sendHeld(){
+  if(!ORG_ID||!fbUid||!held.length) return;
+  TODAY_ID=TODAY_ID||dayId(new Date());                     // writers address today's doc through it
+  const q=held; held=[];
+  q.forEach(commit=>{ try{ commit(); }catch(e){} });
+}
+
 /* ===== writers: the only functions allowed to touch Firestore =====
    Each maps to one real user action (plan 2.4). Discrete events (attendance,
    break start/stop, session changes, roster edits) write immediately.
    Settings debounce ~700ms since a teacher taps through several fields in a
    row. Never called from render() or tick(). */
 function writeSettings(){
-  if(!ORG_ID) return;
   clearTimeout(writeSettings._t);
   writeSettings._t=setTimeout(()=>{
-    fsWrite(orgRef().set({defaults:settingsToDefaults(state.settings),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(()=>{});
+    const defaults=settingsToDefaults(state.settings);
+    send(()=>fsWrite(orgRef().set({defaults,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(()=>{}));
   },700);
 }
 function writeRosterStudent(s){
-  if(!ORG_ID) return;
   const order=Math.max(0,state.students.findIndex(x=>x.id===s.id));
-  fsWrite(classRef().collection('students').doc(s.id).set({
-    name:s.name, active:!!s.active, order, enrolledFrom:dayId(new Date()), enrolledUntil:null
-  },{merge:true})).catch(()=>{});
+  const doc={name:s.name, active:!!s.active, order, enrolledFrom:dayId(new Date()), enrolledUntil:null};
+  send(()=>fsWrite(classRef().collection('students').doc(s.id).set(doc,{merge:true})).catch(()=>{}));
 }
 function writeDay(patch){
-  if(!ORG_ID) return;
-  fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId:academicYearId(new Date()),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true})).catch(()=>{});
+  const yearId=academicYearId(new Date());
+  send(()=>fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true})).catch(()=>{}));
 }
 function writeSessionAndAttendance(){ writeDay({session:sessionToPlain(state.session),attendance:fullAttendancePlain(),roster:fullRosterPlain()}); }
 function writeAttendance(sid){
@@ -817,25 +841,23 @@ function writeAttendance(sid){
 }
 function breakDocId(sid,startAt){ return `${sid}_${+startAt}`; }
 function writeBreakStart(sid){
-  if(!ORG_ID) return;
   const a=state.active[sid]; if(!a) return;
+  // The id is fixed from the start time, so it is known at the tap even when
+  // offline - a cancel or end held behind this start addresses the same doc.
   const id=breakDocId(sid,a.startAt); a._id=id;
-  fsWrite(dayRef().collection('breaks').doc(id).set({
-    sid, reason:a.reason, startAt:+a.startAt, endAt:null, dur:null, over:null, flag:null,
-    overTrip:!!a.overTrip, assignedMin:a.assignedMin||null
-  })).catch(()=>{});
+  const doc={sid, reason:a.reason, startAt:+a.startAt, endAt:null, dur:null, over:null, flag:null,
+    overTrip:!!a.overTrip, assignedMin:a.assignedMin||null};
+  send(()=>fsWrite(dayRef().collection('breaks').doc(id).set(doc)).catch(()=>{}));
 }
 function writeBreakEnd(rec){
-  if(!ORG_ID) return;
   const id=rec._id||breakDocId(rec.sid,rec.startAt);
-  fsWrite(dayRef().collection('breaks').doc(id).set({
-    sid:rec.sid, reason:rec.reason, startAt:+rec.startAt, endAt:+rec.endAt, dur:rec.dur,
-    over:rec.over||0, flag:!!rec.flag, overTrip:!!rec.overTrip, assignedMin:rec.assignedMin||null
-  })).catch(()=>{});
+  const doc={sid:rec.sid, reason:rec.reason, startAt:+rec.startAt, endAt:+rec.endAt, dur:rec.dur,
+    over:rec.over||0, flag:!!rec.flag, overTrip:!!rec.overTrip, assignedMin:rec.assignedMin||null};
+  send(()=>fsWrite(dayRef().collection('breaks').doc(id).set(doc)).catch(()=>{}));
 }
 function writeBreakCancel(id){
-  if(!ORG_ID||!id) return;
-  fsWrite(dayRef().collection('breaks').doc(id).delete()).catch(()=>{});
+  if(!id) return;
+  send(()=>fsWrite(dayRef().collection('breaks').doc(id).delete()).catch(()=>{}));
 }
 
 /* ===== legacy local-history migration (Phase 3, plan section 4) =====
@@ -1691,6 +1713,7 @@ function dayStateIsDirty(){
    midnight: the today-listener must re-subscribe when the date changes"). */
 function resetLocalDayState(){
   DAY_STATE_ID=dayId(new Date());
+  held=[];                                                  // unsent changes were for the day that just ended
   state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
   state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''});
   state.active={}; state.breaks=[]; state.log=[];
