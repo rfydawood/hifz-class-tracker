@@ -21,14 +21,19 @@ async function twoDevices(browser) {
   await expect.poll(() => b.evaluate(() => state.session.status), { timeout: 15000 }).toBe('live');
   return { a, b, close: async () => { await ctxA.close(); await ctxB.close(); } };
 }
-// a finished break of a set length, as if it happened earlier today
+// A finished break of a set length, as if it happened earlier today - entered
+// the way a teacher would, by correcting both times in the break editor. (It
+// used to poke an earlier start time straight into memory; the app rightly
+// re-reads the saved record once its writes are confirmed, which undid that.)
+const hhmm = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 async function loggedBreak(page, name, reason, minsAgo, lengthMin) {
   await logBreak(page, name, reason);
-  await page.evaluate(([ago]) => { const a = Object.values(state.active)[0]; a.startAt = new Date(Date.now() - ago * 60000); }, [minsAgo]);
   await tileFor(page, name).click();
-  const back = new Date(Date.now() - (minsAgo - lengthMin) * 60000);
-  await page.locator('#endTime').fill(`${String(back.getHours()).padStart(2, '0')}:${String(back.getMinutes()).padStart(2, '0')}`);
+  const left = new Date(Date.now() - minsAgo * 60000), back = new Date(left.getTime() + lengthMin * 60000);
+  await page.locator('#startTime').fill(hhmm(left));
+  await page.locator('#endTime').fill(hhmm(back));
   await page.getByRole('button', { name: `Return ${name}` }).click();
+  await expect(tileFor(page, name)).not.toHaveClass(/out/);
 }
 const openFixList = async (page, name) => {
   await page.evaluate(() => openDaySummary());

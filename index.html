@@ -432,7 +432,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5527ee3eff",APP_BUILD_TIME="2026-09-23T06:08:21.274Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="8f2002de75",APP_BUILD_TIME="2026-09-23T09:36:09.597Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -803,18 +803,8 @@ function attachDayListeners(){
   TODAY_ID=dayId(new Date());
   const d=dayRef(TODAY_ID);
   unsubDay=d.onSnapshot({includeMetadataChanges:true},snap=>{
-    if(snap.metadata.hasPendingWrites) return;
-    if(!snap.exists){
-      // Nothing recorded today, so anything on screen came from an older day.
-      // Only trust this from the server: offline, "missing" just means we have
-      // not heard back yet, and wiping a real in-progress day would be worse.
-      if(!snap.metadata.fromCache && dayStateIsDirty()){ resetLocalDayState(); render(); }
-      return;
-    }
-    const data=snap.data();
-    if(data.session) state.session=plainToSession(data.session);
-    if(data.attendance) state.attendance=plainToAttendance(data.attendance);
-    ensureAttendance(); render();
+    if(snap.metadata.hasPendingWrites||inflight.day) return;          // see "the screen only moves forward"
+    applyDay(snap);
   },()=>{});
   // includeMetadataChanges: also hear the moment this device's own changes are
   // confirmed. Answers carrying unconfirmed changes are skipped below, and a
@@ -826,16 +816,62 @@ function attachDayListeners(){
   // counts as pending - deleting a break could leave a later trip showing
   // "past daily limit" here while the record said otherwise.
   unsubBreaks=d.collection('breaks').onSnapshot({includeMetadataChanges:true},qs=>{
-    if(qs.metadata.hasPendingWrites) return;
-    const active={}, done=[];
-    qs.forEach(doc=>{
-      const b=doc.data(), r=RSN(b.reason);
-      if(b.endAt==null){ active[b.sid]={reason:b.reason,label:r.label,startAt:new Date(b.startAt),note:'',allowMs:b.allowMs||0,assignedMin:b.assignedMin||null,overTrip:!!b.overTrip,_id:doc.id}; }
-      else{ done.push({sid:b.sid,reason:b.reason,label:r.label,startAt:new Date(b.startAt),endAt:new Date(b.endAt),dur:b.dur,allowMs:b.allowMs||0,assignedMin:b.assignedMin||null,over:b.over||0,overTrip:!!b.overTrip,flag:!!b.flag,note:'',_id:doc.id}); }
-    });
-    done.sort((a,b)=>a.startAt-b.startAt);
-    state.active=active; state.breaks=done; render();
+    if(qs.metadata.hasPendingWrites||inflight.breaks) return;
+    applyBreaks(qs);
   },()=>{});
+}
+function applyDay(snap){
+  if(!snap.exists){
+    // Nothing recorded today, so anything on screen came from an older day.
+    // Only trust this from the server: offline, "missing" just means we have
+    // not heard back yet, and wiping a real in-progress day would be worse.
+    if(!snap.metadata.fromCache && dayStateIsDirty()){ resetLocalDayState(); render(); }
+    return;
+  }
+  const data=snap.data();
+  if(data.session) state.session=plainToSession(data.session);
+  if(data.attendance) state.attendance=plainToAttendance(data.attendance);
+  ensureAttendance(); render();
+}
+function applyBreaks(qs){
+  const active={}, done=[];
+  qs.forEach(doc=>{
+    const b=doc.data(), r=RSN(b.reason);
+    if(b.endAt==null){ active[b.sid]={reason:b.reason,label:r.label,startAt:new Date(b.startAt),note:'',allowMs:b.allowMs||0,assignedMin:b.assignedMin||null,overTrip:!!b.overTrip,_id:doc.id}; }
+    else{ done.push({sid:b.sid,reason:b.reason,label:r.label,startAt:new Date(b.startAt),endAt:new Date(b.endAt),dur:b.dur,allowMs:b.allowMs||0,assignedMin:b.assignedMin||null,over:b.over||0,overTrip:!!b.overTrip,flag:!!b.flag,note:'',_id:doc.id}); }
+  });
+  done.sort((a,b)=>a.startAt-b.startAt);
+  state.active=active; state.breaks=done; render();
+}
+/* ===== the screen only moves forward =====
+   An answer from a listener is worked out at one moment and handed over a
+   moment later. Its hasPendingWrites says whether this device's unconfirmed
+   changes were in it when it was worked out - not whether a newer change was
+   made before it arrived. So an answer worked out just before a tap, handed
+   over just after, carries no pending flag, and put the screen back to before
+   the tap. In testing: "Start class", then a stale answer saying class hadn't
+   started, so the next tap on a student marked them "not here" instead of
+   opening their break sheet - a wrong absence in the record.
+   inflight counts this device's own unconfirmed writes to each record. While
+   any are unconfirmed, answers for that record are ignored: the screen already
+   shows the change, and no answer can be newer than it. When the last is
+   confirmed (or refused), resync() reads the settled copy from the local
+   cache once, so another device's change that arrived meanwhile isn't missed
+   and a refused write can't leave the screen showing something unsaved. */
+const inflight={day:0,breaks:0};
+function tracked(kind,p){
+  inflight[kind]++;
+  const settle=()=>{ if(--inflight[kind]===0) resync(kind); };
+  p.then(settle,settle);
+  return p;
+}
+function resync(kind){
+  if(!ORG_ID||!TODAY_ID||!fbDb) return;
+  const ref=kind==='day'?dayRef():dayRef().collection('breaks');
+  ref.get({source:'cache'}).then(s=>{
+    if(inflight[kind]||s.metadata.hasPendingWrites) return;
+    (kind==='day'?applyDay:applyBreaks)(s);
+  }).catch(()=>{});
 }
 
 /* ===== changes made before the connection is ready are held, not dropped =====
@@ -880,7 +916,7 @@ function writeRosterStudent(s){
 }
 function writeDay(patch){
   const yearId=academicYearId(new Date());
-  send(()=>fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true})).catch(()=>{}));
+  send(()=>tracked('day',fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true}))).catch(()=>{}));
 }
 function writeSessionAndAttendance(){ writeDay({session:sessionToPlain(state.session),attendance:fullAttendancePlain(),roster:fullRosterPlain()}); }
 function writeAttendance(sid){
@@ -895,17 +931,17 @@ function writeBreakStart(sid){
   const id=a._id||breakDocId(sid,a.startAt); a._id=id;    // keep the original id if the start time was corrected since
   const doc={sid, reason:a.reason, startAt:+a.startAt, endAt:null, dur:null, over:null, flag:null,
     overTrip:!!a.overTrip, assignedMin:a.assignedMin||null};
-  send(()=>fsWrite(dayRef().collection('breaks').doc(id).set(doc)).catch(()=>{}));
+  send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).set(doc))).catch(()=>{}));
 }
 function writeBreakEnd(rec){
   const id=rec._id||breakDocId(rec.sid,rec.startAt);
   const doc={sid:rec.sid, reason:rec.reason, startAt:+rec.startAt, endAt:+rec.endAt, dur:rec.dur,
     over:rec.over||0, flag:!!rec.flag, overTrip:!!rec.overTrip, assignedMin:rec.assignedMin||null};
-  send(()=>fsWrite(dayRef().collection('breaks').doc(id).set(doc)).catch(()=>{}));
+  send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).set(doc))).catch(()=>{}));
 }
 function writeBreakCancel(id){
   if(!id) return;
-  send(()=>fsWrite(dayRef().collection('breaks').doc(id).delete()).catch(()=>{}));
+  send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).delete())).catch(()=>{}));
 }
 
 /* ===== legacy local-history migration (Phase 3, plan section 4) =====

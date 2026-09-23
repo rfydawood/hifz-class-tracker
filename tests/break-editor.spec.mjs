@@ -6,18 +6,25 @@
 // no way back. See index.html editBreak()/saveBreakEdits()/ret().
 import { test, expect } from '@playwright/test';
 import {
-  setupNewClass, skipTourIfPresent, tileFor, logBreak, startClass,
+  setupNewClass, skipTourIfPresent, tileFor, logBreak, startClass, orgId,
 } from './helpers.mjs';
 
 async function openClassWithOneBreak(page) {
   await page.goto('/?emulator=1');
   await setupNewClass(page, 'Ustadh Editor', ['Amina', 'Bilal']);
   await skipTourIfPresent(page);
+  await orgId(page);                                    // connected - the setup below writes to the saved record
   await startClass(page);
   await logBreak(page, 'Amina', 'Washroom');
   await expect(tileFor(page, 'Amina')).toHaveClass(/out/);
-  // backdate the open break so there is a real span to edit
-  await page.evaluate(() => { state.active[Object.keys(state.active)[0]].startAt = new Date(Date.now() - 30 * 60000); });
+  // Backdate the open break so there is a real span to edit - in the saved
+  // record, then wait for the screen to show it. (Setting it only in memory
+  // was undone when the app re-read the record after its writes confirmed.)
+  await page.evaluate(async () => {
+    const id = Object.values(state.active)[0]._id;
+    await dayRef().collection('breaks').doc(id).update({ startAt: Date.now() - 30 * 60000 });
+  });
+  await expect.poll(() => page.evaluate(() => Math.round((Date.now() - Object.values(state.active)[0].startAt) / 60000)), { timeout: 15000 }).toBe(30);
   await tileFor(page, 'Amina').click();
   await expect(page.locator('#startTime')).toBeVisible();
 }
