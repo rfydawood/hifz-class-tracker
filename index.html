@@ -289,8 +289,13 @@ input,select{font:inherit;color:inherit}
    controls and counts in a column on the left, the break categories on the
    right. The first try (content in two columns under a full-width row of
    controls and counts) still stacked everything above the categories, and at
-   the real tablet's 840x528 the categories got 159px: three of five showed. */
-@media (max-height:760px) and (min-width:820px){
+   the real tablet's landscape screen the categories got 159px: three of five
+   showed. That screen is ~805x504 - measured from a sheet whose width is known
+   (720px), after an estimate from the header height said 840 and a 820px
+   minimum here left the real tablet out entirely. Landscape plus short is what
+   defines this layout; the width floor only keeps it off screens too narrow
+   for two panes. */
+@media (orientation:landscape) and (max-height:760px) and (min-width:700px){
   .sheet{max-width:1060px;padding:16px 20px 18px}
   .sheet h3{font-size:20px}
   .sheet p{font-size:14px;margin-top:2px}
@@ -306,14 +311,22 @@ input,select{font:inherit;color:inherit}
   .rside{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
   .rside .rctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap;padding:0;gap:5px}
   .rside .seg{display:flex}
-  .rside .seg button{flex:1;text-align:center;padding:5px 8px}
-  .rside .rctl select{width:100%;padding:5px 9px}
+  .rside .seg button{flex:1;text-align:center;padding:4px 8px}
+  .rside .rctl select{width:100%;padding:4px 9px}
   .rside .rnav{margin-left:0;justify-content:space-between}
-  .rside .rnav button{width:30px;height:30px}
+  .rside .rnav button{width:28px;height:28px}
   .rside .rnav b{min-width:0}
-  .rside .chips{display:grid;grid-template-columns:1fr 1fr;padding:0;gap:5px}
-  .rside .chip{padding:4px 9px}
-  .rside .chip b{font-size:16px}
+  .rside .chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0;gap:4px}
+  .rside .chip{padding:4px 7px;font-size:10.5px;line-height:1.2}
+  .rside .chip b{font-size:15px}
+  /* Break choices in one row of five. As a 3+2 grid they pushed "See or fix
+     today's breaks" and "... left for the day" 34px below the bottom of the
+     sheet on the real tablet (805x504), with nothing showing they were there. */
+  .reasons{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  .reason{padding:14px 6px 12px;font-size:17px;gap:6px;border-radius:16px}
+  .reason svg{width:32px;height:32px}
+  .reason .cap{font-size:11px;line-height:1.25}
+  .rdot{top:10px;left:10px;width:9px;height:9px}
   /* the numbers beside each bar are what the teacher reads; the bar can shrink */
   .rpanes .stat .bar{min-width:40px}
   .rpanes .stat .v{width:232px}
@@ -351,6 +364,24 @@ input,select{font:inherit;color:inherit}
   .banner{flex-wrap:wrap;row-gap:8px}
   .summary{flex-wrap:wrap}
   .summary div{white-space:nowrap;gap:8px}      /* wrap whole counts, never "Left / early" inside one */
+}
+/* Reports on an upright tablet (~533x781): the controls and the eight counts
+   took so much height that only three of the five categories showed. Counts
+   go four to a row and smaller; each category puts its name and numbers on
+   one line with the bar underneath, instead of squeezing all three into a
+   row where the numbers wrapped to three lines. */
+@media (orientation:portrait) and (max-width:620px){
+  .rctl{padding-bottom:8px;gap:6px}
+  .rctl .seg button{padding:5px 9px}
+  .rnav button{width:30px;height:30px}
+  .chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding-bottom:8px}
+  .chip{min-width:0;padding:4px 7px;font-size:10.5px;line-height:1.2}
+  .chip b{font-size:15px;margin-top:1px}
+  .sheet .body{margin-top:8px}
+  .stat{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"name nums" "bar bar";column-gap:10px;row-gap:5px;padding:7px 0}
+  .stat>b{grid-area:name;width:auto}
+  .stat .v{grid-area:nums;width:auto;font-size:12px;line-height:1.3}
+  .stat .bar{grid-area:bar;height:7px}
 }
 @media (max-width:700px){
   /* List rows: name on its own line, the details beneath. As one line these
@@ -432,7 +463,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="3d6287a0bf",APP_BUILD_TIME="2026-09-23T09:36:25.308Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="718567859e",APP_BUILD_TIME="2026-09-23T09:19:07.321Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},

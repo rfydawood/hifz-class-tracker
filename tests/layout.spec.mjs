@@ -8,10 +8,11 @@
 import { test, expect } from '@playwright/test';
 
 const SIZES = [
-  // upright tablets, narrowest first - ~550 wide is a typical 10" Android tablet
-  [480, 800], [552, 883], [600, 960], [768, 1024], [834, 1194],
-  // landscape tablets and laptops - 840x528 is a 10" Android tablet in landscape
-  [840, 528], [860, 540], [960, 600], [1024, 768], [1280, 800], [1920, 1080],
+  // upright tablets, narrowest first. 533x781 is the teacher's own tablet
+  // (1920x1200 at ~2.25x), measured from a screen recording.
+  [480, 800], [533, 781], [600, 960], [768, 1024], [834, 1194],
+  // landscape tablets and laptops. 805x504 is the same tablet on its side.
+  [805, 504], [840, 528], [960, 600], [1024, 768], [1280, 800], [1920, 1080],
 ];
 const NAMES = ['Abdullah Bhatti', 'Ahmed Khan', 'Ibrahim Khan', 'Muhammad Saeed', 'Yusuf Meah', 'Ibrahim Mirza',
   'Mustafa Ansari', 'Noumaan Abdul Azeem', 'Saad Abdul Aziz', 'Suhaib Hasan', 'SaadAttar', 'Abid Patel'];
@@ -126,11 +127,11 @@ test('upright, the header uses two rows; in landscape your name stays on one', a
   }
 });
 
-// The whole point of the reports screen: the five break categories side by
-// side. On a landscape tablet the counts and controls used to push them out
-// of view - at 840x528 only three of five showed, and the teacher turned the
-// tablet upright to read them.
-for (const [w, h] of [[840, 528], [960, 600], [1024, 768], [1280, 800], [552, 883], [768, 1024]]) {
+// The whole point of the reports screen: all five break categories at once.
+// On the teacher's tablet the counts and controls pushed them out of view -
+// three of five showed in landscape (805x504), and after the first fix, sized
+// for an estimated 840x528, still three of five upright (533x781).
+for (const [w, h] of [[805, 504], [840, 528], [960, 600], [1024, 768], [1280, 800], [533, 781], [552, 883], [768, 1024]]) {
   test(`${w}x${h}: reports show all five break categories without scrolling`, async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const page = await ctx.newPage();
@@ -152,6 +153,29 @@ for (const [w, h] of [[840, 528], [960, 600], [1024, 768], [1280, 800], [552, 88
       });
       expect(seen, `${scope} report at ${w}x${h}`).toBe(5);
     }
+    await ctx.close();
+  });
+}
+
+// The two smaller actions on a student's break sheet - "See or fix today's
+// breaks" and "... left for the day" - must be on screen without scrolling.
+// With the break choices in a 3+2 grid they sat 34px below the bottom of the
+// sheet on the teacher's tablet in landscape, with nothing showing they were
+// there.
+for (const [w, h] of [[805, 504], [840, 528], [960, 600], [533, 781], [768, 1024]]) {
+  test(`${w}x${h}: a student's break sheet shows every action without scrolling`, async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await ctx.newPage();
+    await page.route('**/vendor/firebase/**', r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.firebase={initializeApp(){return{}},firestore(){throw new Error("offline")},auth(){throw new Error("offline")}};' }));
+    await page.addInitScript(seed, { names: NAMES, status: 'live' });
+    await page.goto('/index.html');
+    await expect(page.locator('.tile').first()).toBeVisible();
+    await page.locator('.tile', { hasText: 'Abdullah Bhatti' }).click();
+    const hidden = await page.evaluate(() => {
+      const body = document.querySelector('.scrim.show .sheet .body'), br = body.getBoundingClientRect();
+      return [...body.querySelectorAll('.reason, .leftday')].filter(e => e.getBoundingClientRect().bottom > br.bottom + 1).map(e => e.textContent.trim().slice(0, 30));
+    });
+    expect(hidden, `below the bottom of the sheet at ${w}x${h}`).toEqual([]);
     await ctx.close();
   });
 }
