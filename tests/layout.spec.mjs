@@ -10,8 +10,8 @@ import { test, expect } from '@playwright/test';
 const SIZES = [
   // upright tablets, narrowest first - ~550 wide is a typical 10" Android tablet
   [480, 800], [552, 883], [600, 960], [768, 1024], [834, 1194],
-  // landscape tablets and laptops
-  [860, 540], [960, 600], [1024, 768], [1280, 800], [1920, 1080],
+  // landscape tablets and laptops - 840x528 is a 10" Android tablet in landscape
+  [840, 528], [860, 540], [960, 600], [1024, 768], [1280, 800], [1920, 1080],
 ];
 const NAMES = ['Abdullah Bhatti', 'Ahmed Khan', 'Ibrahim Khan', 'Muhammad Saeed', 'Yusuf Meah', 'Ibrahim Mirza',
   'Mustafa Ansari', 'Noumaan Abdul Azeem', 'Saad Abdul Aziz', 'Suhaib Hasan', 'SaadAttar', 'Abid Patel'];
@@ -123,3 +123,33 @@ test('upright, the header uses two rows; in landscape your name stays on one', a
     await ctx.close();
   }
 });
+
+// The whole point of the reports screen: the five break categories side by
+// side. On a landscape tablet the counts and controls used to push them out
+// of view - at 840x528 only three of five showed, and the teacher turned the
+// tablet upright to read them.
+for (const [w, h] of [[840, 528], [960, 600], [1024, 768], [1280, 800], [552, 883], [768, 1024]]) {
+  test(`${w}x${h}: reports show all five break categories without scrolling`, async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await ctx.newPage();
+    await page.route('**/vendor/firebase/**', r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.firebase={initializeApp(){return{}},firestore(){throw new Error("offline")},auth(){throw new Error("offline")}};' }));
+    await page.addInitScript(seed, { names: NAMES, status: 'live' });
+    await page.goto('/index.html');
+    await expect(page.locator('.tile').first()).toBeVisible();
+    for (const scope of ['class', 'student']) {
+      await page.evaluate((sc) => {
+        const names = {}; state.students.forEach(s => { names[s.id] = s.name; });
+        const att = {}; Object.entries(state.attendance).forEach(([k, a]) => { att[k] = { status: a.status, at: null, note: a.note }; });
+        window.reportDays = async () => ({ days: [{ date: '2026-09-22', att, names, breaks: state.breaks.map(b => ({ ...b })) }], label: 'Tuesday, Sep 22' });
+        rpt.scope = sc; rpt.sid = 's6'; return openReports();
+      }, scope);
+      await page.waitForTimeout(300);
+      const seen = await page.evaluate(() => {
+        const body = document.querySelector('.scrim.show .sheet .body'), br = body.getBoundingClientRect();
+        return [...body.querySelectorAll('.stat')].filter(s => { const r = s.getBoundingClientRect(); return r.height > 0 && r.top >= br.top - 1 && r.bottom <= br.bottom + 1; }).length;
+      });
+      expect(seen, `${scope} report at ${w}x${h}`).toBe(5);
+    }
+    await ctx.close();
+  });
+}

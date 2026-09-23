@@ -34,6 +34,13 @@ input,select{font:inherit;color:inherit}
    left and the drawer peeked in from the edge. clip removes the scroll room
    itself. 'hidden' stays first for any engine too old to know clip. */
 .app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;overflow:clip;position:relative}
+/* Until boot() has painted the real class, the page is the empty static
+   shell - "Hifz Class", no students, "In class 0". On the tablet that showed
+   for about a second after the splash, and it reads as real data: it is what
+   looked like "the app lost my class" at the very start of this project.
+   visibility, not display, so the layout still exists for fitGrid() to
+   measure on that first render. */
+.app.booting>*{visibility:hidden}
 .top{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(14px,3.6vh,22px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
 .top-left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;min-height:0}
 .top h1{font-size:clamp(18px,2.9vw,23px);font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
@@ -262,6 +269,7 @@ input,select{font:inherit;color:inherit}
 .tour-actions{display:flex;gap:10px;align-items:center}
 .tour-actions .skip{color:var(--mute);font-weight:700;font-size:14px;margin-right:auto}
 .rcols{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.rpanes,.rside{display:contents}
 .rh{font-size:13px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px}
 .log{font-size:13px;color:var(--mute);line-height:1.5}
 .log div{padding:6px 0;border-bottom:1px solid var(--line)}
@@ -270,7 +278,11 @@ input,select{font:inherit;color:inherit}
    sheet spends most of that on its own title, tabs and big stat chips - the
    teacher was left scrolling a 70px window over 800px of report, or turning
    the tablet on its side to read it. Short screens have width to spare, so
-   trade some: wider sheet, tighter chrome, two columns of content. */
+   trade some: wider sheet, tighter chrome, and side-by-side panes - the
+   controls and counts in a column on the left, the break categories on the
+   right. The first try (content in two columns under a full-width row of
+   controls and counts) still stacked everything above the categories, and at
+   the real tablet's 840x528 the categories got 159px: three of five showed. */
 @media (max-height:760px) and (min-width:820px){
   .sheet{max-width:1060px;padding:16px 20px 18px}
   .sheet h3{font-size:20px}
@@ -283,8 +295,23 @@ input,select{font:inherit;color:inherit}
   .chips{padding-bottom:10px;flex-wrap:nowrap;gap:8px}
   .chip{min-width:0;padding:7px 10px;font-size:11px}
   .chip b{font-size:17px;margin-top:0}
-  .rcols{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0 26px;align-items:start}
-  .rcols>div>.rh:first-child{margin-top:0}
+  .rpanes{display:grid;grid-template-columns:minmax(270px,34%) minmax(0,1fr);gap:0 20px;flex:1;min-height:0;margin-top:10px}
+  .rside{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
+  .rside .rctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap;padding:0;gap:5px}
+  .rside .seg{display:flex}
+  .rside .seg button{flex:1;text-align:center;padding:5px 8px}
+  .rside .rctl select{width:100%;padding:5px 9px}
+  .rside .rnav{margin-left:0;justify-content:space-between}
+  .rside .rnav button{width:30px;height:30px}
+  .rside .rnav b{min-width:0}
+  .rside .chips{display:grid;grid-template-columns:1fr 1fr;padding:0;gap:5px}
+  .rside .chip{padding:4px 9px}
+  .rside .chip b{font-size:16px}
+  /* the numbers beside each bar are what the teacher reads; the bar can shrink */
+  .rpanes .stat .bar{min-width:40px}
+  .rpanes .stat .v{width:232px}
+  .rpanes>.body{margin-top:0}
+  .rcols>div>.rh:first-child{margin-top:16px}
   .stat{padding:7px 0;font-size:13px}
   .stat>b{width:78px}
   .stat .v{width:168px;font-size:12px}
@@ -335,7 +362,7 @@ input,select{font:inherit;color:inherit}
 </head>
 <body>
 
-<div class="app">
+<div class="app booting">
   <header class="top">
     <div class="top-left">
       <h1 id="title">Hifz Class</h1>
@@ -398,7 +425,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="3ecc32367c",APP_BUILD_TIME="2026-09-23T05:03:18.175Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="185e8d28b8",APP_BUILD_TIME="2026-09-23T06:08:06.463Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1329,7 +1356,7 @@ function tourStep(d){ tourI+=d; if(tourI<0) tourI=0; if(tourI>=TOUR.length) retu
 function drawTour(){
   const t=TOUR[tourI], last=tourI===TOUR.length-1;
   $('tourCard').innerHTML=`<h3>${t.h}</h3><p>${t.p}</p>
-    <div class="tour-steps">${TOUR.map((x,i)=>`<i class="${i<=tourI?'on':''}"</i>`).join('')}</div>
+    <div class="tour-steps">${TOUR.map((x,i)=>`<i class="${i<=tourI?'on':''}"></i>`).join('')}</div>
     <div class="tour-actions"><button class="skip" onclick="endTour()">Skip</button>
       ${tourI?`<button class="btn ghost" onclick="tourStep(-1)">Back</button>`:''}
       <button class="btn dark" onclick="tourStep(1)">${last?'Start using it':'Next'}</button></div>`;
@@ -1516,7 +1543,7 @@ async function openReports(){
 
   const seg=(k,opts)=>`<div class="seg">${opts.map(o=>`<button class="${rpt[k]===o[0]?'on present':''}" onclick="setReport('${k}','${o[0]}')">${o[1]}</button>`).join('')}</div>`;
   sheetHTML('Reports', sid?`${nameFor(sid)} · ${label}`:`Whole class · ${label}`,
-   `<div class="rctl">
+   `<div class="rpanes"><div class="rside"><div class="rctl">
       ${seg('kind',[['day','Daily'],['week','Weekly'],['month','Monthly']])}
       ${seg('scope',[['class','Class'],['student','Student']])}
       ${rpt.scope==='student'?`<select onchange="setReport('sid',this.value)">${roster().map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${x.name}</option>`).join('')}</select>`:''}
@@ -1531,8 +1558,8 @@ async function openReports(){
       ${sid?`<div class="chip">Tardy days<b>${out.att.tardy}</b></div><div class="chip">Absent days<b>${out.att.absent}</b></div>`
            :`<div class="chip">Tardy marks<b>${out.att.tardy}</b></div><div class="chip">Absences<b>${out.att.absent}</b></div>`}
       ${out.att.left?`<div class="chip">Left early<b>${out.att.left}</b></div>`:''}
-    </div>
-    <div class="body">${days.length?`<div class="rcols"><div>${bars}</div><div>${detail}</div></div>`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div>
+    </div></div>
+    <div class="body">${days.length?`<div class="rcols"><div>${bars}</div><div>${detail}</div></div>`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div></div>
     <div class="actions"><button class="btn ghost" onclick="exportCSV()">Export CSV</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
 async function exportCSV(){
@@ -1816,9 +1843,15 @@ function tick(){
    A stored orgId that no longer exists must never crash - it just falls
    back to the setup screen. */
 (async function boot(){
-  await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY]);
-  if(!loadFromCache()){ loadProfile(); load(); DAY_STATE_ID=dayId(new Date()); }
-  render(); setInterval(tick,1000);
+  // never leave the app hidden: whatever happens below, it is shown within 3s
+  const reveal=()=>document.querySelector('.app').classList.remove('booting');
+  const failsafe=setTimeout(reveal,3000);
+  try{
+    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY]);
+    if(!loadFromCache()){ loadProfile(); load(); DAY_STATE_ID=dayId(new Date()); }
+    render();
+  } finally { clearTimeout(failsafe); reveal(); }
+  setInterval(tick,1000);
   const sessionOrgId=Store.get(SESSION_ORG_KEY);
   if(sessionOrgId){
     await attachToOrg(sessionOrgId);
