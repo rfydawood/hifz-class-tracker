@@ -82,6 +82,8 @@ const SCREENS = [
   ['reports, class', async p => { await p.evaluate(() => openReports()); }],
   ['reports, student', async p => { await p.evaluate(() => { rpt.scope = 'student'; rpt.sid = 's7'; return openReports(); }); }],
   ['end class', async p => { await p.locator('#mainBtn').click(); }],
+  ["a student's breaks today", async p => { await p.evaluate(() => openStudentBreaks('s3')); }],
+  ['fixing a logged break', async p => { await p.evaluate(() => { const b = state.breaks.find(x => x.sid === 's2'); editLoggedBreak('s2', b._id || breakDocId(b.sid, b.startAt)); }); }],
   ['long teacher name', async p => { await p.evaluate(() => { state.teacher = 'Hafiz Muhammad Abdur Rahman Siddiqui'; render(); }); }],
 ];
 

@@ -169,6 +169,13 @@ input,select{font:inherit;color:inherit}
 .note{margin-top:14px}
 .note input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--paper)}
 .rowlist{display:flex;flex-direction:column;gap:8px}
+.dsrow{cursor:pointer}
+.brow b{flex:0 1 auto;min-width:92px}
+.brow .time:first-of-type{margin-left:auto}
+.brow .btn{flex:none}
+/* the two smaller actions under the break reasons share a row, so neither is pushed below the fold on a short screen */
+.leftrow{display:flex;gap:10px;margin-top:14px}
+.leftrow .leftday{margin-top:0;flex:1}
 .row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
 .row b{flex:1;font-size:16px}
 .row .time{color:var(--mute);font-size:13px;min-width:130px;text-align:right}
@@ -425,7 +432,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="185e8d28b8",APP_BUILD_TIME="2026-09-23T06:08:06.463Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="5527ee3eff",APP_BUILD_TIME="2026-09-23T06:08:21.274Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -766,7 +773,12 @@ async function attachToOrg(orgId){
 async function attachListeners(){
   detachListeners();
   const org=orgRef(), cls=classRef();
-  unsubOrg=org.onSnapshot(snap=>{
+  // Every data listener below takes includeMetadataChanges - see the note on
+  // the breaks listener for why. In short: an answer the cloud computed for an
+  // earlier change can arrive just after a newer change was made on screen,
+  // without it, and overwrite it. Hearing each confirmation means the newer
+  // change is put back a moment later, instead of staying wrong on screen.
+  unsubOrg=org.onSnapshot({includeMetadataChanges:true},snap=>{
     if(!snap.exists||snap.metadata.hasPendingWrites) return;
     const d=snap.data(); if(d.defaults) state.settings=mergeSettings(d.defaults);
     render();
@@ -775,7 +787,7 @@ async function attachListeners(){
     if(!snap.exists||snap.metadata.hasPendingWrites) return;
     render();
   },()=>{});
-  unsubStudents=cls.collection('students').onSnapshot(qs=>{
+  unsubStudents=cls.collection('students').onSnapshot({includeMetadataChanges:true},qs=>{
     if(qs.metadata.hasPendingWrites) return;
     const list=[]; qs.forEach(doc=>list.push(Object.assign({id:doc.id},doc.data())));
     list.sort((a,b)=>(a.order||0)-(b.order||0));
@@ -790,7 +802,7 @@ function attachDayListeners(){
   if(unsubDay) unsubDay(); if(unsubBreaks) unsubBreaks();
   TODAY_ID=dayId(new Date());
   const d=dayRef(TODAY_ID);
-  unsubDay=d.onSnapshot(snap=>{
+  unsubDay=d.onSnapshot({includeMetadataChanges:true},snap=>{
     if(snap.metadata.hasPendingWrites) return;
     if(!snap.exists){
       // Nothing recorded today, so anything on screen came from an older day.
@@ -804,7 +816,16 @@ function attachDayListeners(){
     if(data.attendance) state.attendance=plainToAttendance(data.attendance);
     ensureAttendance(); render();
   },()=>{});
-  unsubBreaks=d.collection('breaks').onSnapshot(qs=>{
+  // includeMetadataChanges: also hear the moment this device's own changes are
+  // confirmed. Answers carrying unconfirmed changes are skipped below, and a
+  // confirmation that changes no data raises no event by default - so if the
+  // last answer processed was an in-between one, the screen stayed on it.
+  // Two ways one gets through: an answer computed before a newer change was
+  // made, delivered just after it (the newer change isn't in it, so nothing in
+  // it is "pending"); and a delete, whose break leaves the list and so never
+  // counts as pending - deleting a break could leave a later trip showing
+  // "past daily limit" here while the record said otherwise.
+  unsubBreaks=d.collection('breaks').onSnapshot({includeMetadataChanges:true},qs=>{
     if(qs.metadata.hasPendingWrites) return;
     const active={}, done=[];
     qs.forEach(doc=>{
@@ -871,7 +892,7 @@ function writeBreakStart(sid){
   const a=state.active[sid]; if(!a) return;
   // The id is fixed from the start time, so it is known at the tap even when
   // offline - a cancel or end held behind this start addresses the same doc.
-  const id=breakDocId(sid,a.startAt); a._id=id;
+  const id=a._id||breakDocId(sid,a.startAt); a._id=id;    // keep the original id if the start time was corrected since
   const doc={sid, reason:a.reason, startAt:+a.startAt, endAt:null, dur:null, over:null, flag:null,
     overTrip:!!a.overTrip, assignedMin:a.assignedMin||null};
   send(()=>fsWrite(dayRef().collection('breaks').doc(id).set(doc)).catch(()=>{}));
@@ -1026,11 +1047,15 @@ function toast(msg,undoable){
   // confirmation has done its job as soon as it's read.
   toast.t=setTimeout(()=>$('toast').classList.remove('show'),undoable?4500:2500);
 }
+/* Undo has to reach the record, not just the screen. It used to only change
+   what was on screen: an undone break stayed open in the cloud, kept in the
+   reports, and the next sync brought the student back "out" with a timer
+   running. Each undo now sends the matching correction. */
 function undo(){
   const a=state.lastAction; if(!a) return;
-  if(a.type==='checkout') delete state.active[a.sid];
-  if(a.type==='return'){ state.breaks=state.breaks.filter(b=>b!==a.rec); state.active[a.sid]=a.prev; }
-  if(a.type==='att') state.attendance[a.sid]=a.prev;
+  if(a.type==='checkout'){ const o=state.active[a.sid]; delete state.active[a.sid]; if(o) writeBreakCancel(o._id||breakDocId(a.sid,o.startAt)); }
+  if(a.type==='return'){ state.breaks=state.breaks.filter(b=>b!==a.rec); state.active[a.sid]=a.prev; writeBreakStart(a.sid); }
+  if(a.type==='att'){ state.attendance[a.sid]=a.prev; writeAttendance(a.sid); }
   state.log.shift(); state.lastAction=null; $('toast').classList.remove('show'); render();
 }
 
@@ -1045,7 +1070,7 @@ function editBreak(sid){
     <div style="display:flex;gap:12px;margin-bottom:16px">
       <div style="flex:1">
         <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Left at</div>
-        <input id="startTime" type="time" value="${timeStr(stStart)}" data-last="${timeStr(stStart)}" oninput="recalcElapsed()" onchange="keepTime(this)" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+        <input id="startTime" type="time" value="${timeStr(stStart)}" data-last="${timeStr(stStart)}" data-orig="${+stStart}" oninput="recalcElapsed()" onchange="keepTime(this)" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
       </div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Return at (now)</div>
@@ -1071,11 +1096,19 @@ function editBreak(sid){
 /* Both fields are read back here. "Return at" used to be read and then
    dropped on the floor - ret() always ended the break at Date.now() - so a
    corrected return time changed nothing and the recorded length was wrong. */
+/* The time fields only hold hours and minutes. If neither was touched, both
+   keep their exact times, seconds included - otherwise opening the editor and
+   saving with no change would quietly shorten or lengthen the break. Once the
+   teacher types a time, both are taken as the whole minutes on screen: "10:02
+   to 10:08" should come out as 6:00, not 5:46 because 10:02 was secretly
+   10:02:14. data-orig carries the exact time (ms); none means "now". */
 function editedTimes(){
   const st=$('startTime'), en=$('endTime');
   if(!st||!en||!st.value||!en.value) return null;
   const d=new Date(), mk=v=>{ const [h,m]=v.split(':'); return new Date(d.getFullYear(),d.getMonth(),d.getDate(),+h,+m); };
-  return {start:mk(st.value),end:mk(en.value)};
+  const exact=el=>el.dataset.orig?new Date(+el.dataset.orig):new Date();
+  const touched=st.value!==st.defaultValue||en.value!==en.defaultValue;
+  return touched ? {start:mk(st.value),end:mk(en.value)} : {start:exact(st),end:exact(en)};
 }
 /* Elapsed is what the teacher is actually deciding on, so it has to answer
    while they are still dragging the clock, not after they commit. */
@@ -1097,6 +1130,91 @@ function saveBreakEdits(sid){
   if(!t) return toast('Please set both times.');
   if(t.start>t.end) return toast('Return time cannot be before the time they left.');
   o.startAt=t.start; ret(sid,false,t.end);
+}
+/* ===== fixing a break after it's logged =====
+   Until now a break could only be corrected while the student was still out.
+   Once back in, a wrong time (forgot to tap Back in, so it reads 40 minutes)
+   or a break logged for the wrong student stayed in the record for good.
+   Today's breaks only - that's what's on this device's screen; past days are
+   read-only in the reports. */
+const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+function openStudentBreaks(sid){
+  closeDrawer();
+  const list=state.breaks.filter(b=>b.sid===sid).sort((x,y)=>x.startAt-y.startAt);
+  const o=state.active[sid];
+  const rows=list.map(b=>{
+    const tail=b.flag?`<span class="time flag">⚑ ${b.over?`${fmtDur(b.over)} over`:'past trip limit'}</span>`:'';
+    return `<div class="row brow"><b>${b.label||RSN(b.reason).label}</b><span class="time">${clockStr(b.startAt)} – ${clockStr(b.endAt)} · ${fmtDur(b.dur)}</span>${tail}
+      <button class="btn ghost" style="padding:7px 13px;font-size:13px" onclick="editLoggedBreak('${sid}','${b._id||breakDocId(b.sid,b.startAt)}')">Fix</button></div>`;
+  }).join('');
+  const now=o?`<div class="row brow"><b>Out now · ${o.label}</b><span class="time">since ${clockStr(o.startAt)}</span><button class="btn ghost" style="padding:7px 13px;font-size:13px" onclick="editBreak('${sid}')">Fix</button></div>`:'';
+  sheetHTML(`${nameOf(sid)}'s breaks today`,'Tap Fix to correct a time, or to delete a break that was logged by mistake.',
+   `<div class="body"><div class="rowlist">${now}${rows||(now?'':'<div class="row"><b>No breaks logged today</b></div>')}</div></div>
+    <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+const loggedBreak=(sid,id)=>state.breaks.find(b=>b.sid===sid&&(b._id||breakDocId(b.sid,b.startAt))===id);
+function editLoggedBreak(sid,id){
+  const b=loggedBreak(sid,id); if(!b) return openStudentBreaks(sid);
+  const field=(fid,d)=>`<input id="${fid}" type="time" value="${hhmm(d)}" data-last="${hhmm(d)}" data-orig="${+d}" oninput="recalcElapsed()" onchange="keepTime(this)" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px">`;
+  sheetHTML(`Fix ${nameOf(sid)}'s ${(b.label||RSN(b.reason).label).toLowerCase()} break`,'',
+   `<div class="body">
+    <div style="display:flex;gap:12px;margin-bottom:16px">
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Left at</div>${field('startTime',b.startAt)}</div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--mute);margin-bottom:6px">Back at</div>${field('endTime',b.endAt)}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--paper);border-radius:8px">
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">Length</div>
+        <div id="elapsedVal" data-allow="${b.allowMs||0}" style="font-size:18px;font-weight:600;color:${b.allowMs&&b.dur>b.allowMs?'var(--ember)':'var(--leaf)'}">${fmtDur(b.dur)}</div></div>
+      <div style="flex:1;text-align:right"><div style="font-size:12px;color:var(--mute)">Allowed</div>
+        <div style="font-size:15px;font-weight:600">${b.allowMs?fmtDur(b.allowMs):'unlimited'}</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn dark" onclick="saveLoggedBreak('${sid}','${id}')">Save</button>
+      <button class="btn ghost" onclick="deleteLoggedBreak('${sid}','${id}')">Delete this break</button>
+    </div>
+    <div class="actions" style="margin-top:10px"><button class="btn ghost" onclick="openStudentBreaks('${sid}')">Back</button></div>
+   </div>`);
+}
+function saveLoggedBreak(sid,id){
+  const b=loggedBreak(sid,id); if(!b) return openStudentBreaks(sid);
+  const t=editedTimes();
+  if(!t) return toast('Please set both times.');
+  if(t.start>t.end) return toast('Back time cannot be before the time they left.');
+  if(t.end>new Date()) return toast('Back time cannot be in the future.');
+  if(+t.start===+b.startAt&&+t.end===+b.endAt) return openStudentBreaks(sid);      // nothing changed
+  const was=fmtDur(b.dur);
+  b._id=id; b.startAt=t.start; b.endAt=t.end; b.dur=t.end-t.start;
+  b.over=b.allowMs?Math.max(0,b.dur-b.allowMs):0;
+  b.flag=b.over>0||!!b.overTrip;
+  writeBreakEnd(b); recountTrips(sid,b.reason);
+  state.lastAction=null;
+  logIt(`<b>${nameOf(sid)}</b>'s ${(b.label||RSN(b.reason).label).toLowerCase()} break corrected: ${was} → ${fmtDur(b.dur)}`);
+  render(); openStudentBreaks(sid); toast(`${nameOf(sid)}'s break corrected to ${fmtDur(b.dur)}`);
+}
+function deleteLoggedBreak(sid,id){
+  const b=loggedBreak(sid,id); if(!b) return openStudentBreaks(sid);
+  const what=(b.label||RSN(b.reason).label).toLowerCase();
+  confirmSheet(`Delete ${nameOf(sid)}'s ${what} break from ${clockStr(b.startAt)}?`,'It will be removed from today\'s record and from the reports.','Delete break',()=>{
+    state.breaks=state.breaks.filter(x=>x!==b);
+    recountTrips(sid,b.reason); writeBreakCancel(id);          // corrections first, delete last - see the breaks listener
+    state.lastAction=null;
+    logIt(`<b>${nameOf(sid)}</b>'s ${what} break from ${clockStr(b.startAt)} deleted`);
+    render(); openStudentBreaks(sid); toast(`${nameOf(sid)}'s ${what} break deleted`);
+  },'warn','Keep it');
+}
+/* The daily trip limit is counted in order: the trip after the limit is the
+   one flagged "past daily limit". Delete an earlier trip, or move one, and
+   the count has to be redone - otherwise a trip stays flagged for a limit it
+   no longer broke. */
+function recountTrips(sid,reason){
+  const lim=LIMIT(reason);
+  const list=state.breaks.filter(b=>b.sid===sid&&b.reason===reason).sort((x,y)=>x.startAt-y.startAt);
+  list.forEach((b,i)=>{
+    const ot=!!(lim&&i>=lim.trips), fl=(b.over||0)>0||ot;
+    if(ot!==!!b.overTrip||fl!==!!b.flag){ b.overTrip=ot; b.flag=fl; writeBreakEnd(b); }
+  });
+  const o=state.active[sid];
+  if(o&&o.reason===reason){ const ot=!!(lim&&list.length>=lim.trips); if(ot!==!!o.overTrip){ o.overTrip=ot; writeBreakStart(sid); } }
 }
 function cancelBreak(sid){
   confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Delete break',()=>{
@@ -1230,7 +1348,8 @@ function openReason(sid){
        return `<button class="reason ${capped?'capped':''}" onclick="${act}"><i class="rdot ${r.key}"></i>${r.icon}${r.label}<span class="cap">${capped?'over daily limit':cap}</span></button>`;
      }).join('')}</div>
      <div class="note"><input id="rnote" placeholder="Optional short note" onfocus="keepVisible(this)"></div>
-     <button class="leftday" onclick="markLeft('${sid}')">${nameOf(sid)} left for the day</button></div>`, dots);
+     <div class="leftrow">${bs.length?`<button class="leftday" onclick="openStudentBreaks('${sid}')">See or fix today's breaks (${bs.length})</button>`:''}
+     <button class="leftday" onclick="markLeft('${sid}')">${nameOf(sid)} left for the day</button></div></div>`, dots);
 }
 /* Shared by "Assigned" and "Other" - both let the teacher set an expected
    duration 1-10 min (prefilled 2) with the same stepper, but the two reasons
@@ -1302,7 +1421,7 @@ function openDaySummary(){
   const c={present:0,tardy:0,absent:0,left:0}; list.forEach(s=>c[att(s.id).status]++);
   const flagged=list.filter(s=>flagsOf(s.id)).length;
   const when=state.session.startedAt?`${clockStr(state.session.startedAt)}${state.session.endedAt?' to '+clockStr(state.session.endedAt):', still running'}`:'Class has not started yet';
-  sheetHTML('Day summary',`${dateStr(new Date())} · ${when}`,
+  sheetHTML('Day summary',`${dateStr(new Date())} · ${when} · tap a student to fix their breaks`,
    `<div class="summary"><div class="p">Present <b>${c.present}</b></div><div class="t">Tardy <b>${c.tardy}</b></div>${c.left?`<div class="g">Left early <b>${c.left}</b></div>`:''}<div class="a">Not here <b>${c.absent}</b></div><div class="a">Flagged <b>${flagged}</b></div></div>
     <div class="body"><div class="rowlist">${list.map(s=>{
       const a=att(s.id), bs=state.breaks.filter(b=>b.sid===s.id);
@@ -1311,7 +1430,7 @@ function openDaySummary(){
       const status=a.status==='present'?'Present':a.status==='tardy'?`Tardy, in at ${clockStr(a.at)}`:a.status==='left'?`Left early, ${clockStr(a.at)}`:(a.note||'Not here');
       const btxt=bs.length?`${bs.length} break${bs.length>1?'s':''} · ${mins} min out`:'No breaks';
       const ftxt=fl?`⚑ ${fl} flagged${overMin?` · ${overMin} min over`:''}`:'';
-      return `<div class="row dsrow"><b>${s.name}</b><span class="time">${status}</span><span class="time">${btxt}</span><span class="time flag">${ftxt}</span></div>`;
+      return `<div class="row dsrow" role="button" tabindex="0" onclick="openStudentBreaks('${s.id}')" title="See or fix ${s.name}'s breaks"><b>${s.name}</b><span class="time">${status}</span><span class="time">${btxt}</span><span class="time flag">${ftxt}</span></div>`;
     }).join('')}</div></div>
     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }

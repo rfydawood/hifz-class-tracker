@@ -114,12 +114,12 @@ service cloud.firestore {
             allow get, list: if isMember(orgId);
             allow create, update: if isMember(orgId)
               && request.resource.data.keys().hasOnly(['sid','reason','startAt','endAt','dur','over','flag','overTrip','assignedMin']);
-            // A break cancelled before the student returns was never a real
-            // record (see checkout()/cancelBreak() in index.html) - deleting
-            // it here matches that same "never recorded" behaviour. This is
-            // the one exception to "nothing is ever deleted" (plan 9):
-            // completed breaks (endAt set) are never targeted by the app's
-            // delete path, only ones still open with endAt == null.
+            // Two app paths delete a break, both correcting a mistake rather
+            // than removing history: cancelling one still open (cancelBreak(),
+            // or Undo straight after logging it), and deleting a finished one
+            // that was logged by mistake (deleteLoggedBreak(), behind a
+            // confirmation). These are the exception to "nothing is ever
+            // deleted" (plan 9), which is about records, not typos.
             allow delete: if isMember(orgId);
           }
         }
