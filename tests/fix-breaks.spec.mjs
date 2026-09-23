@@ -46,6 +46,7 @@ test('a logged break can be corrected, and the correction reaches the record', a
   const { a, b, close } = await twoDevices(browser);
   await loggedBreak(a, 'Amina', 'Washroom', 60, 40);             // "forgot to tap Back in": 40 minutes
   await expect.poll(() => b.evaluate(() => state.breaks.length), { timeout: 15000 }).toBe(1);
+  expect(await a.evaluate(() => state.breaks[0].flag)).toBe(true); // 40 min on a 7 min limit is flagged to begin with
 
   await openFixList(a, 'Amina');
   await a.getByRole('button', { name: 'Fix' }).click();

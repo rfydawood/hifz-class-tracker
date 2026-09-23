@@ -77,6 +77,8 @@ const SCREENS = [
   ['break reasons', async p => { await p.locator('.tile', { hasText: 'Abdullah Bhatti' }).click(); }],
   // clicked straight after the sheet opens, mid slide-in: the tap that used to shift the whole app sideways
   ['minutes stepper', async p => { await p.locator('.tile', { hasText: 'Abdullah Bhatti' }).click(); await p.locator('.reason', { hasText: 'Other' }).click(); }],
+  // washroom opens the same stepper since 3.6 (a student who is in class - Muhammad Saeed is out in this seed)
+  ['washroom stepper', async p => { await p.locator('.tile', { hasText: 'Ibrahim Khan' }).click(); await p.locator('.reason', { hasText: 'Washroom' }).click(); }],
   ['break editor', async p => { await p.locator('.tile', { hasText: 'Muhammad Saeed' }).click(); }],
   ['day summary', async p => { await p.evaluate(() => openDaySummary()); }],
   ['attendance', async p => { await p.evaluate(() => openAttendanceReview()); }],
