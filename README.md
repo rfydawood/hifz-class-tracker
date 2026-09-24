@@ -74,6 +74,6 @@ cd android
 ./gradlew.bat assembleRelease
 # then zipalign + apksigner sign app-release-unsigned.apk with ../../android-app/android.keystore
 # (see android-app/KEYSTORE_PASSWORD_KEEP_SAFE.txt), then
-# firebase appdistribution:distribute <signed.apk> --app 1:726082000637:android:5627f387c8f7218644d094 --project hifz-class-tracker-dece7 --testers "..."
+# firebase appdistribution:distribute <signed.apk> --app 1:726082000637:android:5627f387c8f7218644d094 --project hifz-class-tracker-dece7 --groups hifz-testers
 ```
 Remember to bump `versionCode`/`versionName` in `capacitor-app/android/app/build.gradle` each time.
