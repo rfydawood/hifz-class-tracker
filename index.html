@@ -431,7 +431,7 @@ input,select{font:inherit;color:inherit}
 
   <div class="setup" id="setup"><div class="setup-card">
     <h2>Set up your class</h2>
-    <p class="lede">Two things and you are ready. Everything stays on this computer &mdash; nothing is sent anywhere, and no account is needed.</p>
+    <p class="lede">Two things and you are ready. Your class is saved to your Google account, so it opens on any device you sign in on.</p>
     <label>Your name
       <input id="tName" placeholder="e.g. Ustadh Bilal" oninput="setupCount()">
       <span class="hint">Shown in the corner as &ldquo;[your name]'s Hifz Class&rdquo;.</span>
@@ -446,7 +446,12 @@ input,select{font:inherit;color:inherit}
     </label>
     <div class="setup-actions"><span id="setupCount">0 students</span><button class="btn dark" onclick="finishSetup()">Create my class</button></div>
     <p class="err" id="setupErr"></p>
-    <p class="hint" style="margin-top:14px">Already set up on another device? <a href="#" onclick="event.preventDefault();openJoinPrompt()" style="color:var(--leaf);font-weight:700">Enter your sync code</a> instead.</p>
+  </div></div>
+  <div class="setup" id="signin"><div class="setup-card">
+    <h2>Sign in to your class</h2>
+    <p class="lede">Sign in with your Google account. Your class is saved to it, so the same class opens on any tablet, phone or computer where you sign in &mdash; and nothing is lost if this device is.</p>
+    <button class="btn dark" id="signinBtn" style="width:100%" onclick="signInFromGate()">Sign in with Google</button>
+    <p class="err" id="signinErr"></p>
   </div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
@@ -463,7 +468,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="992388651a",APP_BUILD_TIME="2026-09-26T00:24:39.356Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="d04fb7ec1f",APP_BUILD_TIME="2026-09-26T00:22:06.331Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -623,12 +628,13 @@ function load(){
 }
 
 /* ===== Firestore: the source of truth (IMPLEMENTATION_PLAN.md section 2) =====
-   Personal accounts are organizations of one (2.2) - there is no Google
-   Sign-In yet (that's Phase 4/2.8), so auth stays anonymous and the org's
-   random id plays the role the old "class code" did: knowing it is what
-   "having access" means (see firestore.rules). A second device "joins" by
-   writing its own membership doc for that org id - same trust boundary as
-   before, now a real record instead of an implicit one.
+   Personal accounts are organizations of one (2.2). Since Phase 4 Part A a
+   class belongs to a Google account: users/{uid} lists the classes an
+   account can open, and a second device signs in with the same account to
+   find them (see "Google sign-in" below). Knowing a class's id no longer
+   grants anything - firestore.rules lets in active members only. Devices
+   set up before Part A are anonymous members, still valid; they link to
+   Google keeping the same uid, so their membership carries over as it is.
 
    Offline persistence (enablePersistence) means normal use never talks to
    the network directly - reads come from the local cache and writes queue
@@ -648,8 +654,12 @@ const CLASS_ID='default';                       // one class per personal org - 
 const SESSION_ORG_KEY='session.orgId', SESSION_CLASS_KEY='session.classId', CACHE_KEY='cache.lastClass';
 const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const DEFAULT_FLAG_THRESHOLD=2;                  // org.defaults.flagThreshold - only consumed by the Phase 5 admin dashboard, stored now so the schema doesn't need a later migration
-let fbApp=null, fbDb=null, fbUid=null, fbReady=null;
-let ORG_ID=null, TODAY_ID=null, syncStatus='offline';   // offline | connecting | synced | error
+let fbApp=null, fbDb=null, fbUid=null, fbUser=null, fbReady=null;
+let ORG_ID=null, TODAY_ID=null, syncStatus='offline';   // offline | connecting | synced | error | signedout
+/* The class this device had open but can't reach until someone signs in -
+   its session survived while its sign-in didn't (e.g. app data cleared). */
+let PENDING_ORG=null;
+const EMULATOR=!!new URLSearchParams(location.search).get('emulator');
 /* Which calendar day the session/attendance/breaks currently in memory belong
    to. A day's state must never outlive its day: the instant-paint cache has no
    server round-trip to correct it, so without this the app reopens the next
@@ -675,6 +685,7 @@ function syncStatusLabel(){
   return syncStatus==='synced'?'Synced — changes appear on other devices within seconds'
     :syncStatus==='connecting'?'Connecting…'
     :syncStatus==='error'?'Offline — saved on this device, will sync once you\'re back online'
+    :syncStatus==='signedout'?'Not signed in — sign in with Google to sync this class'
     :'Not synced yet';
 }
 function academicYearId(d){ const y=d.getFullYear(); return d.getMonth()>=7?`${y}-${y+1}`:`${y-1}-${y}`; }
@@ -691,16 +702,18 @@ function initFirestore(){
     try{
       fbApp=firebase.initializeApp(FIREBASE_CONFIG);
       fbDb=firebase.firestore(fbApp);
-      const params=new URLSearchParams(location.search);
-      if(params.get('emulator')){                         // test-only: point at local emulators, never used in production builds
+      if(EMULATOR){                                       // test-only: point at local emulators, never used in production builds
         fbDb.useEmulator('127.0.0.1',8080);
         firebase.auth(fbApp).useEmulator('http://127.0.0.1:9099',{disableWarnings:true});
       }
       try{ await fbDb.enablePersistence({synchronizeTabs:true}); }
       catch(e){ /* failed-precondition (another tab) or unimplemented (old browser) - keep going without persistence, per plan 2.1 */ }
-      await firebase.auth(fbApp).setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      const cred=await firebase.auth(fbApp).signInAnonymously();
-      fbUid=cred.user.uid;
+      const auth=firebase.auth(fbApp);
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      // Whoever is already signed in on this device - read from its own
+      // storage, so it answers offline too. Nobody is signed up
+      // anonymously any more: a new device signs in with Google.
+      setUser(await new Promise(res=>{ const un=auth.onAuthStateChanged(u=>{ un(); res(u); }); }));
       return true;
     }catch(e){ return false; }
   })();
@@ -715,35 +728,38 @@ function dayRef(id){ return classRef().collection('days').doc(id||TODAY_ID); }
 /* One-time creation of a brand-new personal org from whatever is currently
    in `state` (either just-entered setup, or an existing local class being
    upgraded - see bootstrapOrgFromLocal()). Fire-and-forget from the caller:
-   the UI is already updated optimistically before this resolves. */
+   the UI is already updated optimistically before this resolves.
+   One batch: the rules only let an org be created together with its
+   creator's member doc, and a half-made class (an org nobody can open, or a
+   class missing from users/{uid}) is never left behind. Only under a Google
+   account - a class made anonymously could never be found again elsewhere. */
 async function bootstrapOrg(){
   syncStatus='connecting'; render();
   const ok=await initFirestore();
   if(!ok){ syncStatus='error'; render(); scheduleBootstrapRetry(); return false; }
+  if(!isGoogleUser()){ syncStatus='signedout'; render(); return false; }
   try{
-    const code=genSyncCode(), now=firebase.firestore.FieldValue.serverTimestamp();
-    const org=orgRefFor(code);
-    await fsWrite(org.set({
+    const code=genSyncCode(), now=firebase.firestore.FieldValue.serverTimestamp(), today=dayId(new Date());
+    const org=orgRefFor(code), cls=org.collection('classes').doc(CLASS_ID), b=fbDb.batch();
+    b.set(org,{
       schemaVersion:3, name:`${state.teacher||'My'}'s Hifz Class`, kind:'personal',
       activeYearId:academicYearId(new Date()), defaults:settingsToDefaults(state.settings),
       createdAt:now, updatedAt:now
+    });
+    b.set(org.collection('members').doc(fbUid),{
+      email:myEmail(), displayName:state.teacher||fbUser.displayName||'', roles:['admin','teacher'], status:'active', joinedAt:now
+    });
+    b.set(cls,{ name:`${state.teacher||'My'}'s Hifz Class`, teacherUid:fbUid, settingsOverride:null, status:'active' });
+    state.students.forEach((s,i)=>b.set(cls.collection('students').doc(s.id),{
+      name:s.name, active:!!s.active, order:i, enrolledFrom:today, enrolledUntil:null
     }));
-    await fsWrite(org.collection('members').doc(fbUid).set({
-      email:'', displayName:state.teacher||'', roles:['admin','teacher'], status:'active', joinedAt:now
-    }));
-    await fsWrite(org.collection('classes').doc(CLASS_ID).set({
-      name:`${state.teacher||'My'}'s Hifz Class`, teacherUid:fbUid, settingsOverride:null, status:'active'
-    }));
-    await Promise.all(state.students.map((s,i)=>fsWrite(
-      org.collection('classes').doc(CLASS_ID).collection('students').doc(s.id).set({
-        name:s.name, active:!!s.active, order:i, enrolledFrom:dayId(new Date()), enrolledUntil:null
-      })
-    )));
-    await fsWrite(org.collection('classes').doc(CLASS_ID).collection('days').doc(dayId(new Date())).set({
-      date:dayId(new Date()), yearId:academicYearId(new Date()),
+    b.set(cls.collection('days').doc(today),{
+      date:today, yearId:academicYearId(new Date()),
       session:sessionToPlain(state.session), attendance:fullAttendancePlain(), roster:fullRosterPlain(),
       updatedAt:now
-    },{merge:true}));
+    },{merge:true});
+    b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(code),updatedAt:now},{merge:true});
+    await fsWrite(b.commit());
     ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
     sendHeld();
     await attachListeners();
@@ -759,7 +775,7 @@ function scheduleBootstrapRetry(){
   scheduleBootstrapRetry._armed=true;
   window.addEventListener('online',function once(){
     window.removeEventListener('online',once); scheduleBootstrapRetry._armed=false;
-    if(!ORG_ID && state.setup) bootstrapOrg();
+    if(!ORG_ID && state.setup && isGoogleUser()) bootstrapOrg();
   });
 }
 /* Phase 2 minimal migration: an install upgrading from before this version
@@ -767,25 +783,202 @@ function scheduleBootstrapRetry(){
    codepath as a fresh setup. Full day-archive migration is Phase 3. */
 function bootstrapOrgFromLocal(){ bootstrapOrg(); }
 
-async function joinByCode(code){
-  code=(code||'').trim().toUpperCase();
-  if(!code) return toast('Type a sync code first.');
-  syncStatus='connecting';
-  const ok=await initFirestore();
-  if(!ok){ syncStatus='error'; return toast('Could not connect. Check your internet and try again.'); }
+/* ===== Google sign-in (Phase 4 Part A, docs/phase-4.md A4) =====
+   Three ways in:
+   - A device already running a class as an anonymous member (every install
+     before 3.7) LINKS Google to that same user. The uid doesn't change, so
+     its member doc and the class's teacherUid stay valid and nothing moves.
+   - If that Google account already has its own user (signed in somewhere
+     else first), linking is refused with credential-already-in-use. Then the
+     anonymous admin invites that Google email, signs in as it, and claims
+     the invite - which makes the account a member and the class's teacher.
+   - A new device signs in and finds its class through users/{uid}; with no
+     class yet it goes through the normal class setup.
+   Sign-in needs a connection. Once signed in, the account is remembered
+   (LOCAL persistence) and the app works offline exactly as before. */
+function setUser(u){ fbUser=u||null; fbUid=u?u.uid:null; }
+function isGoogleUser(){ return !!(fbUser&&!fbUser.isAnonymous); }
+function myEmail(){
+  if(!fbUser) return '';
+  const g=(fbUser.providerData||[]).find(p=>p&&p.providerId==='google.com');
+  return String(fbUser.email||(g&&g.email)||'').toLowerCase();
+}
+function emailFromIdToken(t){
+  try{ return JSON.parse(t).email||''; }catch(e){}                   // the Auth emulator's unsigned test token
+  try{ return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email||''; }catch(e){ return ''; }
+}
+function nativeAuthPlugin(){
+  const C=window.Capacitor;
+  return C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.FirebaseAuthentication||null;
+}
+/* A Google credential for the web SDK, or null on the website, where the
+   popup does the whole sign-in itself. On the native app the plugin runs
+   Android's own account picker and hands back an ID token only
+   (skipNativeAuth in capacitor.config.json) - the web SDK below stays the
+   one and only signed-in user. Tests (emulator only) supply a token. */
+async function googleCredential(){
+  if(EMULATOR&&window.__hifzTestGoogle) return firebase.auth.GoogleAuthProvider.credential(JSON.stringify(window.__hifzTestGoogle));
+  const P=nativeAuthPlugin();
+  if(P){
+    const r=await P.signInWithGoogle();
+    const t=r&&r.credential&&r.credential.idToken;
+    if(!t) throw Object.assign(new Error('No Google token'),{code:'auth/no-token'});
+    return firebase.auth.GoogleAuthProvider.credential(t);
+  }
+  return null;
+}
+function signInMessage(e){
+  const c=(e&&e.code)||'';
+  if(c==='auth/network-request-failed'||!navigator.onLine) return 'Signing in needs an internet connection. Connect and try again.';
+  if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request'||/cancel/i.test(String(e&&e.message))) return 'Sign-in was cancelled.';
+  if(c==='auth/popup-blocked') return 'The sign-in window was blocked. Allow pop-ups for this site and try again.';
+  return 'Could not sign in. Please try again.';
+}
+/* The sign-in screen: new installs, and anyone signed out. */
+function showSignIn(){ $('setup').classList.remove('show'); $('signinErr').textContent=''; $('signinBtn').disabled=false; $('signin').classList.add('show'); }
+function hideSignIn(){ $('signin').classList.remove('show'); }
+async function signInFromGate(){
+  const btn=$('signinBtn'); btn.disabled=true; $('signinErr').textContent='';
   try{
-    const snap=await orgRefFor(code).get();
-    if(!snap.exists){ syncStatus='error'; return toast('No class found with that code.'); }
-    const now=firebase.firestore.FieldValue.serverTimestamp();
-    await fsWrite(orgRefFor(code).collection('members').doc(fbUid).set({
-      email:'', displayName:'', roles:['admin','teacher'], status:'active', joinedAt:now
-    }));
-    held=[];                                    // anything unsent belonged to this device's previous class, never the one being joined
-    ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
-    await attachListeners();
-    state.setup=true; closeSheet(); $('setup').classList.remove('show'); render();
-    toast('Class loaded — this device will stay in sync.');
-  }catch(e){ syncStatus='error'; toast('Could not join with that code.'); }
+    await signInWithGoogle();
+    await routeSignedIn();
+  }catch(e){ $('signinErr').textContent=signInMessage(e); }
+  finally{ btn.disabled=false; }
+}
+async function signInWithGoogle(){
+  if(!await initFirestore()) throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'});
+  const auth=firebase.auth(fbApp), cred=await googleCredential();
+  const r=cred?await auth.signInWithCredential(cred):await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  setUser(r.user);
+}
+/* The teacher-menu prompt. A device with a class and an anonymous user links;
+   one whose sign-in was lost signs in and picks its class back up. */
+async function signInToKeepClass(){
+  closeSheet(); closeDrawer();
+  try{
+    if(!await initFirestore()) throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'});
+    const u=firebase.auth(fbApp).currentUser;
+    if(u&&u.isAnonymous&&ORG_ID) return await linkAnonymous(u);
+    await signInWithGoogle();
+    await routeSignedIn();
+  }catch(e){ toast(signInMessage(e)); }
+}
+async function linkAnonymous(u){
+  let cred=null;
+  try{
+    cred=await googleCredential();
+    const r=cred?await u.linkWithCredential(cred):await u.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+    setUser(r.user);                                          // same uid as before
+    await recordGoogleAccount(ORG_ID);
+    toast('Signed in — this class is saved to your Google account'); render();
+  }catch(e){
+    if(e&&e.code==='auth/credential-already-in-use'){
+      const c=e.credential||cred;
+      return handOver(c,(e.email||(c&&c.idToken&&emailFromIdToken(c.idToken))||'').toLowerCase());
+    }
+    throw e;
+  }
+}
+/* After linking: the member doc learns who it is, and users/{uid} lists the
+   class so any other device signing in with this account finds it. */
+async function recordGoogleAccount(orgId){
+  const now=firebase.firestore.FieldValue.serverTimestamp(), b=fbDb.batch();
+  b.update(orgRefFor(orgId).collection('members').doc(fbUid),{email:myEmail(),displayName:fbUser.displayName||''});
+  b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(orgId),updatedAt:now},{merge:true});
+  await fsWrite(b.commit());
+}
+/* The Google account already has a user of its own, so it can't be linked.
+   While this device is still the class's anonymous admin it invites that
+   (verified) Google email, then signs in as it and claims the invite, taking
+   over as the class's teacher in the same write. Nothing is copied or moved;
+   the anonymous member doc stays, harmless. */
+async function handOver(cred,email){
+  if(!cred||!email) throw Object.assign(new Error('No Google account email'),{code:'auth/handover'});
+  const orgId=ORG_ID, now=firebase.firestore.FieldValue.serverTimestamp();
+  const inv=orgRefFor(orgId).collection('invites').doc();
+  const invite={email,roles:['admin','teacher'],status:'pending',createdBy:fbUid,createdAt:now,
+    expiresAt:firebase.firestore.Timestamp.fromMillis(Date.now()+7*86400000)};
+  await fsWrite(inv.set(invite));
+  detachListeners();
+  const r=await firebase.auth(fbApp).signInWithCredential(cred);
+  setUser(r.user);
+  await claimInvite(orgId,inv.id,invite,{takeClass:true});
+  await attachListeners();
+  toast('Signed in — this class is saved to your Google account'); render();
+}
+/* Becoming a member through an invite (firestore.rules "claimsInvite"): the
+   member doc with the invite's exact roles and the invite marked claimed go
+   together, or not at all. Already a member (e.g. this account had already
+   been linked on another device): just mark the invite used. */
+async function claimInvite(orgId,inviteId,invite,opts){
+  const org=orgRefFor(orgId), me=org.collection('members').doc(fbUid), now=firebase.firestore.FieldValue.serverTimestamp();
+  let mine=null; try{ mine=await me.get(); }catch(e){}
+  const b=fbDb.batch();
+  if(!(mine&&mine.exists)) b.set(me,{email:myEmail(),displayName:fbUser.displayName||'',roles:invite.roles,status:'active',joinedAt:now,inviteId});
+  b.update(org.collection('invites').doc(inviteId),{status:'claimed',claimedBy:fbUid,claimedAt:now});
+  if(opts&&opts.takeClass) b.update(org.collection('classes').doc(CLASS_ID),{teacherUid:fbUid});
+  b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(orgId),updatedAt:now},{merge:true});
+  await fsWrite(b.commit());
+}
+/* Invites waiting for this account's verified email - a handover cut short
+   (the app closed between the invite and the claim) finishes here. */
+async function claimPendingInvites(){
+  const email=myEmail(); if(!email) return;
+  let qs; try{ qs=await fbDb.collectionGroup('invites').where('email','==',email).get(); }catch(e){ return; }
+  for(const d of qs.docs){
+    const v=d.data();
+    if(v.status!=='pending'||!v.expiresAt||v.expiresAt.toMillis()<Date.now()) continue;
+    try{ await claimInvite(d.ref.parent.parent.id,d.id,v,{}); }catch(e){}
+  }
+}
+/* Signed in: open this account's class. One - straight in; several - pick;
+   none - set one up (or upload the one already on this device). */
+async function routeSignedIn(){
+  syncStatus='connecting'; render();
+  await claimPendingInvites();
+  let orgIds=[];
+  try{ const u=await fbDb.collection('users').doc(fbUid).get(); orgIds=(u.exists&&u.data().orgIds)||[]; }
+  catch(e){ syncStatus='error'; render(); throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'}); }
+  hideSignIn();
+  const want=PENDING_ORG||Store.get(SESSION_ORG_KEY);
+  if(want&&orgIds.includes(want)) return enterOrg(want);
+  if(want&&state.setup&&!orgIds.length){
+    // this device's class isn't on this account - don't set up a new one over it
+    syncStatus='signedout'; render();
+    await firebase.auth(fbApp).signOut(); setUser(null);
+    return toast('That Google account has no class yet. Sign in with the account you used for this class.');
+  }
+  if(orgIds.length===1) return enterOrg(orgIds[0]);
+  if(orgIds.length>1) return openOrgChooser(orgIds);
+  if(state.setup) return bootstrapOrg();                   // a class on this device, not in the cloud yet
+  syncStatus='offline'; render();
+  openSetup();
+}
+async function enterOrg(orgId){
+  if(Store.get(SESSION_ORG_KEY)!==orgId){ held=[]; Store.remove(CACHE_KEY); }     // unsent changes belonged to another class
+  PENDING_ORG=null; hideSignIn(); closeSheet(); $('setup').classList.remove('show');
+  Store.set(SESSION_ORG_KEY,orgId); Store.set(SESSION_CLASS_KEY,CLASS_ID);
+  state.setup=true;
+  await attachToOrg(orgId);
+}
+async function openOrgChooser(orgIds){
+  const names=await Promise.all(orgIds.map(id=>orgRefFor(id).get().then(s=>s.exists&&s.data().name||id,()=>id)));
+  sheetHTML('Which class?','This Google account has more than one class. Pick the one to open on this device.',
+    `<div class="body"><div class="rowlist">${orgIds.map((id,i)=>`<button class="dbtn" onclick="enterOrg('${id}')">${names[i]}</button>`).join('')}</div></div>`);
+}
+/* Sign out. The class stays in the cloud under the account; this device
+   forgets it and goes back to the sign-in screen. Only for Google accounts:
+   an anonymous user signed out could never get back in. */
+function confirmSignOut(){
+  confirmSheet('Sign out on this device?','Your class stays safe in the cloud. Sign in again with the same Google account - here or on any device - to open it.','Sign out',signOut,'warn','Stay signed in');
+}
+async function signOut(){
+  if(!isGoogleUser()) return closeSheet();
+  detachListeners();
+  try{ await firebase.auth(fbApp).signOut(); }catch(e){}
+  Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
+  Store.remove(KEY); Store.remove(PKEY);                   // legacy copies of the class; the cloud has it
+  location.reload();
 }
 
 function detachListeners(){ [unsubOrg,unsubClass,unsubStudents,unsubDay,unsubBreaks].forEach(u=>u&&u()); unsubOrg=unsubClass=unsubStudents=unsubDay=unsubBreaks=null; }
@@ -797,6 +990,11 @@ async function attachToOrg(orgId){
     // back online - do NOT fall back to setup just because we can't reach
     // the network yet (plan 2.1: the app must keep working offline).
     ORG_ID=orgId; syncStatus='error'; render(); scheduleBootstrapRetry(); return;
+  }
+  if(!fbUid){
+    // The class is on screen from the cache but nobody is signed in here any
+    // more. Keep working locally; changes wait in `held` until sign-in.
+    PENDING_ORG=orgId; syncStatus='signedout'; render(); return;
   }
   try{
     const snap=await orgRefFor(orgId).get();
@@ -1104,27 +1302,16 @@ window.__hifzTestReadDay=async function(id){
 
 function openSyncInfo(){
   closeDrawer();
-  if(!ORG_ID){
-    return sheetHTML('Sync','Still connecting this class to the cloud — try again in a moment.',
-      `<div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
-  }
-  sheetHTML('Sync code','Use this code on another device (teacher menu → Sync → enter this code below) to see this exact class live there.',
+  const google=isGoogleUser();
+  const who=google?`Signed in as <b>${myEmail()}</b>`:'Not signed in with Google';
+  sheetHTML('Sync',google?'This class is saved to your Google account. Sign in with it on any device to open the same class.'
+      :'Sign in with Google to keep this class on your account. It stays exactly as it is - same students, same days - and you can then open it on any device.',
     `<div class="body">
-      <div style="font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:10px">${ORG_ID}</div>
-      <p style="color:var(--mute);font-size:13px;line-height:1.5;margin-bottom:14px"><b>Keep it private</b> — anyone with this code can see and change this class's data, so treat it like a password.</p>
+      <p style="font-size:15px;margin-bottom:8px">${who}</p>
       <p style="font-size:14px;font-weight:700">Status: ${syncStatusLabel()}</p>
-      <div class="note"><input id="joinCode" placeholder="Or enter a different sync code to switch classes"></div>
      </div>
-     <div class="actions"><button class="btn ghost" onclick="joinByCode(($('joinCode')||{}).value)">Switch to that code</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
-}
-
-function openJoinPrompt(){
-  // .setup sits above .scrim (z-index 80 vs 20), so the sheet would render
-  // invisibly behind it if left showing - hide it first, restore it on Cancel.
-  $('setup').classList.remove('show');
-  sheetHTML('Enter your sync code','Type the code shown on your other device\'s teacher menu → Sync.',
-    `<div class="body"><div class="note"><input id="joinCode2" placeholder="e.g. AB3XQ-7KLMN" autocapitalize="characters"></div></div>
-     <div class="actions"><button class="btn ghost" onclick="closeSheet();$('setup').classList.add('show')">Cancel</button><button class="btn dark" onclick="joinByCode(($('joinCode2')||{}).value)">Load my class</button></div>`);
+     <div class="actions">${google?`<button class="btn ghost" onclick="confirmSignOut()">Sign out</button>`
+       :`<button class="btn dark" onclick="signInToKeepClass()">Sign in with Google</button>`}<button class="btn ${google?'dark':'ghost'}" onclick="closeSheet()">Done</button></div>`);
 }
 
 function toast(msg,undoable){
@@ -1577,7 +1764,7 @@ function drawRosterList(){
   $('rosterList').innerHTML=setupStudents.length?setupStudents.map(n=>`<div class="roster-item"><span>${n}</span><button onclick="removeSetupStudent('${n.replace(/'/g,"\\'")}')">${n}</button></div>`).join(''):
     `<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">No students yet</div>`;
 }
-function openSetup(){ setupStudents=[]; $('setup').classList.add('show'); $('tName').value=state.teacher||''; drawRosterList(); setupCount(); $('tStudent').focus(); }
+function openSetup(){ setupStudents=[]; $('setup').classList.add('show'); $('tName').value=state.teacher||(fbUser&&fbUser.displayName)||''; drawRosterList(); setupCount(); $('tStudent').focus(); }
 function finishSetup(){
   const name=($('tName').value||'').replace(/[<>"'\`]/g,'').trim();
   if(!name) return $('setupErr').textContent='Please add your name.';
@@ -1645,15 +1832,6 @@ function restoreBackup(input){
   };
   r.readAsText(f); input.value='';
 }
-function startFresh(){
-  confirmSheet('Stop syncing this class on this device?','This device stops following this class online and forgets its local copy. Nothing already saved to the cloud is deleted - use a sync code to bring it back. Download a backup first if you want a local copy.','Disconnect this device',()=>{
-    detachListeners();
-    Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
-    Store.remove(KEY); Store.remove(PKEY); Store.remove(HKEY);
-    location.reload();
-  });
-}
-
 /* ===== legacy local history (HKEY) - read-only from here on =====
    Firestore day docs are the source of truth for reports now (Phase 3).
    HKEY is kept only as: (a) the migration source in migrateLegacyHistoryIfNeeded()
@@ -1847,6 +2025,7 @@ function closeDrawer(){ $('drawer').classList.remove('show'); $('drawerScrim').c
 function drawDrawer(){
   const s=st(), set=state.settings;
   $('dbody').innerHTML=`
+   ${isGoogleUser()?'':`<button class="dbtn gold" onclick="signInToKeepClass()">Sign in with Google<small>Keeps this class on your Google account, safe and on every device you use</small></button>`}
    <h4>Class-wide</h4>
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Snack break','${set.snack.end}')">Start snack break<small>Scheduled ${hm(set.snack.start)} to ${hm(set.snack.end)}</small></button>`:''}
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
@@ -1873,7 +2052,7 @@ function drawDrawer(){
    <h4>Today's log</h4>
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
    <h4>Sync</h4>
-   <button class="dbtn" onclick="openSyncInfo()">${ORG_ID?`This device is synced<small>${syncStatusLabel()}</small>`:'Connecting…<small>This class will be available on other devices shortly</small>'}</button>
+   <button class="dbtn" onclick="openSyncInfo()">${isGoogleUser()?`Signed in as ${myEmail()}<small>${syncStatusLabel()}</small>`:ORG_ID?`Not signed in with Google<small>${syncStatusLabel()}</small>`:`Not synced yet<small>${syncStatusLabel()}</small>`}</button>
    <h4>Backup</h4>
    ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
      :`<button class="dbtn" onclick="closeDrawer();backupAll()">Download a backup<small>Every day this class has recorded, saved as a file</small></button>`}
@@ -2107,9 +2286,13 @@ function tick(){
   if(sessionOrgId){
     await attachToOrg(sessionOrgId);
   } else if(state.setup){
-    bootstrapOrgFromLocal();                    // pre-Phase-2 install: has a class locally, no org yet
+    bootstrapOrgFromLocal();                    // pre-Phase-2 install: has a class locally, no org yet - uploads once signed in
   } else {
-    openSetup();
+    // New install: sign in first. Already signed in with Google (e.g. the
+    // class was removed from this device) - go straight to its class.
+    await initFirestore();
+    if(isGoogleUser()){ try{ await routeSignedIn(); }catch(e){ showSignIn(); } }
+    else showSignIn();
   }
 })();
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
