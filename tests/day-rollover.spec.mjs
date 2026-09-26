@@ -19,7 +19,7 @@ function cacheFor(dayStamp) {
     teacher: 'Ustadh Rollover',
     students,
     settings: {},
-    session: { status: 'ended', startedAt: Date.now() - 7200e3, endedAt: Date.now() - 60e3, lunchAt: null, pauseLabel: null, resumeAt: null },
+    session: { status: 'ended', startedAt: Math.max(new Date().setHours(0, 0, 0, 0), Date.now() - 7200e3), endedAt: Date.now() - 60e3, lunchAt: null, pauseLabel: null, resumeAt: null },
     attendance,
     active: {},
     breaks: [{ sid: 's0', reason: 'washroom', startAt: Date.now() - 3600e3, endAt: Date.now() - 3000e3, dur: 600e3, over: 180e3, flag: true, allowMs: 420e3, assignedMin: null, overTrip: false }],
@@ -61,7 +61,7 @@ test("the same day's session is still restored instantly", async ({ page }) => {
   await bootWithCache(page, stamp(new Date()));
 
   await expect(page.locator('.banner')).toContainText('Class ended at');
-  await expect(page.locator('#mainBtn')).toHaveText('Start again');
+  await expect(page.locator('#mainBtn')).toHaveText('Resume class');     // an ended class from today carries on, see tests/resume-class.spec.mjs
   await expect(page.locator('#cAbs')).toHaveText('1');
   expect(await page.evaluate(() => state.breaks.length)).toBe(1);
 });

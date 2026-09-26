@@ -463,7 +463,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="9ab6af8bf2",APP_BUILD_TIME="2026-09-23T20:44:56.619Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="992388651a",APP_BUILD_TIME="2026-09-26T00:24:39.356Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1375,7 +1375,18 @@ function ret(sid,silent,endAt){
 }
 
 /* ===== class-wide ===== */
-function mainAction(){ const s=st(); if(s==='preclass'||s==='ended') doStart(); else if(s==='lunch') endPause(); else endClass(); }
+function mainAction(){ const s=st(); if(canResume()) resumeClass(); else if(s==='preclass'||s==='ended') doStart(); else if(s==='lunch') endPause(); else endClass(); }
+/* Ending class and tapping the main button again used to run doStart(), which
+   set a new start time over the day's real one - the owner lost a whole day's
+   start time that way on Sep 23. An ended class that started today is picked
+   up where it left off instead: same start time, attendance untouched. */
+function canResume(){ const s=state.session; return s.status==='ended'&&!!s.startedAt&&dayId(new Date(s.startedAt))===dayId(new Date()); }
+function resumeClass(){
+  const now=new Date();
+  state.session.status='live'; state.session.endedAt=null;
+  logIt('Class resumed');
+  writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast(`Class resumed at ${clockStr(now)}`); render();
+}
 function doStart(){
   const now=new Date(); state.session={status:'live',startedAt:now,endedAt:null,lunchAt:null};
   state.students.forEach(s=>{ const a=att(s.id); if(a.status==='present'){ a.at=now; } });
@@ -1841,7 +1852,8 @@ function drawDrawer(){
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
    ${s==='lunch'?`<button class="dbtn leaf" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button>`:''}
    ${s==='live'||s==='lunch'?`<button class="dbtn ember" onclick="endClass()">End class<small>Closes open breaks</small></button>`:''}
-   ${s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}
+   ${canResume()?`<button class="dbtn leaf" onclick="resumeClass()">Resume class<small>Carries on today's class from ${clockStr(state.session.startedAt)}</small></button>`
+     :s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}
    <h4>Review</h4>
    <button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, left early, absent</small></button>
    <button class="dbtn" onclick="openDaySummary()">Day summary<small>Attendance and break totals per student</small></button>
@@ -1862,6 +1874,9 @@ function drawDrawer(){
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
    <h4>Sync</h4>
    <button class="dbtn" onclick="openSyncInfo()">${ORG_ID?`This device is synced<small>${syncStatusLabel()}</small>`:'Connecting…<small>This class will be available on other devices shortly</small>'}</button>
+   <h4>Backup</h4>
+   ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
+     :`<button class="dbtn" onclick="closeDrawer();backupAll()">Download a backup<small>Every day this class has recorded, saved as a file</small></button>`}
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
@@ -1882,7 +1897,7 @@ function render(){
     : `Ended ${clockStr(state.session.endedAt)}`;
 
   const mb=$('mainBtn'); mb.className='start-btn'+(s==='live'?' end':s==='lunch'?' lunch':'');
-  mb.textContent= s==='preclass'?'Start class':s==='live'?'End class':s==='lunch'?'End break':'Start again';
+  mb.textContent= s==='preclass'?'Start class':s==='live'?'End class':s==='lunch'?'End break':canResume()?'Resume class':'Start again';
 
   const due=s==='live'?dueBreak():null; render.nudge=due?due.kind:'';
   const late=state.session.resumeAt&&nowMin()>=toMin(state.session.resumeAt);
@@ -2046,11 +2061,11 @@ function fitHeader(){
   if(fitHeader.key===key) return; fitHeader.key=key;
   const upright=innerHeight>innerWidth && innerWidth<=860;
   top.classList.remove('stacked');
-  // The main button reads Start class / End class / End break / Start again
+  // The main button reads Start class / End class / End break / Resume class / Start again
   // through the day; measure with the widest so a state change can't flip it.
   const mb=$('mainBtn'), label=mb.textContent;
   let widest=label, ww=0;
-  for(const t of ['Start class','End class','End break','Start again']){ mb.textContent=t; if(mb.offsetWidth>ww){ ww=mb.offsetWidth; widest=t; } }
+  for(const t of ['Start class','End class','End break','Resume class','Start again']){ mb.textContent=t; if(mb.offsetWidth>ww){ ww=mb.offsetWidth; widest=t; } }
   mb.textContent=widest;
   let stack=upright || h1.scrollWidth>h1.clientWidth+1;
   if(!stack){
