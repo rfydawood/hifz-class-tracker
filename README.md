@@ -17,14 +17,14 @@ A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`c
 
 **Trade-off of going fully native:** unlike the old wrapper, this app's content is bundled at build time, so a code change no longer shows up automatically — it needs a new build pushed to Firebase App Distribution (see "Rebuilding the native app" below). The web app / PWA above is unaffected and still updates instantly.
 
-## Cloud sync (sync codes)
+## Cloud sync (Google accounts)
 
-Every class lives in Firestore from the moment it's set up — this isn't optional anymore (see `IMPLEMENTATION_PLAN.md` Phase 2). The app still works fully offline (Firestore's local cache queues writes and flushes them on reconnect); there just isn't a separate localStorage copy competing with it.
+Every class lives in Firestore from the moment it's set up (see `IMPLEMENTATION_PLAN.md` Phase 2). The app still works fully offline (Firestore's local cache queues writes and flushes them on reconnect); there just isn't a separate localStorage copy competing with it.
 
-- Setting up a class creates a private, randomly generated **sync code** (e.g. `AB3XQ-7KLMN`) shown in the teacher menu → **Sync**. This is the class's id in the cloud.
-- On another device, entering that same code (teacher menu → Sync → "Enter your sync code" on first launch, or "Switch to that code" from an existing class) attaches that device to the same live class — changes on either device appear on the other within seconds.
-- **The code is the only "password."** There's no separate login — anyone who has the exact code can read and write that class's data, the same way anyone with a shared link could. Codes are long, random, and never listable/guessable from outside, but they should still be kept as private as a password.
-- Backend: Firebase project `hifz-class-tracker-dece7`, Firestore (`firestore.rules` in this repo — an `orgs/{orgId}` tree per personal account, access gated on a real per-device membership document, not listable), Anonymous Authentication (silent, one identity per device/install — Google Sign-In is a later phase). Both were provisioned via `firebase deploy --only firestore,auth` — see `firebase.json`.
+- Since 3.7 (Phase 4 Part A, `docs/phase-4.md`) a class belongs to a **Google account**. A new install starts with **Sign in with Google**; the class is saved to that account, and signing in with the same account on any other device opens the same live class. Teacher menu → **Sync** shows who is signed in, and **Sign out**.
+- Installs from before 3.7 were anonymous. They keep working as they are, and the teacher menu offers **Sign in with Google**, which *links* the account to the same user - nothing is moved.
+- The old **sync code** (e.g. `AB3XQ-7KLMN`) is still the class's id in the cloud, but it no longer grants access to anything: the rules let in active members only. Becoming a member means creating the class, or claiming an invite sent to your own verified Google email (used for the handover described in `docs/phase-4.md` A4; teacher invites are Part B).
+- Backend: Firebase project `hifz-class-tracker-dece7`, Firestore (`firestore.rules` - an `orgs/{orgId}` tree per class, `users/{uid}` listing each account's classes; `firestore.indexes.json` - the invites email index), Firebase Auth with the Google provider (and Anonymous, still enabled for pre-3.7 installs - never disable it). Deploy with `firebase deploy --only firestore --project hifz-class-tracker-dece7`.
 - Test rule changes against the emulator before deploying: `npm run test:rules`. Test the live sync/offline behavior itself with `npm run test:e2e` (Playwright; starts and stops the Firestore + Auth emulators itself).
 
 ## Repo layout
