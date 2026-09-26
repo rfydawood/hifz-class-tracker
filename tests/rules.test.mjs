@@ -4,9 +4,10 @@
 // Start the emulator first:  firebase emulators:start --only firestore
 // Then run:                  node --test tests/rules.test.mjs
 //
-// Phase 2 scope: personal orgs only (one member, roles ['admin','teacher']).
-// Full admin/teacher separation and invites are Phase 4 and are not tested
-// here because they don't exist yet.
+// Phase 4 Part A (docs/phase-4.md A5): membership is the only way in, and
+// there are two ways to become a member - create a new org with your own
+// member doc in the same batch, or claim an invite sent to your verified
+// email. Member docs from before (anonymous devices) keep working.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -79,6 +80,12 @@ async function seedOrgWithMember(uid) {
   });
 }
 
+async function addMember(uid, overrides = {}) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).collection('members').doc(uid).set(memberDoc(overrides));
+  });
+}
+
 test('unauthenticated user cannot read an org', async () => {
   await seedOrgWithMember('uidA');
   const db = testEnv.unauthenticatedContext().firestore();
@@ -90,50 +97,83 @@ test('unauthenticated user cannot create an org', async () => {
   await assertFails(db.collection('orgs').doc(ORG_ID).set(orgDoc()));
 });
 
-test('a fresh authenticated user can create a brand-new org and join it as a member', async () => {
+test('a signed-in user creates a new org in one batch with their own member doc, class, students and users entry', async () => {
+  const db = testEnv.authenticatedContext('uidA', { email: 'bilal@example.com', email_verified: true }).firestore();
+  const org = db.collection('orgs').doc(ORG_ID);
+  const batch = db.batch();
+  batch.set(org, orgDoc());
+  batch.set(org.collection('members').doc('uidA'), memberDoc({ email: 'bilal@example.com' }));
+  batch.set(org.collection('classes').doc(CLASS_ID), classDoc({ teacherUid: 'uidA' }));
+  for (let i = 0; i < 14; i++) {
+    batch.set(org.collection('classes').doc(CLASS_ID).collection('students').doc('s' + i),
+      { name: 'Student ' + i, active: true, order: i, enrolledFrom: '2026-09-25', enrolledUntil: null });
+  }
+  batch.set(org.collection('classes').doc(CLASS_ID).collection('days').doc('2026-09-25'),
+    { date: '2026-09-25', yearId: '2026-2027', attendance: {}, roster: {}, updatedAt: null });
+  batch.set(db.collection('users').doc('uidA'), { orgIds: [ORG_ID], updatedAt: null });
+  await assertSucceeds(batch.commit());
+  await assertSucceeds(org.get());
+});
+
+test('an org cannot be created on its own, without the creator\'s member doc', async () => {
   const db = testEnv.authenticatedContext('uidA').firestore();
-  await assertSucceeds(db.collection('orgs').doc(ORG_ID).set(orgDoc()));
-  await assertSucceeds(
-    db.collection('orgs').doc(ORG_ID).collection('members').doc('uidA').set(memberDoc())
-  );
-  // now a member: can read the org and write the class doc
-  await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
-  await assertSucceeds(
-    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).set(classDoc({ teacherUid: 'uidA' }))
-  );
+  await assertFails(db.collection('orgs').doc(ORG_ID).set(orgDoc()));
+});
+
+test('a new org\'s creator must be admin and teacher', async () => {
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const org = db.collection('orgs').doc(ORG_ID);
+  const batch = db.batch();
+  batch.set(org, orgDoc());
+  batch.set(org.collection('members').doc('uidA'), memberDoc({ roles: ['teacher'] }));
+  await assertFails(batch.commit());
+});
+
+test('Part A creates personal orgs only', async () => {
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const org = db.collection('orgs').doc(ORG_ID);
+  const batch = db.batch();
+  batch.set(org, orgDoc({ kind: 'organization' }));
+  batch.set(org.collection('members').doc('uidA'), memberDoc());
+  await assertFails(batch.commit());
 });
 
 test('creating an org doc at an id that already exists is rejected (cannot overwrite someone else\'s org via create)', async () => {
   await seedOrgWithMember('uidA');
   const db = testEnv.authenticatedContext('uidB').firestore();
-  await assertFails(db.collection('orgs').doc(ORG_ID).set(orgDoc({ name: 'Hijacked' })));
+  const org = db.collection('orgs').doc(ORG_ID);
+  const batch = db.batch();
+  batch.set(org, orgDoc({ name: 'Hijacked' }));
+  batch.set(org.collection('members').doc('uidB'), memberDoc());
+  await assertFails(batch.commit());
 });
 
-test('a user who has not joined can read the bare org doc (to verify a sync code before joining) but not its classroom data', async () => {
+test('a stranger who knows the org id can neither read it nor join it (the old sync-code hole)', async () => {
   await seedOrgWithMember('uidA');
-  const db = testEnv.authenticatedContext('uidB').firestore();
-  // this is how joinByCode() confirms a code is real before writing a member doc
-  await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
-  await assertFails(
-    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).get()
-  );
-  await assertFails(
-    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID)
-      .set(classDoc({ teacherUid: 'uidB' }))
-  );
+  for (const token of [undefined, { email: 'someone@example.com', email_verified: true }]) {
+    const db = testEnv.authenticatedContext('uidB', token).firestore();
+    const org = db.collection('orgs').doc(ORG_ID);
+    await assertFails(org.get());
+    await assertFails(org.collection('classes').doc(CLASS_ID).get());
+    // the old self-join: write your own member doc for a known id
+    await assertFails(org.collection('members').doc('uidB').set(memberDoc({ displayName: 'Second device' })));
+    await assertFails(org.collection('classes').doc(CLASS_ID).collection('students').doc('s1')
+      .set({ name: 'Amina', active: true, order: 0, enrolledFrom: '2025-09-01', enrolledUntil: null }));
+  }
 });
 
-test('a second device joining with the same org id (its own uid) gains real access - this is how cross-device sync attaches', async () => {
+test('an existing anonymous member (joined before Part A) still reads and runs the class', async () => {
   await seedOrgWithMember('uidA');
-  const db = testEnv.authenticatedContext('uidB').firestore();
-  await assertSucceeds(
-    db.collection('orgs').doc(ORG_ID).collection('members').doc('uidB').set(memberDoc({ displayName: 'Second device' }))
-  );
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).collection('members').doc('anonDevice').set(memberDoc({ displayName: '' }));
+  });
+  const db = testEnv.authenticatedContext('anonDevice', { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+  const cls = db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID);
   await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
-  await assertSucceeds(
-    db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('students').doc('s1')
-      .set({ name: 'Amina', active: true, order: 0, enrolledFrom: '2025-09-01', enrolledUntil: null })
-  );
+  await assertSucceeds(cls.collection('days').doc('2026-09-25').set({ date: '2026-09-25', yearId: '2026-2027', attendance: {}, roster: {} }));
+  await assertSucceeds(cls.collection('days').doc('2026-09-25').collection('breaks').doc('b1')
+    .set({ sid: 's1', reason: 'water', startAt: 1, endAt: null, dur: null, over: null, flag: null, overTrip: false, assignedMin: 2 }));
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).set(orgDoc({ defaults: { startTime: '08:30' } }), { merge: true }));
 });
 
 test('a member cannot create a member doc for someone else\'s uid', async () => {
@@ -144,10 +184,24 @@ test('a member cannot create a member doc for someone else\'s uid', async () => 
   );
 });
 
-test('members cannot be listed', async () => {
+test('members cannot be listed by a non-admin', async () => {
   await seedOrgWithMember('uidA');
-  const db = testEnv.authenticatedContext('uidA').firestore();
-  await assertFails(db.collection('orgs').doc(ORG_ID).collection('members').get());
+  await addMember('uidT', { roles: ['teacher'] });
+  const teacher = testEnv.authenticatedContext('uidT').firestore();
+  await assertFails(teacher.collection('orgs').doc(ORG_ID).collection('members').get());
+  const admin = testEnv.authenticatedContext('uidA').firestore();
+  await assertSucceeds(admin.collection('orgs').doc(ORG_ID).collection('members').get());
+});
+
+test('a member may change their own email and name, but not their roles or status, and never delete', async () => {
+  await seedOrgWithMember('uidA');
+  await addMember('uidT', { roles: ['teacher'] });
+  const db = testEnv.authenticatedContext('uidT').firestore();
+  const me = db.collection('orgs').doc(ORG_ID).collection('members').doc('uidT');
+  await assertSucceeds(me.update({ email: 'bilal@example.com', displayName: 'Bilal' }));
+  await assertFails(me.update({ roles: ['admin', 'teacher'] }));
+  await assertFails(me.update({ status: 'revoked' }));
+  await assertFails(me.delete());
 });
 
 test('orgs cannot be listed', async () => {
@@ -288,4 +342,154 @@ test('migration\'s "read then conditionally create" pattern works inside a trans
       tx.set(outsiderRef, { date: '2025-09-12', yearId: '2025-2026', attendance: {}, roster: {} });
     }
   }));
+});
+
+// ---- Part A: users/{uid}, invites and the claim ----
+
+test('users/{uid} is readable and writable only by that uid, with a size-capped orgIds list', async () => {
+  const me = testEnv.authenticatedContext('uidA').firestore();
+  const other = testEnv.authenticatedContext('uidB').firestore();
+  await assertSucceeds(me.collection('users').doc('uidA').set({ orgIds: [ORG_ID], updatedAt: null }));
+  await assertSucceeds(me.collection('users').doc('uidA').get());
+  await assertFails(other.collection('users').doc('uidA').get());
+  await assertFails(other.collection('users').doc('uidA').set({ orgIds: ['X'], updatedAt: null }));
+  await assertFails(me.collection('users').doc('uidA').set({ orgIds: [ORG_ID], extra: 1 }));
+  await assertFails(me.collection('users').doc('uidA').set({ orgIds: Array.from({ length: 51 }, (_, i) => 'o' + i) }));
+  await assertFails(me.collection('users').get());
+});
+
+const DAY = 86400000;
+function inviteDoc(overrides = {}) {
+  return {
+    email: 'bilal@example.com', roles: ['admin', 'teacher'], status: 'pending',
+    createdBy: 'uidA', createdAt: null,
+    expiresAt: firebase.firestore.Timestamp.fromMillis(Date.now() + 7 * DAY),
+    ...overrides,
+  };
+}
+async function seedInvite(id, overrides = {}) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).collection('invites').doc(id).set(inviteDoc(overrides));
+  });
+}
+function claimBatch(db, uid, inviteId, memberOverrides = {}, inviteOverrides = {}) {
+  const org = db.collection('orgs').doc(ORG_ID);
+  const batch = db.batch();
+  batch.set(org.collection('members').doc(uid), memberDoc({ email: 'bilal@example.com', inviteId, ...memberOverrides }));
+  batch.update(org.collection('invites').doc(inviteId), { status: 'claimed', claimedBy: uid, claimedAt: null, ...inviteOverrides });
+  return batch;
+}
+const bilal = (verified = true, email = 'bilal@example.com') =>
+  testEnv.authenticatedContext('uidG', { email, email_verified: verified }).firestore();
+
+test('an admin can create an invite; a non-admin cannot', async () => {
+  await seedOrgWithMember('uidA');
+  await addMember('uidT', { roles: ['teacher'] });
+  const admin = testEnv.authenticatedContext('uidA').firestore();
+  const teacher = testEnv.authenticatedContext('uidT').firestore();
+  const inv = (db) => db.collection('orgs').doc(ORG_ID).collection('invites').doc('i1');
+  await assertFails(inv(teacher).set(inviteDoc({ createdBy: 'uidT' })));
+  await assertFails(inv(admin).set(inviteDoc({ email: 'Bilal@Example.com' })));      // must be stored lowercased
+  await assertSucceeds(inv(admin).set(inviteDoc()));
+});
+
+test('claiming an invite with a matching verified email makes you a member with exactly its roles', async () => {
+  await seedOrgWithMember('uidA');
+  await seedInvite('i1');
+  const db = bilal();
+  await assertSucceeds(claimBatch(db, 'uidG', 'i1').commit());
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).get());
+});
+
+test('the claim works for a mixed-case Google email', async () => {
+  await seedOrgWithMember('uidA');
+  await seedInvite('i1');
+  await assertSucceeds(claimBatch(bilal(true, 'Bilal@Example.com'), 'uidG', 'i1').commit());
+});
+
+test('the claim is refused for an unverified email, a different email, other roles, an expired or used invite, or without marking it claimed', async () => {
+  await seedOrgWithMember('uidA');
+  await seedInvite('i1');
+  await assertFails(claimBatch(bilal(false), 'uidG', 'i1').commit());
+  await assertFails(claimBatch(bilal(true, 'someone@example.com'), 'uidG', 'i1').commit());
+  await assertFails(claimBatch(bilal(), 'uidG', 'i1', { roles: ['admin', 'teacher', 'teacher'] }).commit());
+  await assertFails(claimBatch(bilal(), 'uidG', 'i1', {}, { claimedBy: 'someoneElse' }).commit());
+  const db = bilal();
+  await assertFails(db.collection('orgs').doc(ORG_ID).collection('members').doc('uidG')
+    .set(memberDoc({ email: 'bilal@example.com', inviteId: 'i1' })));     // member doc alone, invite untouched
+
+  await seedInvite('i2', { expiresAt: firebase.firestore.Timestamp.fromMillis(Date.now() - DAY) });
+  await assertFails(claimBatch(bilal(), 'uidG', 'i2').commit());
+  await seedInvite('i3', { status: 'claimed', claimedBy: 'uidX' });
+  await assertFails(claimBatch(bilal(), 'uidG', 'i3').commit());
+  await seedInvite('i4', { status: 'revoked' });
+  await assertFails(claimBatch(bilal(), 'uidG', 'i4').commit());
+});
+
+test('an anonymous user cannot claim an invite', async () => {
+  await seedOrgWithMember('uidA');
+  await seedInvite('i1');
+  const anon = testEnv.authenticatedContext('uidG', { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+  await assertFails(claimBatch(anon, 'uidG', 'i1').commit());
+});
+
+test('the invitee finds their own invite by email, and may only flip it to claimed', async () => {
+  await seedOrgWithMember('uidA');
+  await seedInvite('i1');
+  const db = bilal();
+  const qs = await assertSucceeds(db.collectionGroup('invites').where('email', '==', 'bilal@example.com').get());
+  assert.equal(qs.docs.length, 1);
+  const ref = db.collection('orgs').doc(ORG_ID).collection('invites').doc('i1');
+  await assertFails(ref.update({ roles: ['teacher'], status: 'claimed', claimedBy: 'uidG' }));     // roles are not theirs to change
+  await assertFails(ref.update({ status: 'claimed', claimedBy: 'uidX' }));                       // nor to claim for someone else
+  await assertFails(ref.update({ status: 'revoked' }));
+});
+
+test('invites cannot be listed by anyone but the org\'s admins', async () => {
+  await seedOrgWithMember('uidA');
+  await addMember('uidT', { roles: ['teacher'] });
+  await seedInvite('i1');
+  const admin = testEnv.authenticatedContext('uidA').firestore();
+  await assertSucceeds(admin.collection('orgs').doc(ORG_ID).collection('invites').get());
+  const teacher = testEnv.authenticatedContext('uidT', { email: 'teacher@example.com', email_verified: true }).firestore();
+  await assertFails(teacher.collection('orgs').doc(ORG_ID).collection('invites').get());
+  const stranger = testEnv.authenticatedContext('uidS', { email: 'stranger@example.com', email_verified: true }).firestore();
+  await assertFails(stranger.collectionGroup('invites').get());
+  await assertFails(stranger.collectionGroup('invites').where('email', '==', 'bilal@example.com').get());
+  await assertFails(testEnv.unauthenticatedContext().firestore().collectionGroup('invites').get());
+});
+
+test('handover: the claim can also make the new account the class\'s teacher, in the same batch', async () => {
+  await seedOrgWithMember('uidA');
+  await seedInvite('i1');
+  const db = bilal();
+  const batch = claimBatch(db, 'uidG', 'i1');
+  batch.update(db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID), { teacherUid: 'uidG' });
+  batch.set(db.collection('users').doc('uidG'), { orgIds: [ORG_ID], updatedAt: null });
+  await assertSucceeds(batch.commit());
+});
+
+test('in a shared (non-personal) org only the class\'s own teacher runs the class; an admin reads but does not operate', async () => {
+  await seedOrgWithMember('uidA');
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).update({ kind: 'organization' });
+  });
+  await addMember('uidT', { roles: ['teacher'] });
+  await addMember('uidAdm', { roles: ['admin'] });
+  await addMember('uidT2', { roles: ['teacher'] });
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).update({ teacherUid: 'uidT' });
+  });
+  const day = (uid) => testEnv.authenticatedContext(uid).firestore()
+    .collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('days').doc('2026-09-25');
+  const doc = { date: '2026-09-25', yearId: '2026-2027', attendance: {}, roster: {} };
+  await assertSucceeds(day('uidT').set(doc));
+  await assertFails(day('uidAdm').set(doc));
+  await assertFails(day('uidT2').set(doc));
+  await assertSucceeds(day('uidAdm').get());
+  const roster = testEnv.authenticatedContext('uidAdm').firestore()
+    .collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('students').doc('s9');
+  await assertSucceeds(roster.set({ name: 'Yusuf', active: true, order: 9, enrolledFrom: '2026-09-25', enrolledUntil: null }));
+  const settings = testEnv.authenticatedContext('uidT').firestore().collection('orgs').doc(ORG_ID);
+  await assertFails(settings.set({ defaults: { startTime: '07:00' } }, { merge: true }));   // teacher can't write org defaults
 });

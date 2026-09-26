@@ -1,55 +1,95 @@
 rules_version = '2';
 
-// Data model (see IMPLEMENTATION_PLAN.md section 2.2 and 6).
+// Data model: IMPLEMENTATION_PLAN.md section 2.2. Rules: section 6.
+// Phase 4 Part A (docs/phase-4.md A5).
 //
-// Personal accounts are organizations with one member (Phase 2 scope - see
-// plan section 2.2, "do not build two models"). There is no Google Sign-In
-// yet (that is Phase 4 / plan section 2.8), so auth is still anonymous.
-// orgId plays the same role the old "class code" did: a long, random,
-// never-listed id. Knowing it is what "having access" means, exactly like
-// the blob-based rules this file replaces. What's new is that *joining* an
-// org from a second device now happens explicitly, by creating a `members`
-// document for that device's own anonymous uid - so rules can key
-// read/write off real membership instead of "anyone who can reach this doc
-// at all". Admin/teacher role separation and invites are Phase 4 - every
-// member created in this phase is ['admin','teacher'], which is correct for
-// a one-person org and forward-compatible with the org schema.
+// Access is membership. An org is readable only by its active members; the
+// old "know the sync code and you're in" (a signed-in user could read any org
+// by id and write their own member doc into it) is closed. There are exactly
+// two ways to become a member:
+//   (a) create a brand-new org, with your own member doc in the same batch;
+//   (b) claim a pending invite sent to your own verified email address.
+// Member docs written before Part A - anonymous devices that joined by code -
+// stay valid: nothing below asks a member for an email or a Google account.
+//
+// Write rules read membership with getAfter(): what counts is the state the
+// write leaves behind, which is what lets a new org, its member, its class
+// and its students be created in one batch. That is no looser than get():
+// the member doc in that state has itself passed the member rules below.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
+    function orgPath(orgId) { return /databases/$(database)/documents/orgs/$(orgId); }
+    function memberPath(orgId, uid) { return /databases/$(database)/documents/orgs/$(orgId)/members/$(uid); }
+    function classPath(orgId, classId) { return /databases/$(database)/documents/orgs/$(orgId)/classes/$(classId); }
+    function invitePath(orgId, inviteId) { return /databases/$(database)/documents/orgs/$(orgId)/invites/$(inviteId); }
 
-    function isMember(orgId) {
-      return signedIn() &&
-        exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.status == 'active';
+    // The caller's verified email, lowercased - '' when there is none
+    // (anonymous users have no email claim at all).
+    function verifiedEmail() {
+      return signedIn() && request.auth.token.get('email_verified', false) == true
+        ? request.auth.token.get('email', '').lower() : '';
     }
 
-    function isNewOrgId(orgId) {
-      return !exists(/databases/$(database)/documents/orgs/$(orgId));
+    // ---- membership as it stands (reads) ----
+    function isMember(orgId) {
+      return signedIn() && exists(memberPath(orgId, request.auth.uid))
+        && get(memberPath(orgId, request.auth.uid)).data.status == 'active';
+    }
+    function isAdmin(orgId) {
+      return isMember(orgId) && 'admin' in get(memberPath(orgId, request.auth.uid)).data.roles;
+    }
+
+    // ---- membership as this write leaves it (writes) ----
+    function isMemberAfter(orgId) {
+      return signedIn() && existsAfter(memberPath(orgId, request.auth.uid))
+        && getAfter(memberPath(orgId, request.auth.uid)).data.status == 'active';
+    }
+    function isAdminAfter(orgId) {
+      return isMemberAfter(orgId) && 'admin' in getAfter(memberPath(orgId, request.auth.uid)).data.roles;
+    }
+    // Running the class - session, attendance, breaks. The class's own
+    // teacher; or, in a personal org, any teacher member, which is how one
+    // person runs the same class from several devices. An admin who is not
+    // the teacher reads but never operates (plan 2.7).
+    function runsClassAfter(orgId, classId) {
+      return isMemberAfter(orgId)
+        && 'teacher' in getAfter(memberPath(orgId, request.auth.uid)).data.roles
+        && (getAfter(classPath(orgId, classId)).data.teacherUid == request.auth.uid
+            || getAfter(orgPath(orgId)).data.kind == 'personal');
+    }
+
+    // ---- users/{uid}: where a signed-in account finds its classes ----
+    // Only a pointer - listing an org here grants nothing; the org's own
+    // rules decide access.
+    match /users/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['orgIds','updatedAt'])
+        && request.resource.data.orgIds is list
+        && request.resource.data.orgIds.size() <= 50;
+      allow delete: if false;
     }
 
     // ---- orgs/{orgId} ----
     match /orgs/{orgId} {
-      // A device joining by code must be able to check the org exists
-      // *before* it has a member doc for it (see joinByCode() in
-      // index.html) - same trust model the old classes/{code} rules used:
-      // knowing the exact, unguessable id is what "having access" means.
-      // `list` stays denied so orgs can never be enumerated, and every
-      // subcollection below (classes/students/days/breaks - the actual
-      // classroom data) still requires real membership.
-      allow get: if signedIn();
+      allow get: if isMember(orgId);
       allow list: if false;
 
+      // Only together with the creator's own member doc, as admin and teacher.
       allow create: if signedIn()
-        && isNewOrgId(orgId)
         && request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','createdAt','updatedAt'])
         && request.resource.data.schemaVersion is int
         && request.resource.data.kind == 'personal'
         && request.resource.data.name is string && request.resource.data.name.size() < 200
-        && request.resource.data.activeYearId is string;
+        && request.resource.data.activeYearId is string
+        && existsAfter(memberPath(orgId, request.auth.uid))
+        && getAfter(memberPath(orgId, request.auth.uid)).data.roles.hasAll(['admin','teacher'])
+        && getAfter(memberPath(orgId, request.auth.uid)).data.status == 'active';
 
-      allow update: if isMember(orgId)
+      allow update: if isAdmin(orgId)
         && request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','createdAt','updatedAt'])
         && request.resource.data.kind == resource.data.kind
         && request.resource.data.name is string && request.resource.data.name.size() < 200;
@@ -57,26 +97,76 @@ service cloud.firestore {
       allow delete: if false;
 
       // ---- orgs/{orgId}/members/{uid} ----
-      // Phase 2: personal orgs only. A device "joins" by writing its own
-      // uid's member doc once it knows the orgId - same trust boundary as
-      // the old class code (know the id => full access), just modeled as a
-      // real membership record instead of an implicit one. A member may
-      // only ever create/update *their own* doc, never anyone else's.
       match /members/{uid} {
-        allow get: if signedIn() && request.auth.uid == uid;
-        allow list: if false;
+        allow get: if signedIn() && (request.auth.uid == uid || isAdmin(orgId));
+        allow list: if isAdmin(orgId);
 
-        allow create: if signedIn() && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt'])
-          && request.resource.data.roles is list
-          && request.resource.data.roles.hasOnly(['admin','teacher'])
-          && request.resource.data.status == 'active';
+        function memberShape() {
+          return request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt','inviteId'])
+            && request.resource.data.roles is list
+            && request.resource.data.roles.hasOnly(['admin','teacher'])
+            && request.resource.data.email is string && request.resource.data.email.size() < 200
+            && request.resource.data.displayName is string && request.resource.data.displayName.size() < 200;
+        }
 
-        allow update: if signedIn() && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt'])
-          && request.resource.data.roles is list
-          && request.resource.data.roles.hasOnly(['admin','teacher']);
+        // (a) the creator of a brand-new org, in the same batch as the org.
+        function joinsNewOrg() {
+          return !exists(orgPath(orgId)) && existsAfter(orgPath(orgId))
+            && request.resource.data.roles.hasAll(['admin','teacher'])
+            && request.resource.data.status == 'active';
+        }
+        // (b) claiming a pending, unexpired invite to your own verified
+        // email: roles copied exactly, invite marked claimed by you in the
+        // same batch.
+        function claimsInvite() {
+          let inviteId = request.resource.data.get('inviteId', '');
+          let before = get(invitePath(orgId, inviteId)).data;
+          let after = getAfter(invitePath(orgId, inviteId)).data;
+          return inviteId is string && inviteId != ''
+            && exists(invitePath(orgId, inviteId))
+            && before.status == 'pending'
+            && request.time < before.expiresAt
+            && verifiedEmail() != '' && before.email == verifiedEmail()
+            && request.resource.data.roles == before.roles
+            && request.resource.data.status == 'active'
+            && after.status == 'claimed' && after.claimedBy == uid;
+        }
 
+        allow create: if signedIn() && request.auth.uid == uid && memberShape()
+          && (joinsNewOrg() || claimsInvite());
+
+        // Your own name and email; roles and status only by an admin.
+        allow update: if signedIn() && memberShape()
+          && (isAdmin(orgId)
+              || (request.auth.uid == uid
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email','displayName'])));
+
+        allow delete: if false;
+      }
+
+      // ---- orgs/{orgId}/invites/{inviteId} ----
+      match /invites/{inviteId} {
+        function inviteShape() {
+          return request.resource.data.keys().hasOnly(['email','roles','code','status','createdBy','createdAt','expiresAt','claimedBy','claimedAt'])
+            && request.resource.data.email is string && request.resource.data.email.size() < 200
+            && request.resource.data.email == request.resource.data.email.lower()
+            && request.resource.data.roles is list
+            && request.resource.data.roles.hasOnly(['admin','teacher'])
+            && request.resource.data.status in ['pending','claimed','revoked']
+            && request.resource.data.expiresAt is timestamp;
+        }
+        allow get, list: if isAdmin(orgId);
+        allow create: if isAdmin(orgId) && inviteShape()
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if inviteShape()
+          && (isAdmin(orgId)
+              // the invitee flips their own invite to claimed, and nothing else
+              || (resource.data.status == 'pending'
+                  && verifiedEmail() != '' && resource.data.email == verifiedEmail()
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','claimedBy','claimedAt'])
+                  && request.resource.data.status == 'claimed'
+                  && request.resource.data.claimedBy == request.auth.uid));
         allow delete: if false;
       }
 
@@ -84,27 +174,28 @@ service cloud.firestore {
       match /classes/{classId} {
         allow get, list: if isMember(orgId);
 
-        allow create, update: if isMember(orgId)
+        allow create, update: if isAdminAfter(orgId)
           && request.resource.data.keys().hasOnly(['name','teacherUid','settingsOverride','status'])
           && request.resource.data.name is string && request.resource.data.name.size() < 200
+          && request.resource.data.teacherUid is string
           && request.resource.data.status in ['active','archived'];
 
         allow delete: if false;
 
-        // ---- .../students/{studentId} ----
+        // ---- .../students/{studentId} - the roster ----
         match /students/{studentId} {
           allow get, list: if isMember(orgId);
-          allow create, update: if isMember(orgId)
+          allow create, update: if (runsClassAfter(orgId, classId) || isAdminAfter(orgId))
             && request.resource.data.keys().hasOnly(['name','active','order','enrolledFrom','enrolledUntil'])
             && request.resource.data.name is string && request.resource.data.name.size() < 200
             && request.resource.data.active is bool;
           allow delete: if false;
         }
 
-        // ---- .../days/{date} ----
+        // ---- .../days/{date} - session and attendance ----
         match /days/{date} {
           allow get, list: if isMember(orgId);
-          allow create, update: if isMember(orgId)
+          allow create, update: if runsClassAfter(orgId, classId)
             && request.resource.data.keys().hasOnly(['date','yearId','session','attendance','roster','summary','updatedAt'])
             && request.resource.data.date is string;
           allow delete: if false;
@@ -112,18 +203,27 @@ service cloud.firestore {
           // ---- .../days/{date}/breaks/{breakId} ----
           match /breaks/{breakId} {
             allow get, list: if isMember(orgId);
-            allow create, update: if isMember(orgId)
+            allow create, update: if runsClassAfter(orgId, classId)
               && request.resource.data.keys().hasOnly(['sid','reason','startAt','endAt','dur','over','flag','overTrip','assignedMin']);
             // Two app paths delete a break, both correcting a mistake rather
             // than removing history: cancelling one still open (cancelBreak(),
-            // or Undo straight after logging it), and deleting a finished one
-            // that was logged by mistake (deleteLoggedBreak(), behind a
+            // or Undo straight after logging it), and deleting one logged by
+            // mistake (deleteLoggedBreak(), or Reset day - both behind a
             // confirmation). These are the exception to "nothing is ever
             // deleted" (plan 9), which is about records, not typos.
-            allow delete: if isMember(orgId);
+            allow delete: if runsClassAfter(orgId, classId);
           }
         }
       }
+    }
+
+    // ---- an invitee finding their own invites (collection-group query) ----
+    // Only invites addressed to the caller's own verified email; a query must
+    // filter on that email to be allowed at all, so no one can list anyone
+    // else's invites. Needs the invites.email collection-group index
+    // (firestore.indexes.json).
+    match /{path=**}/invites/{inviteId} {
+      allow get, list: if verifiedEmail() != '' && resource.data.email == verifiedEmail();
     }
 
     // Everything else is closed by default.
