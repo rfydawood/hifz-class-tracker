@@ -257,14 +257,32 @@ Notes for the Part B session:
 
 - **Teachers sign in with their school Google accounts, `@uthmanacademy.org`**
   — not personal Gmail. Invites go to those addresses.
+- **The owner is not the admin.** They join the organization as a teacher,
+  with their school account (`rafays.dawood@uthmanacademy.org`).
+- **Their class starts fresh in the organization.** The personal class under
+  `rfy.dawood@gmail.com` is **not** moved in — its history must not appear in
+  organization-level numbers. It stays where it is, untouched, still readable
+  by signing in with that Gmail. So Part B needs **no migration of existing
+  data**; drop the "move the personal class into an organization" item.
+- **Switching the tablet:** the tablet is signed in with the Gmail. On the
+  switch day the owner signs out and signs in with the school account, which
+  lands in the new organization class. Make that switch obvious and safe
+  (a clear "Switch account" in the teacher menu; signing out never deletes
+  anything). A clean start date (a Monday, or the 1st) avoids a split week.
+- **Org defaults belong to the admin:** class hours and break limits are set
+  by the admin for everyone; a teacher can't change them (plan 2.7). The
+  per-trip minutes stepper stays with the teacher.
 - **Still open — ask before building:**
-  - Should the owner's own admin account also be their school account
-    (`rafays.dawood@uthmanacademy.org`)? Their class is currently tied to
-    `rfy.dawood@gmail.com` (linked in Part A). If yes, add the school account
-    as an `['admin','teacher']` member through the invite path — nothing
-    moves — and ask whether the Gmail stays as a second way in.
-  - Does the owner's existing class move into the new organization, keeping
-    its history, or does the organization start separately?
+  - Who the admin is (name and school email) — **can be several people.**
+    Any number of members may hold `admin`; recommend at least two so the
+    school can't be locked out, and individual addresses over a shared one
+    (a shared inbox hides who changed what). One person with two addresses is
+    two members - fine, but not the default.
+  - Who creates the organization: the admin themselves, or the owner creates
+    it, invites the admin as `admin`, then steps down to `['teacher']`. If the
+    latter, an admin changing their own roles must be allowed, and **an org
+    must never be left with no active admin** — enforce that in the app and,
+    where rules can, in rules; test it.
   - Whether to restrict invites (and so membership) to `@uthmanacademy.org`
     addresses. The rules could enforce it; propose it, don't assume it.
 - **Check first:** uthmanacademy.org is a Google Workspace domain, and its
@@ -290,9 +308,8 @@ Only after Part A has run in real classes. Per IMPLEMENTATION_PLAN.md 2.2,
 - **One class per teacher:** replace the fixed `CLASS_ID = 'default'` with
   the class from `session.classId`; a teacher joining an org with no class
   goes through the existing class setup, which creates
-  `classes/{newId}` with `teacherUid` = them. Moving the owner's personal
-  class into a new organization is a separate, explicit, tested step — ask
-  the owner how they want it before building it.
+  `classes/{newId}` with `teacherUid` = them. (No moving of existing classes
+  into an organization - see "Decided by the owner" above.)
 - **People** screen for admins: members with roles, revoke, pending invites
   with resend and revoke. Only admins change roles.
 - **Admin view of a class:** read-only (plan 2.7 — the admin never logs
