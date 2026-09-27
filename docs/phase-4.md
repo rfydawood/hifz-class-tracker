@@ -222,6 +222,35 @@ Report to the owner in plain words, then **stop and ask** before Part B.
 
 ---
 
+### Part A status — done 2026-09-27
+
+Released as **3.7** (versionCode 18, tag `v3.7`); rules and the invites
+index deployed after the owner signed in on the tablet. Verified with the
+owner: tablet synced as rfy.dawood@gmail.com with all 12 students and the
+Sep 23 / week-of-Sep-21 reports intact; the website, signed in with the same
+account, shows the same class; a backup was downloaded from the website.
+Suite at release: `npm run test:rules` 31/31, `npm run test:e2e` 58/58.
+
+Notes for the Part B session:
+
+- The tablet linked under the **old** rules (A6 step 3 comes before step 5),
+  which don't allow `users/{uid}`. So linking writes the member doc and
+  `users/{uid}` separately, and `ensureUserIndex()` fills `users/{uid}` in on
+  a later open. Keep any Part B write that must work before a rules deploy
+  equally tolerant, and test it against the previous rules
+  (`firebase --config <copy pointing at the old rules> emulators:exec ...`).
+- The website had no signed-in visitor before the rules, and no one can
+  back up from the database with the CLI (it has no export command, and
+  reading the CLI's login token is blocked here), so the backup came after
+  the deploy. Plan Part B's backup the same way.
+- Layout tests measure with Manrope loaded from Google Fonts on this
+  machine. The font arrives after the first paint, so the app refits on
+  `document.fonts` load (see `fitHeader`/`fitGrid`).
+- `npx cap sync android` on Windows leaves line-ending-only changes in two
+  Gradle files; `git checkout -- capacitor-app/android` clears them.
+
+---
+
 ## Part B — organizations and teachers (3.8)
 
 Only after Part A has run in real classes. Per IMPLEMENTATION_PLAN.md 2.2,

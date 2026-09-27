@@ -42,6 +42,13 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 - `make_icons.py` — regenerates app icons if the design changes
 - `README.md` — human-facing summary of the above (keep it updated alongside this file when things change)
 
+## Phase 4 status
+
+Part A (Google sign-in, rules that close the sync-code hole) shipped in 3.7
+on 2026-09-27 - see the status section in `docs/phase-4.md`. Part B
+(organizations, teacher invites, roles) is next and not started; the owner
+wants to begin it in a later session.
+
 ## Working conventions established so far
 
 - **Always push to GitHub yourself after any change, without being asked.** The user is non-technical and explicitly said they'll forget to ask and will assume local edits are already live. Every change = commit + push + trigger a Pages rebuild + confirm it's actually live (see the `gh api ... pages/builds` step above) — never leave a change sitting local-only, and never wait for the user to say "push it."
