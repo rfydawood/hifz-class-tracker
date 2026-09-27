@@ -273,7 +273,11 @@ Notes for the Part B session:
   by the admin for everyone; a teacher can't change them (plan 2.7). The
   per-trip minutes stepper stays with the teacher.
 - **Still open — ask before building:**
-  - Who the admin is (name and school email).
+  - Who the admin is (name and school email) — **can be several people.**
+    Any number of members may hold `admin`; recommend at least two so the
+    school can't be locked out, and individual addresses over a shared one
+    (a shared inbox hides who changed what). One person with two addresses is
+    two members - fine, but not the default.
   - Who creates the organization: the admin themselves, or the owner creates
     it, invites the admin as `admin`, then steps down to `['teacher']`. If the
     latter, an admin changing their own roles must be allowed, and **an org
