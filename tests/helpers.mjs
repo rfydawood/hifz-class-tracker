@@ -196,13 +196,18 @@ export async function createAnonymousClass(page, teacher, students) {
     await initFirestore();
     const r = await firebase.auth(fbApp).signInAnonymously(); setUser(r.user);
     const code = genSyncCode(), now = firebase.firestore.FieldValue.serverTimestamp(), today = dayId(new Date());
-    const org = orgRefFor(code), cls = org.collection('classes').doc('default'), b = fbDb.batch();
-    b.set(org, { schemaVersion: 3, name: `${teacher}'s Hifz Class`, kind: 'personal', activeYearId: academicYearId(new Date()),
-      defaults: settingsToDefaults(state.settings), createdAt: now, updatedAt: now });
-    b.set(org.collection('members').doc(fbUid), { email: '', displayName: teacher, roles: ['admin', 'teacher'], status: 'active', joinedAt: now });
-    b.set(cls, { name: `${teacher}'s Hifz Class`, teacherUid: fbUid, settingsOverride: null, status: 'active' });
-    students.forEach((n, i) => b.set(cls.collection('students').doc('s' + i), { name: n, active: true, order: i, enrolledFrom: today, enrolledUntil: null }));
-    await b.commit();
+    const org = orgRefFor(code), cls = org.collection('classes').doc('default');
+    const docs = [
+      [org, { schemaVersion: 3, name: `${teacher}'s Hifz Class`, kind: 'personal', activeYearId: academicYearId(new Date()),
+        defaults: settingsToDefaults(state.settings), createdAt: now, updatedAt: now }],
+      [org.collection('members').doc(fbUid), { email: '', displayName: teacher, roles: ['admin', 'teacher'], status: 'active', joinedAt: now }],
+      [cls, { name: `${teacher}'s Hifz Class`, teacherUid: fbUid, settingsOverride: null, status: 'active' }],
+      ...students.map((n, i) => [cls.collection('students').doc('s' + i), { name: n, active: true, order: i, enrolledFrom: today, enrolledUntil: null }]),
+    ];
+    // one batch under the Part A rules; one by one, as 3.6 itself did, under
+    // the rules before them (a run against the old rules, see docs/phase-4.md A6)
+    try { const b = fbDb.batch(); docs.forEach(([r, d]) => b.set(r, d)); await b.commit(); }
+    catch (e) { for (const [r, d] of docs) await r.set(d); }
     // straight into localStorage too: the native mock's Preferences don't
     // survive the reload below, and Store.hydrate() falls back to localStorage
     const keep = { 'session.orgId': code, 'session.classId': 'default',

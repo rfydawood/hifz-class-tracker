@@ -235,7 +235,7 @@ input,select{font:inherit;color:inherit}
 .chip b{display:block;font-size:22px;color:var(--ink);letter-spacing:-.02em;margin-top:2px}
 .chip.warn{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
 .chip.warn b{color:var(--ember)}
-.stat{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stat{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .stat>b{width:94px;font-weight:800}
 .bar{flex:1;height:10px;border-radius:6px;background:var(--paper);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:6px}
@@ -468,7 +468,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="d04fb7ec1f",APP_BUILD_TIME="2026-09-26T00:22:06.331Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="e2c4c56b1d",APP_BUILD_TIME="2026-09-27T14:01:29.973Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -880,12 +880,25 @@ async function linkAnonymous(u){
   }
 }
 /* After linking: the member doc learns who it is, and users/{uid} lists the
-   class so any other device signing in with this account finds it. */
+   class so any other device signing in with this account finds it. The two
+   are separate on purpose: the owner links on the tablet BEFORE the Part A
+   rules are deployed (docs/phase-4.md A6), and the old rules know nothing of
+   users/{uid}. The link itself and the member doc are what matter then;
+   ensureUserIndex() fills users/{uid} in on a later open, once it's allowed. */
 async function recordGoogleAccount(orgId){
-  const now=firebase.firestore.FieldValue.serverTimestamp(), b=fbDb.batch();
-  b.update(orgRefFor(orgId).collection('members').doc(fbUid),{email:myEmail(),displayName:fbUser.displayName||''});
-  b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(orgId),updatedAt:now},{merge:true});
-  await fsWrite(b.commit());
+  try{ await fsWrite(orgRefFor(orgId).collection('members').doc(fbUid).update({email:myEmail(),displayName:fbUser.displayName||''})); }catch(e){}
+  await ensureUserIndex(orgId);
+}
+/* users/{uid} must list the class this device has open. Checked once each
+   time the class is attached - a read, and a write only when it's missing,
+   so an idle app still writes nothing. Never fatal. */
+async function ensureUserIndex(orgId){
+  if(!isGoogleUser()||!orgId) return;
+  try{
+    const ref=fbDb.collection('users').doc(fbUid), snap=await ref.get();
+    if(snap.exists&&(snap.data().orgIds||[]).includes(orgId)) return;
+    await fsWrite(ref.set({orgIds:firebase.firestore.FieldValue.arrayUnion(orgId),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}));
+  }catch(e){}
 }
 /* The Google account already has a user of its own, so it can't be linked.
    While this device is still the class's anonymous admin it invites that
@@ -1039,6 +1052,7 @@ async function attachListeners(){
   attachDayListeners();
   syncStatus='synced'; render();
   migrateLegacyHistoryIfNeeded();
+  ensureUserIndex(ORG_ID);
 }
 function attachDayListeners(){
   if(unsubDay) unsubDay(); if(unsubBreaks) unsubBreaks();
@@ -2256,6 +2270,15 @@ function fitHeader(){
   top.classList.toggle('stacked', stack);
 }
 let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(()=>{ fitHeader(); fitGrid(); },120); });
+/* Manrope arrives from Google Fonts after the first paint, and it is a little
+   larger than the fallback font the screen was first fitted with: the header
+   grew by a few pixels and the roster's last row no longer fitted. Fit again
+   once the real font is in. fitHeader() caches on its text, so clear that. */
+if(document.fonts){
+  const refit=()=>{ fitHeader.key=null; fitHeader(); fitGrid(); };
+  document.fonts.ready.then(refit).catch(()=>{});
+  if(document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',refit);
+}
 addEventListener('orientationchange',()=>setTimeout(()=>{ fitHeader(); fitGrid(); },250));
 function tick(){
   if(DAY_STATE_ID && dayId(new Date())!==DAY_STATE_ID){   // left open past midnight
