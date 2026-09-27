@@ -253,6 +253,26 @@ Notes for the Part B session:
 
 ## Part B — organizations and teachers (3.8)
 
+### Decided by the owner (2026-09-27)
+
+- **Teachers sign in with their school Google accounts, `@uthmanacademy.org`**
+  — not personal Gmail. Invites go to those addresses.
+- **Still open — ask before building:**
+  - Should the owner's own admin account also be their school account
+    (`rafays.dawood@uthmanacademy.org`)? Their class is currently tied to
+    `rfy.dawood@gmail.com` (linked in Part A). If yes, add the school account
+    as an `['admin','teacher']` member through the invite path — nothing
+    moves — and ask whether the Gmail stays as a second way in.
+  - Does the owner's existing class move into the new organization, keeping
+    its history, or does the organization start separately?
+  - Whether to restrict invites (and so membership) to `@uthmanacademy.org`
+    addresses. The rules could enforce it; propose it, don't assume it.
+- **Check first:** uthmanacademy.org is a Google Workspace domain, and its
+  admin can block outside apps from "Sign in with Google". Before building
+  the invite flow, have the owner try signing in with a school account (or
+  ask their Workspace admin to allow "Hifz Class Tracker"). A blocked domain
+  shows up as a Google error screen, not an app error.
+
 Only after Part A has run in real classes. Per IMPLEMENTATION_PLAN.md 2.2,
 2.7, 2.8:
 
