@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "726082000637",
+    "project_id": "hifz-class-tracker-dece7",
+    "storage_bucket": "hifz-class-tracker-dece7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726082000637:android:5627f387c8f7218644d094",
+        "android_client_info": {
+          "package_name": "com.hifztracker.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "726082000637-fjn9d5fv96nkm02o84kjou46ck6sngam.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hifztracker.app",
+            "certificate_hash": "9e243c609cd209594a1812909ce286bb2a2d7c82"
+          }
+        },
+        {
+          "client_id": "726082000637-5bu0q1tnqe2vh6bo6d1hupd4h2sc5o4e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcXq9R4Ytg3b72WbK3Hd7lC0qmnStNjTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "726082000637-5bu0q1tnqe2vh6bo6d1hupd4h2sc5o4e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
