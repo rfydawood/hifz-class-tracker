@@ -21,7 +21,7 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 
 - Project ID: `hifz-class-tracker-dece7` (console: https://console.firebase.google.com/project/hifz-class-tracker-dece7/overview)
 - Firebase CLI on this machine is already logged in (`rfy.dawood@gmail.com`) — most `firebase` commands just work, pass `--project hifz-class-tracker-dece7` when a command needs it.
-- Contains: an Android app registration (`com.hifztracker.app`, for App Distribution; the release key's SHA-1 and SHA-256 are registered on it for Google sign-in, and `capacitor-app/android/app/google-services.json` is its public config), a Firestore database and Firebase Auth (Google provider, plus Anonymous kept enabled for installs from before 3.7 - never disable it). Every class lives under `orgs/{orgId}` (personal accounts = an org of one; plan section 2.2), and `users/{uid}` lists the classes a Google account can open. Since Phase 4 Part A (`docs/phase-4.md`) a class belongs to a Google account: new devices sign in with Google, older anonymous installs link to Google keeping the same uid, and the sync code (the org id, still shown nowhere important) grants nothing - `firestore.rules` admits active members only. All Firestore access goes through the named writer functions in index.html (`writeAttendance`, `writeBreakStart`/`writeBreakEnd`, `writeSessionAndAttendance`, `writeRosterStudent`, `writeSettings`) and realtime listeners (`attachListeners`/`attachDayListeners`) — never a blanket save(). Test rules against the emulator (`npm run test:rules`) before deploying.
+- Contains: an Android app registration (`com.hifztracker.app`, for App Distribution; the release key's SHA-1 and SHA-256 are registered on it for Google sign-in, and `capacitor-app/android/app/google-services.json` is its public config), a Firestore database and Firebase Auth (Google provider, plus Anonymous kept enabled for installs from before 3.7 - never disable it). Every class lives under `orgs/{orgId}` (personal accounts = an org of one; a school = an org of kind `organization`, one class per teacher with the class id = the teacher's uid; plan section 2.2), and `users/{uid}` lists the orgs a Google account can open. Since Phase 4 Part A (`docs/phase-4.md`) a class belongs to a Google account: new devices sign in with Google, older anonymous installs link to Google keeping the same uid, and the sync code (the org id, still shown nowhere important) grants nothing - `firestore.rules` admits active members only. All Firestore access goes through the named writer functions in index.html (`writeAttendance`, `writeBreakStart`/`writeBreakEnd`, `writeSessionAndAttendance`, `writeRosterStudent`, `writeSettings`) and realtime listeners (`attachListeners`/`attachDayListeners`) — never a blanket save(). Test rules against the emulator (`npm run test:rules`) before deploying.
 - Note: this Google account was brand new to Google Cloud/Firebase, which caused several one-time manual console clicks (accepting ToS, first-time project creation) that the CLI couldn't do on its own. Those are done now and shouldn't recur, but if a *new* Google Cloud/Firebase resource type is provisioned for the first time and the CLI gets a bare 403/permission error, that's likely why — a one-time manual console visit fixes it.
 
 ## Local machine setup (already installed, don't reinstall)
@@ -46,8 +46,11 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 
 Part A (Google sign-in, rules that close the sync-code hole) shipped in 3.7
 on 2026-09-27 - see the status section in `docs/phase-4.md`. Part B
-(organizations, teacher invites, roles) is next and not started; the owner
-wants to begin it in a later session.
+(schools: teacher invites, roles, admin view) is built and tested on the
+session branch but **not released**: it waits on the owner's answers (who
+the admins are, who creates the school, domain lock, the school-account
+sign-in check) and then the 3.8 release order in `docs/phase-4.md` - app
+first, then rules. Until the rules are deployed, "Create a school" fails.
 
 ## Working conventions established so far
 

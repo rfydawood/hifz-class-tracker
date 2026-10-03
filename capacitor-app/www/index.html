@@ -265,6 +265,42 @@ input,select{font:inherit;color:inherit}
 .setup-actions span{color:var(--mute);font-size:14px;font-weight:700}
 .setup-actions .btn{margin-left:auto}
 .err{color:var(--ember);font-weight:700;font-size:14px;margin-top:12px;min-height:18px}
+/* Phase 4 Part B: the welcome card (signed in, no class yet), schools and people */
+.setup-card h4{font-size:15px;font-weight:800;margin:22px 0 6px}
+.setup-card p.small{color:var(--mute);font-size:14px;line-height:1.5;margin-bottom:10px}
+.setup-card .pair{display:flex;gap:10px;flex-wrap:wrap}
+#welcome .roster-add input{margin-top:0}
+.setup-card .pair .btn{min-width:180px}
+/* the welcome card on a short landscape tablet (805x504): tighter, so it all shows */
+@media (max-height:600px){
+  #welcome{padding:12px}
+  #welcome .setup-card{padding:20px 26px}
+  #welcome .setup-card .lede{margin:6px 0 10px}
+  #welcome .setup-card h4{margin-top:12px}
+  #welcome .setup-card .btn{padding:12px}
+  #welcome .setup-card .err{min-height:0;margin-top:6px}
+  #welcome .setup-card .linkbtn{margin-top:12px}
+}
+.setup-card .linkbtn{display:block;margin:20px auto 0;color:var(--mute);font-weight:700;font-size:14px;text-decoration:underline}
+.setup-card label.check{display:flex;align-items:flex-start;gap:10px;font-weight:600;font-size:14px;line-height:1.45}
+.setup-card label.check input{display:inline-block;width:auto;margin:3px 0 0;flex:none}
+.prow{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:wrap}
+.prow .who{flex:1;min-width:170px}
+.prow .who b{display:block;font-size:15px}
+.prow .who small{display:block;color:var(--mute);font-size:12px;font-weight:600;margin-top:2px;word-break:break-all}
+.prow.off{opacity:.65}
+.pbtn{padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--paper);font-size:13px;font-weight:700;color:var(--mute)}
+.pbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pbtn.danger{color:var(--ember)}
+.pbtn.go{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.sheet h4.rh2{font-size:13px;font-weight:700;color:var(--mute);margin:16px 0 8px}
+.sheet h4.rh2:first-child{margin-top:0}
+.msgbox{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.5;-webkit-user-select:text;user-select:text}
+.sheet .inp{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--paper);margin-top:6px}
+.sheet .lbl{display:block;font-weight:800;font-size:14px;margin-bottom:14px}
+.ro{font-weight:600;color:var(--mute);font-size:14px;text-align:right}
+.noclass{grid-column:1/-1;align-self:center;text-align:center;color:var(--mute);font-size:15px;line-height:1.5;padding:30px}
+.noclass b{display:block;color:var(--ink);font-size:19px;margin-bottom:6px}
 .tour{position:fixed;inset:0;background:rgba(31,46,54,.55);display:none;place-items:center;z-index:70;padding:24px}
 .tour.show{display:grid}
 .tour-card{background:var(--card);border-radius:20px;max-width:540px;width:100%;padding:28px}
@@ -431,7 +467,7 @@ input,select{font:inherit;color:inherit}
 
   <div class="setup" id="setup"><div class="setup-card">
     <h2>Set up your class</h2>
-    <p class="lede">Two things and you are ready. Your class is saved to your Google account, so it opens on any device you sign in on.</p>
+    <p class="lede" id="setupLede">Two things and you are ready. Your class is saved to your Google account, so it opens on any device you sign in on.</p>
     <label>Your name
       <input id="tName" placeholder="e.g. Ustadh Bilal" oninput="setupCount()">
       <span class="hint">Shown in the corner as &ldquo;[your name]'s Hifz Class&rdquo;.</span>
@@ -453,6 +489,7 @@ input,select{font:inherit;color:inherit}
     <button class="btn dark" id="signinBtn" style="width:100%" onclick="signInFromGate()">Sign in with Google</button>
     <p class="err" id="signinErr"></p>
   </div></div>
+  <div class="setup" id="welcome"><div class="setup-card" id="welcomeCard"></div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
   <div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
@@ -468,7 +505,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="e2c4c56b1d",APP_BUILD_TIME="2026-09-27T14:01:29.973Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="cac04ddb10",APP_BUILD_TIME="2026-10-03T03:03:52.038Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -477,7 +514,7 @@ const REASONS=[
   {key:'assigned',label:'Assigned',icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 13V9M9.5 2.5h5M19.5 5.5 21 7"/></svg>'}
 ];
 const state={
-  teacher:'', setup:false,
+  teacher:'', className:'', setup:false,
   students:[],
   settings:{
     startTime:'08:00', endTime:'15:30',
@@ -650,8 +687,24 @@ const FIREBASE_CONFIG={
   authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
   messagingSenderId:"726082000637"
 };
-const CLASS_ID='default';                       // one class per personal org - Phase 2 scope
+/* The class on screen. A personal org has one, 'default'. In a school each
+   teacher has their own (its id is their uid), and an admin can open any
+   class to look at it - read-only. HOME_CLASS is the class this device runs
+   (session.classId); null for an admin who doesn't teach a class. Stored as
+   '-' for "none", since a missing key means a device from before schools. */
+let CLASS_ID='default', HOME_CLASS='default';
 const SESSION_ORG_KEY='session.orgId', SESSION_CLASS_KEY='session.classId', CACHE_KEY='cache.lastClass';
+let ORG_INFO=null;      // the open org: {kind, name, domain}
+let MY_MEMBER=null;     // this account's member doc in it: {roles, status, ...}
+let CLASS_INFO=null;    // the open class: {name, teacherUid, settingsOverride}
+let ORG_DEFAULTS=null;  // the org's settings, before the class's own overrides
+const inSchool=()=>!!(ORG_INFO&&ORG_INFO.kind==='organization');
+const isAdminHere=()=>!!(MY_MEMBER&&MY_MEMBER.status==='active'&&(MY_MEMBER.roles||[]).includes('admin'));
+/* An admin looking at someone else's class sees it live but never operates it
+   (plan 2.7; firestore.rules refuse the writes too). */
+const viewOnly=()=>inSchool()&&!!CLASS_ID&&(CLASS_ID!==HOME_CLASS||!!(CLASS_INFO&&CLASS_INFO.teacherUid&&CLASS_INFO.teacherUid!==fbUid));
+function viewOnlyStop(){ if(!viewOnly()) return false; toast('View only - only this class\'s teacher can change it'); return true; }
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const DEFAULT_FLAG_THRESHOLD=2;                  // org.defaults.flagThreshold - only consumed by the Phase 5 admin dashboard, stored now so the schema doesn't need a later migration
 let fbApp=null, fbDb=null, fbUid=null, fbUser=null, fbReady=null;
@@ -666,7 +719,7 @@ const EMULATOR=!!new URLSearchParams(location.search).get('emulator');
    morning still showing yesterday's ended class and yesterday's absent/tardy
    marks. Set wherever day state is established; checked every tick. */
 let DAY_STATE_ID=null;
-let unsubOrg=null, unsubClass=null, unsubStudents=null, unsubDay=null, unsubBreaks=null;
+let unsubOrg=null, unsubMe=null, unsubClass=null, unsubStudents=null, unsubDay=null, unsubBreaks=null;
 
 /* Test hook only (tests/write-count.spec.mjs): every real Firestore write
    funnels through fsWrite() so a test can assert "zero writes while idle"
@@ -723,6 +776,16 @@ function initFirestore(){
 function orgRefFor(code){ return fbDb.collection('orgs').doc(code); }
 function orgRef(){ return orgRefFor(ORG_ID); }
 function classRef(){ return orgRef().collection('classes').doc(CLASS_ID); }
+/* The settings in force for the open class: the org's, with any the class
+   overrides on top (plan 2.2 settingsOverride). */
+function applySettings(){
+  if(!ORG_DEFAULTS) return;
+  const d=ORG_DEFAULTS, o=(CLASS_INFO&&CLASS_INFO.settingsOverride)||{}, x=Object.assign({},d,o);
+  ['snack','lunch','limits'].forEach(k=>{ x[k]=Object.assign({},d[k]||{},o[k]||{}); });
+  state.settings=mergeSettings(x);
+}
+function noteOrg(d){ ORG_INFO={kind:d.kind||'personal',name:d.name||'',domain:d.domain||''}; ORG_DEFAULTS=d.defaults||ORG_DEFAULTS; }
+function setHomeClass(id){ CLASS_ID=HOME_CLASS=id||null; Store.set(SESSION_CLASS_KEY,id||'-'); }
 function dayRef(id){ return classRef().collection('days').doc(id||TODAY_ID); }
 
 /* One-time creation of a brand-new personal org from whatever is currently
@@ -740,7 +803,7 @@ async function bootstrapOrg(){
   if(!isGoogleUser()){ syncStatus='signedout'; render(); return false; }
   try{
     const code=genSyncCode(), now=firebase.firestore.FieldValue.serverTimestamp(), today=dayId(new Date());
-    const org=orgRefFor(code), cls=org.collection('classes').doc(CLASS_ID), b=fbDb.batch();
+    const org=orgRefFor(code), cls=org.collection('classes').doc('default'), b=fbDb.batch();
     b.set(org,{
       schemaVersion:3, name:`${state.teacher||'My'}'s Hifz Class`, kind:'personal',
       activeYearId:academicYearId(new Date()), defaults:settingsToDefaults(state.settings),
@@ -760,7 +823,8 @@ async function bootstrapOrg(){
     },{merge:true});
     b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(code),updatedAt:now},{merge:true});
     await fsWrite(b.commit());
-    ORG_ID=code; Store.set(SESSION_ORG_KEY,code); Store.set(SESSION_CLASS_KEY,CLASS_ID);
+    ORG_ID=code; Store.set(SESSION_ORG_KEY,code); setHomeClass('default');
+    ORG_INFO={kind:'personal',name:`${state.teacher||'My'}'s Hifz Class`,domain:''};
     sendHeld();
     await attachListeners();
     return true;
@@ -775,7 +839,8 @@ function scheduleBootstrapRetry(){
   scheduleBootstrapRetry._armed=true;
   window.addEventListener('online',function once(){
     window.removeEventListener('online',once); scheduleBootstrapRetry._armed=false;
-    if(!ORG_ID && state.setup && isGoogleUser()) bootstrapOrg();
+    if(SETUP_ORG&&state.setup&&isGoogleUser()) createSchoolClass();
+    else if(!ORG_ID && state.setup && isGoogleUser()) bootstrapOrg();
   });
 }
 /* Phase 2 minimal migration: an install upgrading from before this version
@@ -835,7 +900,7 @@ function signInMessage(e){
   return 'Could not sign in. Please try again.';
 }
 /* The sign-in screen: new installs, and anyone signed out. */
-function showSignIn(){ $('setup').classList.remove('show'); $('signinErr').textContent=''; $('signinBtn').disabled=false; $('signin').classList.add('show'); }
+function showSignIn(){ $('setup').classList.remove('show'); $('welcome').classList.remove('show'); $('signinErr').textContent=''; $('signinBtn').disabled=false; $('signin').classList.add('show'); }
 function hideSignIn(){ $('signin').classList.remove('show'); }
 async function signInFromGate(){
   const btn=$('signinBtn'); btn.disabled=true; $('signinErr').textContent='';
@@ -929,7 +994,7 @@ async function claimInvite(orgId,inviteId,invite,opts){
   const b=fbDb.batch();
   if(!(mine&&mine.exists)) b.set(me,{email:myEmail(),displayName:fbUser.displayName||'',roles:invite.roles,status:'active',joinedAt:now,inviteId});
   b.update(org.collection('invites').doc(inviteId),{status:'claimed',claimedBy:fbUid,claimedAt:now});
-  if(opts&&opts.takeClass) b.update(org.collection('classes').doc(CLASS_ID),{teacherUid:fbUid});
+  if(opts&&opts.takeClass) b.update(org.collection('classes').doc('default'),{teacherUid:fbUid});
   b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(orgId),updatedAt:now},{merge:true});
   await fsWrite(b.commit());
 }
@@ -965,14 +1030,45 @@ async function routeSignedIn(){
   if(orgIds.length>1) return openOrgChooser(orgIds);
   if(state.setup) return bootstrapOrg();                   // a class on this device, not in the cloud yet
   syncStatus='offline'; render();
-  openSetup();
+  openWelcome();
 }
+/* Into an org: find this account's own class in it. A personal org has its
+   one class. In a school, the class this teacher teaches; none yet - a
+   teacher sets theirs up, an admin who doesn't teach goes to the school's
+   list of classes. An org this account can no longer open (removed from a
+   school) goes back to the welcome screen. */
 async function enterOrg(orgId){
-  if(Store.get(SESSION_ORG_KEY)!==orgId){ held=[]; Store.remove(CACHE_KEY); }     // unsent changes belonged to another class
   PENDING_ORG=null; hideSignIn(); closeSheet(); $('setup').classList.remove('show');
-  Store.set(SESSION_ORG_KEY,orgId); Store.set(SESSION_CLASS_KEY,CLASS_ID);
-  state.setup=true;
+  let home;
+  try{ home=await findHomeClass(orgId); }
+  catch(e){ syncStatus='error'; render(); return openWelcome('Could not open your class. Check the internet connection, then tap Check again.'); }
+  if(home.gone){
+    // its own member doc says so (removed from a school) - not a guess from
+    // a failed read, so the account's pointer to it can go
+    await dropFromUserIndex(orgId);
+    syncStatus='offline'; render();
+    return openWelcome('You are no longer a member of that school. If that is a mistake, ask its admin.');
+  }
+  hideWelcome();
+  const changing=Store.get(SESSION_ORG_KEY)!==orgId||(Store.get(SESSION_CLASS_KEY)||'default')!==(home.classId||'-');
+  if(changing){ held=[]; Store.remove(CACHE_KEY); resetClassState(); }     // unsent changes belonged to another class
+  Store.set(SESSION_ORG_KEY,orgId); setHomeClass(home.classId);
+  if(home.classId) state.setup=true;
   await attachToOrg(orgId);
+}
+async function findHomeClass(orgId){
+  const org=orgRefFor(orgId);
+  const me=await org.collection('members').doc(fbUid).get();     // always readable to its owner
+  const m=me.exists?me.data():null;
+  if(!m||m.status!=='active') return {gone:true};
+  const o=await org.get();
+  if(!o.exists) return {gone:true};
+  noteOrg(o.data()); MY_MEMBER=m;
+  if(ORG_INFO.kind!=='organization') return {classId:'default'};
+  if(!(m.roles||[]).includes('teacher')) return {classId:null};
+  const qs=await org.collection('classes').where('teacherUid','==',fbUid).get();
+  const c=qs.docs.find(d=>d.data().status!=='archived');
+  return {classId:c?c.id:null};
 }
 async function openOrgChooser(orgIds){
   const names=await Promise.all(orgIds.map(id=>orgRefFor(id).get().then(s=>s.exists&&s.data().name||id,()=>id)));
@@ -989,12 +1085,15 @@ async function signOut(){
   if(!isGoogleUser()) return closeSheet();
   detachListeners();
   try{ await firebase.auth(fbApp).signOut(); }catch(e){}
+  // On the native app, forget the Google account too, so signing in next
+  // shows the account picker instead of quietly reusing the same account.
+  const P=nativeAuthPlugin(); if(P&&P.signOut){ try{ await P.signOut(); }catch(e){} }
   Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
   Store.remove(KEY); Store.remove(PKEY);                   // legacy copies of the class; the cloud has it
   location.reload();
 }
 
-function detachListeners(){ [unsubOrg,unsubClass,unsubStudents,unsubDay,unsubBreaks].forEach(u=>u&&u()); unsubOrg=unsubClass=unsubStudents=unsubDay=unsubBreaks=null; }
+function detachListeners(){ [unsubOrg,unsubMe,unsubClass,unsubStudents,unsubDay,unsubBreaks].forEach(u=>u&&u()); unsubOrg=unsubMe=unsubClass=unsubStudents=unsubDay=unsubBreaks=null; }
 async function attachToOrg(orgId){
   syncStatus='connecting'; render();
   const ok=await initFirestore();
@@ -1015,19 +1114,23 @@ async function attachToOrg(orgId){
       // a genuinely stale/deleted org id - this is the "never crash" case
       // from plan 2.9, not the offline case above.
       Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
-      syncStatus='offline'; return openSetup();
+      syncStatus='offline'; return openWelcome();
     }
+    noteOrg(snap.data());
   }catch(e){
     // couldn't verify existence (e.g. offline-but-not-yet-cached) - assume
     // it's still good and let the realtime listeners recover once connected.
   }
+  try{ const m=await orgRefFor(orgId).collection('members').doc(fbUid).get(); if(m.exists) MY_MEMBER=m.data(); }catch(e){}
   ORG_ID=orgId;
+  if(MY_MEMBER&&MY_MEMBER.status==='revoked') return accessRemoved();
   sendHeld();
   await attachListeners();
+  if(!CLASS_ID) noClassYet();
 }
 async function attachListeners(){
   detachListeners();
-  const org=orgRef(), cls=classRef();
+  const org=orgRef();
   // Every data listener below takes includeMetadataChanges - see the note on
   // the breaks listener for why. In short: an answer the cloud computed for an
   // earlier change can arrive just after a newer change was made on screen,
@@ -1035,11 +1138,27 @@ async function attachListeners(){
   // change is put back a moment later, instead of staying wrong on screen.
   unsubOrg=org.onSnapshot({includeMetadataChanges:true},snap=>{
     if(!snap.exists||snap.metadata.hasPendingWrites) return;
-    const d=snap.data(); if(d.defaults) state.settings=mergeSettings(d.defaults);
+    noteOrg(snap.data()); applySettings();
     render();
   },()=>{ syncStatus='error'; render(); });
+  // This account's own membership: its roles decide what the menu offers,
+  // and a school removing it closes the class on this device straight away.
+  // Its own member doc stays readable to it after removal, so this hears it.
+  unsubMe=org.collection('members').doc(fbUid).onSnapshot(snap=>{
+    if(!snap.exists) return;
+    MY_MEMBER=snap.data();
+    if(MY_MEMBER.status==='revoked'&&inSchool()) return accessRemoved();
+    if(viewOnly()&&!isAdminHere()) return leaveView();       // no longer an admin: other classes are closed to them
+    render();
+  },()=>{});
+  if(!CLASS_ID){ syncStatus='synced'; render(); ensureUserIndex(ORG_ID); return; }
+  state.setup=true;                                         // a class is open on this device
+  const cls=classRef();
   unsubClass=cls.onSnapshot(snap=>{
     if(!snap.exists||snap.metadata.hasPendingWrites) return;
+    const d=snap.data();
+    CLASS_INFO={name:d.name||'',teacherUid:d.teacherUid||'',settingsOverride:d.settingsOverride||null};
+    state.className=CLASS_INFO.name; applySettings();
     render();
   },()=>{});
   unsubStudents=cls.collection('students').onSnapshot({includeMetadataChanges:true},qs=>{
@@ -1122,7 +1241,7 @@ function tracked(kind,p){
   return p;
 }
 function resync(kind){
-  if(!ORG_ID||!TODAY_ID||!fbDb) return;
+  if(!ORG_ID||!CLASS_ID||!TODAY_ID||!fbDb) return;
   const ref=kind==='day'?dayRef():dayRef().collection('breaks');
   ref.get({source:'cache'}).then(s=>{
     if(inflight[kind]||s.metadata.hasPendingWrites) return;
@@ -1159,6 +1278,7 @@ function sendHeld(){
    Settings debounce ~700ms since a teacher taps through several fields in a
    row. Never called from render() or tick(). */
 function writeSettings(){
+  if(inSchool()&&!isAdminHere()) return;                   // a school's settings are its admins'
   clearTimeout(writeSettings._t);
   writeSettings._t=setTimeout(()=>{
     const defaults=settingsToDefaults(state.settings);
@@ -1171,6 +1291,7 @@ function writeRosterStudent(s){
   send(()=>fsWrite(classRef().collection('students').doc(s.id).set(doc,{merge:true})).catch(()=>{}));
 }
 function writeDay(patch){
+  if(viewOnly()) return;
   const yearId=academicYearId(new Date());
   send(()=>tracked('day',fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true}))).catch(()=>{}));
 }
@@ -1181,7 +1302,7 @@ function writeAttendance(sid){
 }
 function breakDocId(sid,startAt){ return `${sid}_${+startAt}`; }
 function writeBreakStart(sid){
-  const a=state.active[sid]; if(!a) return;
+  const a=state.active[sid]; if(!a||viewOnly()) return;
   // The id is fixed from the start time, so it is known at the tap even when
   // offline - a cancel or end held behind this start addresses the same doc.
   const id=a._id||breakDocId(sid,a.startAt); a._id=id;    // keep the original id if the start time was corrected since
@@ -1190,21 +1311,358 @@ function writeBreakStart(sid){
   send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).set(doc))).catch(()=>{}));
 }
 function writeBreakEnd(rec){
+  if(viewOnly()) return;
   const id=rec._id||breakDocId(rec.sid,rec.startAt);
   const doc={sid:rec.sid, reason:rec.reason, startAt:+rec.startAt, endAt:+rec.endAt, dur:rec.dur,
     over:rec.over||0, flag:!!rec.flag, overTrip:!!rec.overTrip, assignedMin:rec.assignedMin||null};
   send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).set(doc))).catch(()=>{}));
 }
 function writeBreakCancel(id){
-  if(!id) return;
+  if(!id||viewOnly()) return;
   send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).delete())).catch(()=>{}));
 }
 /* One batch, so the cloud's answer is all-or-nothing: separate deletes each
    raise their own in-between answer, and a list of breaks shrinking one at a
    time on screen is exactly the flicker the listeners have to smooth over. */
 function writeBreakCancelAll(ids){
-  if(!ids.length) return;
+  if(!ids.length||viewOnly()) return;
   send(()=>{ const b=fbDb.batch(); ids.forEach(id=>b.delete(dayRef().collection('breaks').doc(id))); return tracked('breaks',fsWrite(b.commit())).catch(()=>{}); });
+}
+
+/* ===== schools (Phase 4 Part B, docs/phase-4.md) =====
+   A school is an org of kind 'organization'. Its admins invite teachers by
+   email and manage people and the school's settings; each teacher runs their
+   own class (its id is their uid); an admin opens any class to watch it -
+   read-only, they never operate it (plan 2.7). firestore.rules hold every
+   one of these lines; the screens here only follow them.
+   The app never sends email (no server - plan 2.1): an invite is a record
+   the teacher's sign-in is matched to, and the admin sends the teacher a
+   message with the link, the address to sign in with, and a one-time code
+   for when they sign in with a different address. */
+const DEFAULT_SETTINGS=JSON.parse(JSON.stringify(state.settings));
+const PUBLIC_MAIL=['gmail.com','googlemail.com','outlook.com','hotmail.com','live.com','yahoo.com','icloud.com','me.com','aol.com','proton.me','protonmail.com'];
+const domainOf=e=>{ const p=String(e||'').split('@'); return p.length===2?p[1]:''; };
+const rolesLabel=r=>(r||[]).includes('admin')?((r||[]).includes('teacher')?'Admin and teacher':'Admin'):'Teacher';
+const serverNow=()=>firebase.firestore.FieldValue.serverTimestamp();
+const WEEK=7*86400000;
+
+function resetClassState(){
+  CLASS_INFO=null; state.className=''; state.students=[]; state.attendance={};
+  resetLocalDayState();
+}
+/* No class of one's own open: an admin goes to the school's classes, a
+   teacher sets theirs up. */
+function noClassYet(){
+  if(!ORG_ID) return;
+  if(isAdminHere()) return openSchool();
+  if(MY_MEMBER&&(MY_MEMBER.roles||[]).includes('teacher')) openSetup({orgId:ORG_ID,name:(ORG_INFO&&ORG_INFO.name)||'your school'});
+}
+/* The school removed this account (its own member doc says so). Nothing on
+   this device is the class's only copy, so the class just closes here. */
+function accessRemoved(){
+  const name=(ORG_INFO&&ORG_INFO.name)||'the school', orgId=ORG_ID;
+  detachListeners();
+  ORG_ID=null; ORG_INFO=null; MY_MEMBER=null; resetClassState(); CLASS_ID=HOME_CLASS=null;
+  Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
+  syncStatus='offline'; closeSheet(); closeDrawer(); render();
+  if(orgId&&isGoogleUser()) dropFromUserIndex(orgId);
+  openWelcome(`You are no longer a member of ${name}. If that is a mistake, ask the school's admin.`);
+}
+function dropFromUserIndex(orgId){
+  return fsWrite(fbDb.collection('users').doc(fbUid).set({orgIds:firebase.firestore.FieldValue.arrayRemove(orgId),updatedAt:serverNow()},{merge:true})).catch(()=>{});
+}
+
+/* ---- the welcome card: signed in, no class on this account yet ----
+   Plan 2.8's first question, "Do you have an invite code?" - asked after
+   sign-in, because an invite to this account's own email needs no code at
+   all: routeSignedIn() has already looked for one and joined it. */
+let WELCOME_MSG='';
+function openWelcome(msg){
+  WELCOME_MSG=msg||'';
+  hideSignIn(); $('setup').classList.remove('show');
+  drawWelcome();
+  $('welcome').classList.add('show');
+}
+function hideWelcome(){ $('welcome').classList.remove('show'); }
+function drawWelcome(view){
+  const email=esc(myEmail()), dom=domainOf(myEmail());
+  if(view==='school'){
+    $('welcomeCard').innerHTML=`<h2>Create a school</h2>
+      <p class="lede">You'll be its admin: you invite the teachers, set the school's hours and break limits, and can open every class. Each teacher runs their own class.</p>
+      <label>School name<input id="wSchool" placeholder="e.g. Uthman Academy Hifz" onkeydown="if(event.key==='Enter')createSchool()"></label>
+      ${dom&&!PUBLIC_MAIL.includes(dom)?`<label class="check"><input type="checkbox" id="wDomain" checked><span>Only people with an <b>@${esc(dom)}</b> email address can join</span></label>`:''}
+      <div class="setup-actions" style="margin-top:20px"><button class="btn ghost" style="margin-left:0" onclick="drawWelcome()">Back</button><button class="btn dark" id="wCreate" onclick="createSchool()">Create school</button></div>
+      <p class="err" id="welcomeErr"></p>`;
+    return $('wSchool').focus();
+  }
+  $('welcomeCard').innerHTML=`<h2>Welcome</h2>
+    ${WELCOME_MSG?`<p class="err" style="margin:10px 0 0">${esc(WELCOME_MSG)}</p>`:''}
+    <p class="lede">You're signed in as <b>${email}</b>. There's no class on this account yet.</p>
+    <h4>Joining your school?</h4>
+    <p class="small">Ask your school's admin to invite <b>${email}</b>, then tap Check again - or type the invite code they gave you.</p>
+    <div class="roster-add"><input id="wCode" placeholder="Invite code, e.g. ABCDE-FGH23" autocomplete="off" autocapitalize="characters" spellcheck="false" onkeydown="if(event.key==='Enter')joinWithCode()"><button class="btn dark" style="flex:none" onclick="joinWithCode()">Join</button></div>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="checkAgain()">Check again</button>
+    <p class="err" id="welcomeErr"></p>
+    <h4>Not joining a school?</h4>
+    <div class="pair"><button class="btn ghost" onclick="startOwnClass()">Set up my own class</button><button class="btn ghost" onclick="drawWelcome('school')">Create a school</button></div>
+    <button class="linkbtn" onclick="signOut()">Use a different Google account</button>`;
+}
+function startOwnClass(){ hideWelcome(); openSetup(); }
+async function checkAgain(){
+  WELCOME_MSG='';
+  try{ await routeSignedIn(); }catch(e){ $('welcomeErr').textContent=signInMessage(e); return; }
+  if($('welcome').classList.contains('show')) $('welcomeErr').textContent=`No invite for ${myEmail()} yet. Ask your admin to check the address they typed.`;
+}
+async function createSchool(){
+  const err=t=>{ $('welcomeErr').textContent=t; $('wCreate').disabled=false; };
+  const name=($('wSchool').value||'').replace(/[<>"'`]/g,'').trim();
+  if(!name) return err('Please give the school a name.');
+  const dom=$('wDomain')&&$('wDomain').checked?domainOf(myEmail()):'';
+  $('wCreate').disabled=true;
+  try{
+    const code=genSyncCode(), now=serverNow(), org=orgRefFor(code), b=fbDb.batch();
+    const doc={schemaVersion:3,name,kind:'organization',activeYearId:academicYearId(new Date()),defaults:settingsToDefaults(DEFAULT_SETTINGS),createdAt:now,updatedAt:now};
+    if(dom) doc.domain=dom;
+    b.set(org,doc);
+    b.set(org.collection('members').doc(fbUid),{email:myEmail(),displayName:fbUser.displayName||'',roles:['admin','teacher'],status:'active',joinedAt:now});
+    b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(code),updatedAt:now},{merge:true});
+    await fsWrite(b.commit());
+    await enterOrg(code);
+    toast('School created - now invite your teachers');
+  }catch(e){ err('Could not create the school. Check the internet connection and try again.'); }
+}
+/* The code fallback: signed in with a different address than the admin
+   typed. The code is the invite's id; inviteCodes/{code} says which school
+   it's for and with what roles. firestore.rules check the rest. */
+async function joinWithCode(){
+  const err=t=>{ $('welcomeErr').textContent=t; };
+  const raw=($('wCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(raw.length!==10) return err('An invite code has 10 letters and numbers, like ABCDE-FGH23.');
+  const code=raw.slice(0,5)+'-'+raw.slice(5);
+  err('');
+  try{
+    const c=await fbDb.collection('inviteCodes').doc(code).get();
+    if(!c.exists) return err('That code was not found. Check it with your admin.');
+    const {orgId,roles}=c.data(), org=orgRefFor(orgId), me=org.collection('members').doc(fbUid);
+    const mine=await me.get();
+    if(!(mine.exists&&mine.data().status==='active')){
+      const now=serverNow(), b=fbDb.batch();
+      b.set(me,{email:myEmail(),displayName:fbUser.displayName||'',roles,status:'active',joinedAt:now,inviteId:code});
+      b.update(org.collection('invites').doc(code),{status:'claimed',claimedBy:fbUid,claimedAt:now});
+      b.set(fbDb.collection('users').doc(fbUid),{orgIds:firebase.firestore.FieldValue.arrayUnion(orgId),updatedAt:now},{merge:true});
+      await fsWrite(b.commit());
+    }
+    await enterOrg(orgId);
+  }catch(e){
+    err(e&&e.code==='permission-denied'?'That code didn\'t work. It may have expired or been used already, or the school only takes its own email addresses. Ask your admin for a new invite.'
+      :'Could not join. Check the internet connection and try again.');
+  }
+}
+
+/* ---- the school's classes (admins) ---- */
+async function openSchool(){
+  closeDrawer();
+  if(!ORG_ID||!isAdminHere()) return;
+  const title=esc((ORG_INFO&&ORG_INFO.name)||'School');
+  sheetHTML(title,'Loading…',`<div class="body"><div class="empty"><b>Loading…</b></div></div>`);
+  let classes, members={};
+  try{
+    const today=dayId(new Date());
+    const [cq,mq]=await Promise.all([orgRef().collection('classes').get(),orgRef().collection('members').get()]);
+    mq.forEach(d=>{ members[d.id]=d.data(); });
+    classes=await Promise.all(cq.docs.filter(d=>d.data().status!=='archived').map(async d=>{
+      let day=null; try{ const x=await d.ref.collection('days').doc(today).get(); day=x.exists?x.data():null; }catch(e){}
+      return Object.assign({id:d.id,day},d.data());
+    }));
+  }catch(e){ return sheetHTML(title,'',`<div class="body"><div class="empty"><b>Could not load the classes</b>Check the internet connection and try again.</div></div><div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`); }
+  if(!$('scrim').classList.contains('show')) return;          // closed while loading
+  classes.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const status=day=>{
+    const s=day&&day.session;
+    if(!s||!s.status||s.status==='preclass') return 'not started today';
+    if(s.status==='live') return `in class since ${clockStr(new Date(s.startedAt))}`;
+    if(s.status==='lunch') return (s.pauseLabel||'on a break').toLowerCase();
+    return s.endedAt?`ended ${clockStr(new Date(s.endedAt))}`:'ended';
+  };
+  const notHere=day=>Object.values((day&&day.attendance)||{}).filter(a=>a&&(a.status==='absent'||a.status==='left')).length;
+  const canSetUp=(MY_MEMBER.roles||[]).includes('teacher')&&!HOME_CLASS;
+  sheetHTML(title,`${classes.length} class${classes.length===1?'':'es'} · today`,
+   `<div class="body"><div class="rowlist">${classes.length?classes.map(c=>{
+      const t=members[c.teacherUid], n=notHere(c.day);
+      return `<div class="prow"><div class="who"><b>${esc(c.name)}</b><small>${esc(t?(t.displayName||t.email):'No teacher')}${c.id===HOME_CLASS?' (you)':''} · ${status(c.day)}${n?` · ${n} not here`:''}</small></div>
+        <button class="pbtn go" onclick="openClass('${c.id}')">${c.id===CLASS_ID?'Showing':'Open'}</button></div>`;
+    }).join(''):`<div class="empty"><b>No classes yet</b>Invite your teachers from People. Each one sets up their class the first time they sign in.</div>`}</div></div>
+    <div class="actions">${canSetUp?`<button class="btn ghost" onclick="closeSheet();noClassSetUp()">Set up my class</button>`:''}<button class="btn ghost" onclick="openPeople()">People</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+function noClassSetUp(){ openSetup({orgId:ORG_ID,name:(ORG_INFO&&ORG_INFO.name)||'your school'}); }
+/* Switch the screen to another class of the school - to look at it, unless
+   it is this device's own. The listeners move with it; nothing is written. */
+async function openClass(classId){
+  closeSheet(); closeDrawer();
+  classId=classId||null;
+  if(classId===CLASS_ID) return;
+  if(held.length) return toast('Still saving - try again in a moment');
+  detachListeners(); resetClassState(); CLASS_ID=classId;
+  if(classId&&classId===HOME_CLASS) loadFromCache();
+  render();
+  await attachListeners();
+  if(!CLASS_ID) openSchool();
+}
+function leaveView(){ openClass(HOME_CLASS); }
+function teacherCreatedClassId(){ return fbUid; }                   // one class per teacher (firestore.rules)
+async function createSchoolClass(){
+  const school=SETUP_ORG; if(!school) return false;
+  syncStatus='connecting'; render();
+  const ok=await initFirestore();
+  if(!ok||!isGoogleUser()){ syncStatus='error'; render(); scheduleBootstrapRetry(); return false; }
+  try{
+    const org=orgRefFor(school.orgId), id=teacherCreatedClassId(), cls=org.collection('classes').doc(id);
+    const today=dayId(new Date()), now=serverNow(), name=`${state.teacher}'s Hifz Class`, b=fbDb.batch();
+    b.set(cls,{name,teacherUid:fbUid,settingsOverride:null,status:'active'});
+    state.students.forEach((s,i)=>b.set(cls.collection('students').doc(s.id),{name:s.name,active:!!s.active,order:i,enrolledFrom:today,enrolledUntil:null}));
+    b.set(cls.collection('days').doc(today),{date:today,yearId:academicYearId(new Date()),session:sessionToPlain(state.session),
+      attendance:fullAttendancePlain(),roster:fullRosterPlain(),updatedAt:now},{merge:true});
+    b.update(org.collection('members').doc(fbUid),{displayName:state.teacher});      // how the school's admins see them in People
+    await fsWrite(b.commit());
+    SETUP_ORG=null; state.className=name;
+    ORG_ID=school.orgId; Store.set(SESSION_ORG_KEY,school.orgId); setHomeClass(id);
+    sendHeld();
+    await attachListeners();
+    return true;
+  }catch(e){ syncStatus='error'; render(); scheduleBootstrapRetry(); return false; }
+}
+
+/* ---- People: members and invites (admins) ---- */
+let PEOPLE={members:[],invites:[]}, INVITE_ROLES=['teacher'], SHARE_TEXT='';
+const inviteExpiry=v=>v.expiresAt&&v.expiresAt.toMillis?v.expiresAt.toMillis():0;
+async function openPeople(){
+  closeDrawer();
+  if(!ORG_ID||!isAdminHere()) return closeSheet();
+  sheetHTML('People','Loading…',`<div class="body"><div class="empty"><b>Loading…</b></div></div>`);
+  try{
+    const [mq,iq]=await Promise.all([orgRef().collection('members').get(),orgRef().collection('invites').get()]);
+    PEOPLE={members:mq.docs.map(d=>Object.assign({uid:d.id},d.data())),
+            invites:iq.docs.map(d=>Object.assign({id:d.id},d.data())).filter(v=>v.status==='pending')};
+  }catch(e){ return sheetHTML('People','',`<div class="body"><div class="empty"><b>Could not load the school's people</b>Check the internet connection and try again.</div></div><div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`); }
+  drawPeople();
+}
+function drawPeople(){
+  const name=m=>m.displayName||m.email||'Someone';
+  const active=PEOPLE.members.filter(m=>m.status==='active').sort((a,b)=>name(a).localeCompare(name(b)));
+  const gone=PEOPLE.members.filter(m=>m.status!=='active');
+  const role=(m,r)=>`<button class="pbtn ${(m.roles||[]).includes(r)?'on':''}" aria-pressed="${(m.roles||[]).includes(r)}" onclick="toggleRole('${m.uid}','${r}')">${r==='admin'?'Admin':'Teacher'}</button>`;
+  const now=Date.now();
+  const inv=v=>{ const exp=inviteExpiry(v), old=exp<now;
+    return `<div class="prow ${old?'off':''}"><div class="who"><b>${esc(v.email)}</b><small>${rolesLabel(v.roles)} · ${old?'expired':`waiting · good until ${new Date(exp).toLocaleDateString([],{month:'short',day:'numeric'})}`}${v.code?` · code ${esc(v.code)}`:''}</small></div>
+      ${old?`<button class="pbtn" onclick="renewInvite('${v.id}')">Renew</button>`:`<button class="pbtn" onclick="shareInvite('${v.id}')">Send again</button>`}<button class="pbtn danger" onclick="cancelInvite('${v.id}')">Cancel</button></div>`; };
+  sheetHTML('People',`${esc(ORG_INFO.name)} · ${active.length} member${active.length===1?'':'s'}${ORG_INFO.domain?` · @${esc(ORG_INFO.domain)} only`:''}`,
+   `<div class="body"><h4 class="rh2">Members</h4><div class="rowlist">${active.map(m=>`<div class="prow"><div class="who"><b>${esc(name(m))}${m.uid===fbUid?' (you)':''}</b><small>${esc(m.email||'')}</small></div>
+       ${role(m,'admin')}${role(m,'teacher')}${m.uid===fbUid?'':`<button class="pbtn danger" onclick="removeMember('${m.uid}')">Remove</button>`}</div>`).join('')}</div>
+     ${PEOPLE.invites.length?`<h4 class="rh2">Invited - not signed in yet</h4><div class="rowlist">${PEOPLE.invites.map(inv).join('')}</div>`:''}
+     ${gone.length?`<h4 class="rh2">Removed</h4><div class="rowlist">${gone.map(m=>`<div class="prow off"><div class="who"><b>${esc(name(m))}</b><small>${esc(m.email||'')}</small></div><button class="pbtn" onclick="restoreMember('${m.uid}')">Put back</button></div>`).join('')}</div>`:''}
+     <p style="font-size:13px;margin-top:14px">Admins manage people and the school's settings, and can open every class to watch it. Teachers run their own class. A school always keeps at least one admin.</p></div>
+    <div class="actions"><button class="btn ghost" onclick="openSchool()">Classes</button><button class="btn dark" onclick="openInvite()">Invite someone</button></div>`);
+}
+function toggleRole(uid,r){
+  const m=PEOPLE.members.find(x=>x.uid===uid); if(!m) return;
+  const has=(m.roles||[]).includes(r), next=has?(m.roles||[]).filter(x=>x!==r):[...(m.roles||[]),r];
+  const roles=['admin','teacher'].filter(x=>next.includes(x)), plain=m.displayName||m.email||'They', who=esc(plain);
+  if(uid===fbUid&&r==='admin'&&has){
+    // stepping down needs another admin who stays (firestore.rules)
+    const other=PEOPLE.members.find(x=>x.uid!==fbUid&&x.status==='active'&&(x.roles||[]).includes('admin'));
+    if(!other) return toast('Make someone else an admin first - a school always needs one');
+    return confirmSheet('Step down as admin?',`You'll no longer manage people or the school's settings, or see other classes. ${esc(other.displayName||other.email)} stays an admin.`,'Step down',
+      ()=>saveMember(uid,{roles,steppedDownFor:other.uid},'You are no longer an admin'),'warn','Stay admin');
+  }
+  if(r==='admin'&&!has) return confirmSheet(`Make ${who} an admin?`,'Admins manage people and the school\'s settings, and can open every class.','Make admin',()=>saveMember(uid,{roles},`${plain} is now an admin`));
+  saveMember(uid,{roles});
+}
+function removeMember(uid){
+  const m=PEOPLE.members.find(x=>x.uid===uid); if(!m) return;
+  const plain=m.displayName||m.email||'them', who=esc(plain);
+  confirmSheet(`Remove ${who}?`,`They can no longer open the school's classes. Their class and its records stay, and you can put them back any time.`,'Remove',()=>saveMember(uid,{status:'revoked'},`${plain} removed from the school`),'warn','Keep');
+}
+function restoreMember(uid){ saveMember(uid,{status:'active'},'Back in the school'); }
+async function saveMember(uid,patch,msg){
+  try{ await fsWrite(orgRef().collection('members').doc(uid).update(patch)); if(msg) toast(msg); }
+  catch(e){ toast('Could not save that. Check the internet connection and try again.'); }
+  if(uid===fbUid&&patch.roles&&!patch.roles.includes('admin')){
+    MY_MEMBER=Object.assign({},MY_MEMBER,patch); closeSheet();
+    return viewOnly()?leaveView():render();
+  }
+  openPeople();
+}
+function openInvite(email,err){
+  const dom=ORG_INFO.domain;
+  const opts=[[['teacher'],'Teacher'],[['admin'],'Admin'],[['admin','teacher'],'Admin and teacher']];
+  sheetHTML('Invite someone',dom?`Only @${esc(dom)} addresses can join ${esc(ORG_INFO.name)}.`:`They join ${esc(ORG_INFO.name)} by signing in with this address's Google account.`,
+   `<div class="body"><label class="lbl">Their email address<input class="inp" id="invEmail" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${dom?`name@${esc(dom)}`:'name@example.com'}" value="${esc(email||'')}" onkeydown="if(event.key==='Enter')createInvite()"></label>
+     <div class="lbl">They will be<div style="margin-top:8px"><div class="seg">${opts.map(([r,l])=>`<button class="${r.join()===INVITE_ROLES.join()?'on':''}" onclick="INVITE_ROLES=['${r.join("','")}'];openInvite($('invEmail').value)">${l}</button>`).join('')}</div></div></div>
+     <p class="err" id="invErr">${esc(err||'')}</p></div>
+    <div class="actions"><button class="btn ghost" onclick="openPeople()">Back</button><button class="btn dark" id="invGo" onclick="createInvite()">Create invite</button></div>`);
+}
+async function createInvite(){
+  const email=($('invEmail').value||'').trim().toLowerCase();
+  const err=t=>{ $('invErr').textContent=t; $('invGo').disabled=false; };
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return err('Please type their full email address.');
+  if(ORG_INFO.domain&&domainOf(email)!==ORG_INFO.domain) return err(`Only @${ORG_INFO.domain} addresses can join this school.`);
+  if(PEOPLE.members.some(m=>m.status==='active'&&m.email===email)) return err('They are already in the school.');
+  const open=PEOPLE.invites.find(v=>v.email===email&&inviteExpiry(v)>Date.now());
+  if(open) return shareInvite(open.id);
+  $('invGo').disabled=true;
+  const code=genSyncCode(), b=fbDb.batch();
+  const invite={email,roles:INVITE_ROLES.slice(),code,status:'pending',createdBy:fbUid,createdAt:serverNow(),
+    expiresAt:firebase.firestore.Timestamp.fromMillis(Date.now()+WEEK)};
+  b.set(orgRef().collection('invites').doc(code),invite);
+  b.set(fbDb.collection('inviteCodes').doc(code),{orgId:ORG_ID,roles:invite.roles});
+  try{ await fsWrite(b.commit()); }catch(e){ return err('Could not create the invite. Check the internet connection and try again.'); }
+  PEOPLE.invites.push(Object.assign({id:code},invite));
+  shareInvite(code);
+}
+function inviteMessage(v){
+  const until=new Date(inviteExpiry(v)).toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+  const as=(v.roles||[]).includes('admin')?` as ${rolesLabel(v.roles).toLowerCase()}`:'';
+  return `Assalamu alaikum! You're invited to ${ORG_INFO.name} on Hifz Class Tracker${as}.
+
+1. Open https://rfydawood.github.io/hifz-class-tracker/ (on a tablet, add it to the home screen), or the Android app if you have it.
+2. Tap Sign in with Google and choose ${v.email}
+
+That's all - you'll be let in straight away.${v.code?`
+
+Signing in with a different account? Type this invite code when asked: ${v.code}`:''}
+
+This invite is good until ${until}.`;
+}
+function shareInvite(id){
+  const v=PEOPLE.invites.find(x=>x.id===id); if(!v) return;
+  SHARE_TEXT=inviteMessage(v);
+  sheetHTML('Send the invite',`The app doesn't send email itself. Send ${esc(v.email)} this message - WhatsApp, text or email all work.`,
+   `<div class="body"><div class="msgbox" id="invMsg">${esc(SHARE_TEXT)}</div></div>
+    <div class="actions"><button class="btn ghost" onclick="openPeople()">Back to People</button>${navigator.share?`<button class="btn ghost" onclick="shareText()">Share…</button>`:''}<button class="btn dark" onclick="copyText()">Copy message</button></div>`);
+}
+async function copyText(){
+  try{ await navigator.clipboard.writeText(SHARE_TEXT); return toast('Message copied - paste it into WhatsApp or an email'); }catch(e){}
+  try{ const r=document.createRange(); r.selectNodeContents($('invMsg')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); }catch(e){}
+  toast('Copy the selected message');
+}
+async function shareText(){ try{ await navigator.share({text:SHARE_TEXT}); }catch(e){} }
+async function renewInvite(id){
+  try{ await fsWrite(orgRef().collection('invites').doc(id).update({expiresAt:firebase.firestore.Timestamp.fromMillis(Date.now()+WEEK)})); toast('Invite renewed for another week'); }
+  catch(e){ toast('Could not renew it. Check the internet connection and try again.'); }
+  await openPeople();
+  shareInvite(id);
+}
+function cancelInvite(id){
+  const v=PEOPLE.invites.find(x=>x.id===id); if(!v) return;
+  confirmSheet('Cancel this invite?',`${esc(v.email)} won't be able to join with it. You can invite them again later.`,'Cancel invite',async()=>{
+    try{ await fsWrite(orgRef().collection('invites').doc(id).update({status:'revoked'})); toast('Invite cancelled'); }
+    catch(e){ toast('Could not cancel it. Check the internet connection and try again.'); }
+    openPeople();
+  },'warn','Keep it');
+}
+function confirmSwitchAccount(){
+  closeDrawer();
+  confirmSheet('Switch account?',`You'll sign in again and choose the account - for example your school account. ${CLASS_ID&&!viewOnly()?`This class stays safe in the cloud under ${esc(myEmail())}: sign in with it again any time to open it. `:''}Nothing is deleted.`,'Switch account',signOut,'dark','Cancel');
 }
 
 /* ===== legacy local-history migration (Phase 3, plan section 4) =====
@@ -1254,7 +1712,11 @@ window.__hifzMigrationDone=false;
    days are cheap no-ops (mergeDayIntoFirestoreIfMissing's existence check
    skips them immediately), so this is safe to repeat. */
 async function migrateLegacyHistoryIfNeeded(){
-  if(Store.get(MIGRATION_FLAG_KEY)==='1'||!ORG_ID){ window.__hifzMigrationDone=true; return; }
+  // A device's history from before syncing is one teacher's own class. It
+  // belongs in their personal class and never in a school's records - so
+  // not until the open org is known to be personal (Part B decision: the
+  // owner's school class starts fresh).
+  if(Store.get(MIGRATION_FLAG_KEY)==='1'||!ORG_ID||!ORG_INFO||ORG_INFO.kind!=='personal'){ window.__hifzMigrationDone=true; return; }
   const h=readHistory();
   const failures={};
   for(const id of Object.keys(h)){
@@ -1318,7 +1780,7 @@ function openSyncInfo(){
   closeDrawer();
   const google=isGoogleUser();
   const who=google?`Signed in as <b>${myEmail()}</b>`:'Not signed in with Google';
-  sheetHTML('Sync',google?'This class is saved to your Google account. Sign in with it on any device to open the same class.'
+  sheetHTML('Sync',google?(inSchool()?`This account belongs to ${esc(ORG_INFO.name)}. Sign in with it on any device to open the same class.`:'This class is saved to your Google account. Sign in with it on any device to open the same class.')
       :'Sign in with Google to keep this class on your account. It stays exactly as it is - same students, same days - and you can then open it on any device.',
     `<div class="body">
       <p style="font-size:15px;margin-bottom:8px">${who}</p>
@@ -1427,6 +1889,7 @@ function saveBreakEdits(sid){
    read-only in the reports. */
 const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 function openStudentBreaks(sid){
+  if(viewOnlyStop()) return;
   closeDrawer();
   const list=state.breaks.filter(b=>b.sid===sid).sort((x,y)=>x.startAt-y.startAt);
   const o=state.active[sid];
@@ -1513,6 +1976,7 @@ function cancelBreak(sid){
 }
 
 function tap(sid){
+  if(viewOnlyStop()) return;
   const a=att(sid), o=state.active[sid], s=st();
   if(o) return editBreak(sid);                                   // out -> back in
   if(s==='preclass'){                                       // before start: toggle presence
@@ -1576,7 +2040,7 @@ function ret(sid,silent,endAt){
 }
 
 /* ===== class-wide ===== */
-function mainAction(){ const s=st(); if(canResume()) resumeClass(); else if(s==='preclass'||s==='ended') doStart(); else if(s==='lunch') endPause(); else endClass(); }
+function mainAction(){ if(viewOnlyStop()) return; const s=st(); if(canResume()) resumeClass(); else if(s==='preclass'||s==='ended') doStart(); else if(s==='lunch') endPause(); else endClass(); }
 /* Ending class and tapping the main button again used to run doStart(), which
    set a new start time over the day's real one - the owner lost a whole day's
    start time that way on Sep 23. An ended class that started today is picked
@@ -1626,6 +2090,7 @@ function endPause(){
    over: session, attendance, and every break logged today. */
 function resetDay(){
   closeDrawer();
+  if(viewOnlyStop()) return;
   const ids=[...state.breaks.map(b=>b._id||breakDocId(b.sid,b.startAt)),
              ...Object.entries(state.active).map(([sid,a])=>a._id||breakDocId(sid,a.startAt))];
   const what=ids.length?`today's attendance and all ${ids.length} break${ids.length===1?'':'s'} logged today`:"today's attendance";
@@ -1742,7 +2207,7 @@ function openAttendanceReview(){
     <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row atrow"><b>${s.name}</b><span class="time">${a.note||(a.at?clockStr(a.at):'')}</span><div class="seg">${[['present','present'],['tardy','tardy'],['left','left early'],['absent','absent']].map(([k,lbl])=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${lbl}</button>`).join('')}</div></div>`}).join('')}</div></div>
     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
-function setStatus(sid,k){ const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); writeAttendance(sid); } render(); openAttendanceReview(); }
+function setStatus(sid,k){ if(viewOnlyStop()) return; const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); writeAttendance(sid); } render(); openAttendanceReview(); }
 
 function openDaySummary(){
   closeDrawer();
@@ -1778,7 +2243,15 @@ function drawRosterList(){
   $('rosterList').innerHTML=setupStudents.length?setupStudents.map(n=>`<div class="roster-item"><span>${n}</span><button onclick="removeSetupStudent('${n.replace(/'/g,"\\'")}')">${n}</button></div>`).join(''):
     `<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">No students yet</div>`;
 }
-function openSetup(){ setupStudents=[]; $('setup').classList.add('show'); $('tName').value=state.teacher||(fbUser&&fbUser.displayName)||''; drawRosterList(); setupCount(); $('tStudent').focus(); }
+/* SETUP_ORG: setting up a teacher's class in a school (opened by
+   noClassYet()), rather than a personal class of one's own. */
+let SETUP_ORG=null;
+function openSetup(school){
+  SETUP_ORG=school||null; setupStudents=[];
+  $('setupLede').textContent=SETUP_ORG?`Your class at ${SETUP_ORG.name}. Two things and you are ready - it opens on any device you sign in on with this account.`
+    :'Two things and you are ready. Your class is saved to your Google account, so it opens on any device you sign in on.';
+  $('setup').classList.add('show'); $('tName').value=state.teacher||(fbUser&&fbUser.displayName)||''; drawRosterList(); setupCount(); $('tStudent').focus();
+}
 function finishSetup(){
   const name=($('tName').value||'').replace(/[<>"'\`]/g,'').trim();
   if(!name) return $('setupErr').textContent='Please add your name.';
@@ -1786,7 +2259,7 @@ function finishSetup(){
   state.teacher=name;
   state.students=setupStudents.map((n,i)=>({id:'s'+i,name:n,active:true}));
   state.attendance={}; ensureAttendance();
-  state.setup=true; bootstrapOrg();
+  state.setup=true; if(SETUP_ORG) createSchoolClass(); else bootstrapOrg();
   $('setupErr').textContent=''; $('setup').classList.remove('show');
   render(); startTour();
 }
@@ -2025,7 +2498,7 @@ function addStudent(){
 }
 function archiveStudent(sid){
   const s=state.students.find(x=>x.id===sid); if(!s) return;
-  if(state.active[sid]) ret(sid,true);
+  if(state.active[sid]&&!viewOnly()) ret(sid,true);
   s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); writeRosterStudent(s); render(); drawDrawer(); toast(`${s.name} removed from the list`);
 }
 function restoreStudent(sid){
@@ -2037,42 +2510,56 @@ function restoreStudent(sid){
 function openDrawer(){ $('drawer').classList.add('show'); $('drawerScrim').classList.add('show'); drawDrawer(); }
 function closeDrawer(){ $('drawer').classList.remove('show'); $('drawerScrim').classList.remove('show'); }
 function drawDrawer(){
-  const s=st(), set=state.settings;
+  const s=st(), set=state.settings, vo=viewOnly(), school=inSchool(), admin=isAdminHere(), hasClass=!!CLASS_ID;
+  // In a school the hours and limits are the school's: its admins change
+  // them for every class, a teacher sees them (plan 2.7, Part B decision).
+  const canEdit=!school||admin;
+  const ro=(label,sub,val)=>`<div class="field"><div>${label}<small>${sub}</small></div><span class="ro">${val}</span></div>`;
   $('dbody').innerHTML=`
    ${isGoogleUser()?'':`<button class="dbtn gold" onclick="signInToKeepClass()">Sign in with Google<small>Keeps this class on your Google account, safe and on every device you use</small></button>`}
-   <h4>Class-wide</h4>
+   ${vo?`<h4>Viewing</h4><button class="dbtn leaf" onclick="leaveView()">${HOME_CLASS?'Back to my class':'Back to classes'}<small>${esc(state.className||'This class')} is view only</small></button>`:''}
+   ${school&&admin?`<h4>${esc(ORG_INFO.name||'School')}</h4>
+     <button class="dbtn" onclick="openSchool()">Classes<small>Every class in the school, live - open one to view it</small></button>
+     <button class="dbtn" onclick="openPeople()">People<small>Admins and teachers, invites</small></button>`:''}
+   ${hasClass&&!vo?`<h4>Class-wide</h4>
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Snack break','${set.snack.end}')">Start snack break<small>Scheduled ${hm(set.snack.start)} to ${hm(set.snack.end)}</small></button>`:''}
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
    ${s==='lunch'?`<button class="dbtn leaf" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button>`:''}
    ${s==='live'||s==='lunch'?`<button class="dbtn ember" onclick="endClass()">End class<small>Closes open breaks</small></button>`:''}
    ${canResume()?`<button class="dbtn leaf" onclick="resumeClass()">Resume class<small>Carries on today's class from ${clockStr(state.session.startedAt)}</small></button>`
-     :s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}
-   <h4>Review</h4>
-   <button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, left early, absent</small></button>
+     :s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}`:''}
+   ${hasClass?`<h4>Review</h4>
+   ${vo?'':`<button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, left early, absent</small></button>`}
    <button class="dbtn" onclick="openDaySummary()">Day summary<small>Attendance and break totals per student</small></button>
    <button class="dbtn" onclick="openReports()">Reports<small>Daily, weekly, monthly · class or one student</small></button>
    <h4>Class list</h4>
    ${state.students.filter(x=>x.active).map((x,i)=>`<div class="rrow"><b>${i+1}. ${x.name}</b><button onclick="archiveStudent('${x.id}')">Remove</button></div>`).join('')}
    ${state.students.some(x=>!x.active)?`${state.students.filter(x=>!x.active).map(x=>`<div class="rrow"><b>${x.name}</b><small>removed</small><button class="back" onclick="restoreStudent('${x.id}')">Put back</button></div>`).join('')}`:''}
-   <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>
-   <h4>Settings</h4>
-   <div class="field"><div>Class hours<small>Monday to Friday</small></div><span class="two"><input type="time" value="${set.startTime}" onchange="state.settings.startTime=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.endTime}" onchange="state.settings.endTime=this.value;writeSettings();render();drawDrawer()"></span></div>
+   <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>`:''}
+   <h4>${school?(canEdit?'School-wide settings':'School settings'):'Settings'}</h4>
+   ${school?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 4px">${canEdit?`These apply to every class in ${esc(ORG_INFO.name||'the school')}.`:'Set by your school\'s admin. The minutes for each trip are still yours to choose when you log a break.'}</small>`:''}
+   ${canEdit?`<div class="field"><div>Class hours<small>Monday to Friday</small></div><span class="two"><input type="time" value="${set.startTime}" onchange="state.settings.startTime=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.endTime}" onchange="state.settings.endTime=this.value;writeSettings();render();drawDrawer()"></span></div>
    <div class="field"><div>Snack break<small>School-wide</small></div><span class="two"><input type="time" value="${set.snack.start}" onchange="state.settings.snack.start=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.snack.end}" onchange="state.settings.snack.end=this.value;writeSettings();render();drawDrawer()"></span></div>
    <div class="field"><div>Lunch and recess<small>School-wide</small></div><span class="two"><input type="time" value="${set.lunch.start}" onchange="state.settings.lunch.start=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.lunch.end}" onchange="state.settings.lunch.end=this.value;writeSettings();render();drawDrawer()"></span></div>
    <h4>Break limits</h4>
    ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
      <select onchange="state.settings.limits.${k}.min=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
-     <select onchange="state.settings.limits.${k}.trips=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
-   <h4>Today's log</h4>
-   <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
-   <h4>Sync</h4>
+     <select onchange="state.settings.limits.${k}.trips=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}`
+   :`${ro('Class hours','Monday to Friday',`${hm(set.startTime)} - ${hm(set.endTime)}`)}
+   ${ro('Snack break','School-wide',`${hm(set.snack.start)} - ${hm(set.snack.end)}`)}
+   ${ro('Lunch and recess','School-wide',`${hm(set.lunch.start)} - ${hm(set.lunch.end)}`)}
+   ${['washroom','water','wudhu'].map(k=>ro(RSN(k).label,'Minutes per trip · trips per day',`${set.limits[k].min} min · ${set.limits[k].trips}/day`)).join('')}`}
+   ${hasClass&&!vo?`<h4>Today's log</h4>
+   <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>`:''}
+   <h4>Account</h4>
    <button class="dbtn" onclick="openSyncInfo()">${isGoogleUser()?`Signed in as ${myEmail()}<small>${syncStatusLabel()}</small>`:ORG_ID?`Not signed in with Google<small>${syncStatusLabel()}</small>`:`Not synced yet<small>${syncStatusLabel()}</small>`}</button>
-   <h4>Backup</h4>
+   ${isGoogleUser()?`<button class="dbtn" onclick="confirmSwitchAccount()">Switch account<small>Sign in with a different Google account - nothing here is deleted</small></button>`:''}
+   ${hasClass&&!vo?`<h4>Backup</h4>
    ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
      :`<button class="dbtn" onclick="closeDrawer();backupAll()">Download a backup<small>Every day this class has recorded, saved as a file</small></button>`}
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
-   <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
+   <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>`:''}
    <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
 }
 
@@ -2082,7 +2569,10 @@ function render(){
   $('clock').textContent=clockStr(now); $('date').textContent=dateStr(now);
   const outs=Object.keys(state.active).length, abs=list.filter(x=>['absent','left'].includes(att(x.id).status)).length;   // "Not here" is a live count of who is not in the room, whichever way they got there
   $('cIn').textContent=list.length-outs-abs; $('cOut').textContent=outs; $('cAbs').textContent=abs;
-  $('title').textContent = state.teacher ? `${state.teacher}'s Hifz Class` : 'Hifz Class';
+  const vo=viewOnly();
+  $('title').textContent = !CLASS_ID ? ((ORG_INFO&&ORG_INFO.name)||'Hifz Class')
+    : vo ? (state.className||'Loading…')
+    : state.className || (state.teacher ? `${state.teacher}'s Hifz Class` : 'Hifz Class');
   const nx=nextUp();
   $('sub').textContent= s==='preclass'?`Before class · ${hm(state.settings.startTime)}-${hm(state.settings.endTime)}`
     : s==='live'?`Since ${clockStr(state.session.startedAt)}${nx?` · next ${nx}`:''}`
@@ -2090,11 +2580,14 @@ function render(){
     : `Ended ${clockStr(state.session.endedAt)}`;
 
   const mb=$('mainBtn'); mb.className='start-btn'+(s==='live'?' end':s==='lunch'?' lunch':'');
+  mb.style.display=(vo||!CLASS_ID)?'none':'';
   mb.textContent= s==='preclass'?'Start class':s==='live'?'End class':s==='lunch'?'End break':canResume()?'Resume class':'Start again';
 
   const due=s==='live'?dueBreak():null; render.nudge=due?due.kind:'';
   const late=state.session.resumeAt&&nowMin()>=toMin(state.session.resumeAt);
-  $('banner').innerHTML= s==='preclass'?`<div class="banner paper">Everyone is assumed present. Click a student who is not here to mark them absent. Once class starts, clicking a marked student records them tardy with the time.</div>`
+  $('banner').innerHTML= !CLASS_ID?`<div class="banner paper">${isAdminHere()?'Open a class from the school\'s list to see it live.':'Your class is not set up yet.'}<button class="act" onclick="${isAdminHere()?'openSchool()':'noClassYet()'}">${isAdminHere()?'Classes':'Set up'}</button></div>`
+    : vo?`<div class="banner paper">View only. This is ${esc((CLASS_INFO&&CLASS_INFO.name)||'another teacher\'s class')} - only its teacher logs breaks and attendance.<button class="act" onclick="leaveView()">${HOME_CLASS?'Back to my class':'Back to classes'}</button></div>`
+    : s==='preclass'?`<div class="banner paper">Everyone is assumed present. Click a student who is not here to mark them absent. Once class starts, clicking a marked student records them tardy with the time.</div>`
     : due?`<div class="banner">${due.kind} is scheduled now, ${hm(due.start)} to ${hm(due.end)}. Individual break logging pauses while it runs.<button class="act" onclick="startPause('${due.kind}','${due.end}')">Start ${due.kind.toLowerCase()}</button></div>`
     : s==='lunch'?`<div class="banner${late?'':''}">${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}.${state.session.resumeAt?` ${late?'Class was due back at':'Class resumes at'} ${hm(state.session.resumeAt)}.`:''} Individual break logging is paused.<button class="act" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button></div>`
     : s==='ended'?`<div class="banner leaf">Class ended at ${clockStr(state.session.endedAt)}.<button class="act" onclick="openDaySummary()">View day summary</button><button class="act" style="margin-left:8px;background:var(--paper);color:var(--ink);border:1px solid var(--line)" onclick="resetDay()">Reset day</button></div>`:'';
@@ -2103,7 +2596,8 @@ function render(){
   $('gridHint').textContent= s==='preclass'?'Tap a name to mark them not here':'Tap a student to log a break · tap again when they are back';
 
   const g=$('grid');
-  g.innerHTML=list.map(x=>{
+  if(!CLASS_ID) g.innerHTML=`<div class="noclass"><b>${esc((ORG_INFO&&ORG_INFO.name)||'Your school')}</b>${isAdminHere()?'Pick a class to see who is in, who is out, and its reports.':'Set up your class to start.'}</div>`;
+  else g.innerHTML=list.map(x=>{
     const a=att(x.id), o=state.active[x.id];
     const fl=flagsOf(x.id);
     if(o) return `<button class="tile out ${isLong(o)?'long':''}" data-long="${+o.startAt}" data-lim="${o.allowMs||0}" onclick="tap('${x.id}')"><span class="tag">Back in</span><span class="name">${x.name}</span><span class="state">${o.label}${o.assignedMin?` ${o.assignedMin} min`:''} · <span data-t="${+o.startAt}">${fmtDur(now-o.startAt)}</span></span></button>`;
@@ -2116,7 +2610,7 @@ function render(){
 
   const outEntries=Object.entries(state.active).sort((a,b)=>a[1].startAt-b[1].startAt);
   $('outHint').textContent=outs||'';
-  $('outList').innerHTML=outEntries.length?outEntries.map(([sid,a])=>`<div class="out-item ${isLong(a)?'long':''}" data-long="${+a.startAt}" data-lim="${a.allowMs||0}"><div class="who"><b>${nameOf(sid)}</b><span>${a.label} · left ${clockStr(a.startAt)}${a.allowMs?` · ${Math.round(a.allowMs/60000)} min allowed`:''}${a.overTrip?' · past daily limit':''}</span></div><div class="t" data-t="${+a.startAt}">${fmtDur(now-a.startAt)}</div><button class="back" onclick="ret('${sid}')">Back in</button></div>`).join('')
+  $('outList').innerHTML=outEntries.length?outEntries.map(([sid,a])=>`<div class="out-item ${isLong(a)?'long':''}" data-long="${+a.startAt}" data-lim="${a.allowMs||0}"><div class="who"><b>${nameOf(sid)}</b><span>${a.label} · left ${clockStr(a.startAt)}${a.allowMs?` · ${Math.round(a.allowMs/60000)} min allowed`:''}${a.overTrip?' · past daily limit':''}</span></div><div class="t" data-t="${+a.startAt}">${fmtDur(now-a.startAt)}</div>${vo?'':`<button class="back" onclick="ret('${sid}')">Back in</button>`}</div>`).join('')
     :`<div class="empty"><b>Everyone is in class</b>Log a break and the timer appears here.</div>`;
   $('outList').classList.toggle('compact',outEntries.length>3);
   document.querySelector('.stage').classList.toggle('no-out',outEntries.length===0);
@@ -2135,10 +2629,14 @@ function render(){
    Cheap localStorage/Preferences write, not a Firestore write, so it has no
    bearing on the "zero writes while idle" rule. */
 function cacheLastClass(){
+  // Only a class this device runs. The sign-in screen used to cache its
+  // empty board too, and on the next open that read as a class: a new
+  // device that was reloaded before signing in never saw sign-in again.
+  if(!state.setup||!CLASS_ID||viewOnly()) return;
   try{
     Store.set(CACHE_KEY,JSON.stringify({
       day:dayId(new Date()),
-      teacher:state.teacher, students:state.students, settings:state.settings,
+      teacher:state.teacher, className:state.className, students:state.students, settings:state.settings,
       session:sessionToPlain(state.session), attendance:fullAttendancePlain(),
       active:Object.fromEntries(Object.entries(state.active).map(([sid,a])=>[sid,Object.assign({},a,{startAt:+a.startAt})])),
       breaks:state.breaks.map(b=>Object.assign({},b,{startAt:+b.startAt,endAt:b.endAt?+b.endAt:null}))
@@ -2149,7 +2647,10 @@ function loadFromCache(){
   try{
     const raw=Store.get(CACHE_KEY); if(!raw) return false;
     const c=JSON.parse(raw);
+    // an empty board cached by the sign-in screen (before the fix above) is not a class
+    if(!(Array.isArray(c.students)&&c.students.length)&&!Store.get(SESSION_ORG_KEY)) return false;
     if(c.teacher) state.teacher=c.teacher;
+    if(c.className) state.className=c.className;
     if(Array.isArray(c.students)) state.students=c.students;
     state.settings=mergeSettings(c.settings);
     // The roster and the rules belong to the class and paint on any day. The
@@ -2282,7 +2783,7 @@ if(document.fonts){
 addEventListener('orientationchange',()=>setTimeout(()=>{ fitHeader(); fitGrid(); },250));
 function tick(){
   if(DAY_STATE_ID && dayId(new Date())!==DAY_STATE_ID){   // left open past midnight
-    resetLocalDayState(); if(ORG_ID) attachDayListeners(); return render();
+    resetLocalDayState(); if(ORG_ID&&CLASS_ID) attachDayListeners(); return render();
   }
   const now=Date.now();
   document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
@@ -2305,7 +2806,8 @@ function tick(){
     render();
   } finally { clearTimeout(failsafe); reveal(); }
   setInterval(tick,1000);
-  const sessionOrgId=Store.get(SESSION_ORG_KEY);
+  const sessionOrgId=Store.get(SESSION_ORG_KEY), sessionClass=Store.get(SESSION_CLASS_KEY);
+  CLASS_ID=HOME_CLASS=sessionClass==='-'?null:(sessionClass||'default');
   if(sessionOrgId){
     await attachToOrg(sessionOrgId);
   } else if(state.setup){
