@@ -1,16 +1,25 @@
 rules_version = '2';
 
 // Data model: IMPLEMENTATION_PLAN.md section 2.2. Rules: section 6.
-// Phase 4 Part A (docs/phase-4.md A5).
+// Phase 4 Part A (docs/phase-4.md A5) and Part B (organizations).
 //
 // Access is membership. An org is readable only by its active members; the
 // old "know the sync code and you're in" (a signed-in user could read any org
 // by id and write their own member doc into it) is closed. There are exactly
 // two ways to become a member:
 //   (a) create a brand-new org, with your own member doc in the same batch;
-//   (b) claim a pending invite sent to your own verified email address.
+//   (b) claim a pending invite - sent to your own verified email address, or
+//       by its one-time code (the invite's id) when you signed in with a
+//       different address.
 // Member docs written before Part A - anonymous devices that joined by code -
 // stay valid: nothing below asks a member for an email or a Google account.
+//
+// Two kinds of org. 'personal' is one teacher on any number of devices: every
+// member reads and runs its one class, as before. 'organization' is a school:
+// a teacher reads and runs only their own class; admins read every class,
+// edit rosters and the school's settings, and manage people, but never run
+// another teacher's class (plan 2.7). An org may be locked to one email
+// domain (`domain`), and is never left without an active admin.
 //
 // Write rules read membership with getAfter(): what counts is the state the
 // write leaves behind, which is what lets a new org, its member, its class
@@ -32,6 +41,13 @@ service cloud.firestore {
         ? request.auth.token.get('email', '').lower() : '';
     }
 
+    // The part after the @, or '' - never an error for an odd address.
+    function domainOf(email) {
+      return email.split('@').size() == 2 ? email.split('@')[1] : '';
+    }
+    // '' when the org takes anyone, else the one domain its people must have.
+    function orgDomain(orgId) { return get(orgPath(orgId)).data.get('domain', ''); }
+
     // ---- membership as it stands (reads) ----
     function isMember(orgId) {
       return signedIn() && exists(memberPath(orgId, request.auth.uid))
@@ -39,6 +55,16 @@ service cloud.firestore {
     }
     function isAdmin(orgId) {
       return isMember(orgId) && 'admin' in get(memberPath(orgId, request.auth.uid)).data.roles;
+    }
+
+    // Who may read a class and everything under it. In a personal org, every
+    // member (one teacher, several devices). In a school, an admin, or the
+    // class's own teacher - a teacher never sees another teacher's class.
+    function canReadClass(orgId, classId) {
+      return isAdmin(orgId)
+        || (isMember(orgId)
+            && (get(orgPath(orgId)).data.kind == 'personal'
+                || get(classPath(orgId, classId)).data.teacherUid == request.auth.uid));
     }
 
     // ---- membership as this write leaves it (writes) ----
@@ -78,21 +104,29 @@ service cloud.firestore {
       allow get: if isMember(orgId);
       allow list: if false;
 
+      function orgShape() {
+        return request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','domain','createdAt','updatedAt'])
+          && request.resource.data.name is string && request.resource.data.name.size() < 200
+          && request.resource.data.get('domain', '') is string
+          && request.resource.data.get('domain', '').size() < 100;
+      }
+
       // Only together with the creator's own member doc, as admin and teacher.
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','createdAt','updatedAt'])
+      // A school locked to a domain is created by someone from that domain.
+      allow create: if signedIn() && orgShape()
         && request.resource.data.schemaVersion is int
-        && request.resource.data.kind == 'personal'
-        && request.resource.data.name is string && request.resource.data.name.size() < 200
+        && request.resource.data.kind in ['personal','organization']
         && request.resource.data.activeYearId is string
+        && (request.resource.data.get('domain', '') == ''
+            || (request.resource.data.kind == 'organization'
+                && domainOf(verifiedEmail()) == request.resource.data.domain))
         && existsAfter(memberPath(orgId, request.auth.uid))
         && getAfter(memberPath(orgId, request.auth.uid)).data.roles.hasAll(['admin','teacher'])
         && getAfter(memberPath(orgId, request.auth.uid)).data.status == 'active';
 
-      allow update: if isAdmin(orgId)
-        && request.resource.data.keys().hasOnly(['schemaVersion','name','kind','activeYearId','defaults','createdAt','updatedAt'])
-        && request.resource.data.kind == resource.data.kind
-        && request.resource.data.name is string && request.resource.data.name.size() < 200;
+      // The school's name and settings (hours, break limits) - admins only.
+      allow update: if isAdmin(orgId) && orgShape()
+        && request.resource.data.kind == resource.data.kind;
 
       allow delete: if false;
 
@@ -102,9 +136,10 @@ service cloud.firestore {
         allow list: if isAdmin(orgId);
 
         function memberShape() {
-          return request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt','inviteId'])
+          return request.resource.data.keys().hasOnly(['email','displayName','roles','status','joinedAt','inviteId','steppedDownFor'])
             && request.resource.data.roles is list
             && request.resource.data.roles.hasOnly(['admin','teacher'])
+            && request.resource.data.status in ['active','revoked']
             && request.resource.data.email is string && request.resource.data.email.size() < 200
             && request.resource.data.displayName is string && request.resource.data.displayName.size() < 200;
         }
@@ -115,9 +150,11 @@ service cloud.firestore {
             && request.resource.data.roles.hasAll(['admin','teacher'])
             && request.resource.data.status == 'active';
         }
-        // (b) claiming a pending, unexpired invite to your own verified
-        // email: roles copied exactly, invite marked claimed by you in the
-        // same batch.
+        // (b) claiming a pending, unexpired invite: roles copied exactly,
+        // invite marked claimed by you in the same batch. Either the invite
+        // is to your own verified email, or you have its one-time code - the
+        // invite's id, which only the admins and the person they gave it to
+        // know - and a Google account (in the school's domain, if it has one).
         function claimsInvite() {
           let inviteId = request.resource.data.get('inviteId', '');
           let before = get(invitePath(orgId, inviteId)).data;
@@ -126,7 +163,10 @@ service cloud.firestore {
             && exists(invitePath(orgId, inviteId))
             && before.status == 'pending'
             && request.time < before.expiresAt
-            && verifiedEmail() != '' && before.email == verifiedEmail()
+            && verifiedEmail() != ''
+            && (before.email == verifiedEmail()
+                || (before.get('code', '') == inviteId
+                    && (orgDomain(orgId) == '' || domainOf(verifiedEmail()) == orgDomain(orgId))))
             && request.resource.data.roles == before.roles
             && request.resource.data.status == 'active'
             && after.status == 'claimed' && after.claimedBy == uid;
@@ -135,9 +175,25 @@ service cloud.firestore {
         allow create: if signedIn() && request.auth.uid == uid && memberShape()
           && (joinsNewOrg() || claimsInvite());
 
-        // Your own name and email; roles and status only by an admin.
+        // An org is never left without an active admin. An admin changes
+        // anyone else's roles and status - they stay admin themselves, so
+        // one remains. Their own roles they may change while staying admin,
+        // or step down by naming another member who is an active admin once
+        // this write is done (steppedDownFor).
+        function staysAdmin() {
+          return request.resource.data.status == 'active' && 'admin' in request.resource.data.roles;
+        }
+        function anotherAdminRemains() {
+          let other = request.resource.data.get('steppedDownFor', '');
+          return other is string && other != '' && other != uid
+            && getAfter(memberPath(orgId, other)).data.status == 'active'
+            && 'admin' in getAfter(memberPath(orgId, other)).data.roles;
+        }
+
+        // Everyone: their own name and email. Roles and status: an admin, as above.
         allow update: if signedIn() && memberShape()
-          && (isAdmin(orgId)
+          && ((isAdmin(orgId) && request.auth.uid != uid)
+              || (isAdmin(orgId) && request.auth.uid == uid && (staysAdmin() || anotherAdminRemains()))
               || (request.auth.uid == uid
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email','displayName'])));
 
@@ -156,14 +212,22 @@ service cloud.firestore {
             && request.resource.data.expiresAt is timestamp;
         }
         allow get, list: if isAdmin(orgId);
+        // A school locked to a domain invites only addresses in it. A code,
+        // when there is one, is the invite's own id.
         allow create: if isAdmin(orgId) && inviteShape()
           && request.resource.data.status == 'pending'
-          && request.resource.data.createdBy == request.auth.uid;
+          && request.resource.data.createdBy == request.auth.uid
+          && (orgDomain(orgId) == '' || domainOf(request.resource.data.email) == orgDomain(orgId))
+          && request.resource.data.get('code', inviteId) == inviteId;
         allow update: if inviteShape()
           && (isAdmin(orgId)
-              // the invitee flips their own invite to claimed, and nothing else
+              // the invitee flips their own invite to claimed, and nothing else -
+              // matched by email, or by code while becoming a member through it
               || (resource.data.status == 'pending'
-                  && verifiedEmail() != '' && resource.data.email == verifiedEmail()
+                  && verifiedEmail() != ''
+                  && (resource.data.email == verifiedEmail()
+                      || (resource.data.get('code', '') == inviteId
+                          && getAfter(memberPath(orgId, request.auth.uid)).data.get('inviteId', '') == inviteId))
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','claimedBy','claimedAt'])
                   && request.resource.data.status == 'claimed'
                   && request.resource.data.claimedBy == request.auth.uid));
@@ -172,19 +236,39 @@ service cloud.firestore {
 
       // ---- orgs/{orgId}/classes/{classId} ----
       match /classes/{classId} {
-        allow get, list: if isMember(orgId);
+        allow get: if canReadClass(orgId, classId);
+        // A teacher finds their own class with where('teacherUid','==',uid).
+        allow list: if isAdmin(orgId)
+          || (isMember(orgId)
+              && (get(orgPath(orgId)).data.kind == 'personal'
+                  || resource.data.teacherUid == request.auth.uid));
 
-        allow create, update: if isAdminAfter(orgId)
-          && request.resource.data.keys().hasOnly(['name','teacherUid','settingsOverride','status'])
-          && request.resource.data.name is string && request.resource.data.name.size() < 200
-          && request.resource.data.teacherUid is string
-          && request.resource.data.status in ['active','archived'];
+        function classShape() {
+          return request.resource.data.keys().hasOnly(['name','teacherUid','settingsOverride','status'])
+            && request.resource.data.name is string && request.resource.data.name.size() < 200
+            && request.resource.data.teacherUid is string
+            && request.resource.data.status in ['active','archived'];
+        }
+        // Admins make and manage classes. A teacher sets up their own - one
+        // each: its id is their uid - and may rename it, nothing more (hours
+        // and limits are the school's, plan 2.7).
+        allow create: if classShape()
+          && (isAdminAfter(orgId)
+              || (classId == request.auth.uid
+                  && request.resource.data.teacherUid == request.auth.uid
+                  && isMemberAfter(orgId)
+                  && 'teacher' in getAfter(memberPath(orgId, request.auth.uid)).data.roles));
+        allow update: if classShape()
+          && (isAdminAfter(orgId)
+              || (isMember(orgId) && resource.data.teacherUid == request.auth.uid
+                  && 'teacher' in get(memberPath(orgId, request.auth.uid)).data.roles
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])));
 
         allow delete: if false;
 
         // ---- .../students/{studentId} - the roster ----
         match /students/{studentId} {
-          allow get, list: if isMember(orgId);
+          allow get, list: if canReadClass(orgId, classId);
           allow create, update: if (runsClassAfter(orgId, classId) || isAdminAfter(orgId))
             && request.resource.data.keys().hasOnly(['name','active','order','enrolledFrom','enrolledUntil'])
             && request.resource.data.name is string && request.resource.data.name.size() < 200
@@ -194,7 +278,7 @@ service cloud.firestore {
 
         // ---- .../days/{date} - session and attendance ----
         match /days/{date} {
-          allow get, list: if isMember(orgId);
+          allow get, list: if canReadClass(orgId, classId);
           allow create, update: if runsClassAfter(orgId, classId)
             && request.resource.data.keys().hasOnly(['date','yearId','session','attendance','roster','summary','updatedAt'])
             && request.resource.data.date is string;
@@ -202,7 +286,7 @@ service cloud.firestore {
 
           // ---- .../days/{date}/breaks/{breakId} ----
           match /breaks/{breakId} {
-            allow get, list: if isMember(orgId);
+            allow get, list: if canReadClass(orgId, classId);
             allow create, update: if runsClassAfter(orgId, classId)
               && request.resource.data.keys().hasOnly(['sid','reason','startAt','endAt','dur','over','flag','overTrip','assignedMin']);
             // Two app paths delete a break, both correcting a mistake rather
@@ -215,6 +299,23 @@ service cloud.firestore {
           }
         }
       }
+    }
+
+    // ---- inviteCodes/{code}: what a typed invite code points at ----
+    // The code fallback (plan 2.8): someone signed in with a different address
+    // than the admin entered types the code from their invite, and this says
+    // which org it belongs to and with what roles. Read by exact code only,
+    // never listed; written once by an admin, with the invite whose id is the
+    // code. Holds nothing that grants access - the claim rules above decide.
+    match /inviteCodes/{code} {
+      allow get: if verifiedEmail() != '';
+      allow list: if false;
+      allow create: if request.resource.data.keys().hasOnly(['orgId','roles'])
+        && request.resource.data.orgId is string
+        && isAdmin(request.resource.data.orgId)
+        && getAfter(invitePath(request.resource.data.orgId, code)).data.get('code', '') == code
+        && request.resource.data.roles == getAfter(invitePath(request.resource.data.orgId, code)).data.roles;
+      allow update, delete: if false;
     }
 
     // ---- an invitee finding their own invites (collection-group query) ----

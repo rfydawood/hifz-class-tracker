@@ -7,7 +7,8 @@
 // Phase 4 Part A (docs/phase-4.md A5): membership is the only way in, and
 // there are two ways to become a member - create a new org with your own
 // member doc in the same batch, or claim an invite sent to your verified
-// email. Member docs from before (anonymous devices) keep working.
+// email (Part B: or by its code). Member docs from before (anonymous
+// devices) keep working. Part B tests are at the end of the file.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -129,13 +130,17 @@ test('a new org\'s creator must be admin and teacher', async () => {
   await assertFails(batch.commit());
 });
 
-test('Part A creates personal orgs only', async () => {
+test('an org is personal or a school (organization) - nothing else', async () => {
   const db = testEnv.authenticatedContext('uidA').firestore();
-  const org = db.collection('orgs').doc(ORG_ID);
-  const batch = db.batch();
-  batch.set(org, orgDoc({ kind: 'organization' }));
-  batch.set(org.collection('members').doc('uidA'), memberDoc());
-  await assertFails(batch.commit());
+  const make = (kind) => {
+    const org = db.collection('orgs').doc(ORG_ID);
+    const batch = db.batch();
+    batch.set(org, orgDoc({ kind }));
+    batch.set(org.collection('members').doc('uidA'), memberDoc());
+    return batch.commit();
+  };
+  await assertFails(make('company'));
+  await assertSucceeds(make('organization'));
 });
 
 test('creating an org doc at an id that already exists is rejected (cannot overwrite someone else\'s org via create)', async () => {
@@ -492,4 +497,255 @@ test('in a shared (non-personal) org only the class\'s own teacher runs the clas
   await assertSucceeds(roster.set({ name: 'Yusuf', active: true, order: 9, enrolledFrom: '2026-09-25', enrolledUntil: null }));
   const settings = testEnv.authenticatedContext('uidT').firestore().collection('orgs').doc(ORG_ID);
   await assertFails(settings.set({ defaults: { startTime: '07:00' } }, { merge: true }));   // teacher can't write org defaults
+});
+
+// ---- Phase 4 Part B: schools (orgs of kind 'organization') ----
+// A teacher reads and runs only their own class; admins read every class,
+// manage people and the school's settings, and never run someone else's
+// class; a school may be locked to one email domain; invites can be claimed
+// by code; and a school is never left without an active admin.
+
+const SCHOOL = 'SCHOOL-00001';
+const DOMAIN = 'uthmanacademy.org';
+const school = (uid, email) => testEnv.authenticatedContext(uid, email ? { email, email_verified: true } : undefined).firestore().collection('orgs').doc(SCHOOL);
+
+async function seedSchool({ domain = DOMAIN } = {}) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const org = ctx.firestore().collection('orgs').doc(SCHOOL);
+    await org.set(orgDoc({ name: 'Uthman Academy Hifz', kind: 'organization', ...(domain ? { domain } : {}) }));
+    const m = (uid, roles, extra = {}) => org.collection('members').doc(uid).set(memberDoc({ email: `${uid}@${DOMAIN}`, roles, ...extra }));
+    await m('admin1', ['admin']);
+    await m('rafay', ['admin', 'teacher']);
+    await m('t1', ['teacher']);
+    await m('t2', ['teacher']);
+    await m('gone', ['teacher'], { status: 'revoked' });
+    for (const uid of ['t1', 't2', 'gone']) {
+      const cls = org.collection('classes').doc(uid);
+      await cls.set(classDoc({ name: `${uid}'s Hifz Class`, teacherUid: uid }));
+      await cls.collection('students').doc('s0').set({ name: 'Student', active: true, order: 0, enrolledFrom: '2026-10-05', enrolledUntil: null });
+      await cls.collection('days').doc('2026-10-05').set({ date: '2026-10-05', yearId: '2026-2027', attendance: {}, roster: {} });
+      await cls.collection('days').doc('2026-10-05').collection('breaks').doc('b1')
+        .set({ sid: 's0', reason: 'water', startAt: 1, endAt: 2, dur: 1, over: 0, flag: false, overTrip: false, assignedMin: 2 });
+    }
+  });
+}
+
+test('a school is created in one batch by an admin and teacher; locked to a domain only by someone from it', async () => {
+  const create = (email, extra) => {
+    const db = testEnv.authenticatedContext('uidR', { email, email_verified: true }).firestore();
+    const org = db.collection('orgs').doc(SCHOOL);
+    const batch = db.batch();
+    batch.set(org, orgDoc({ kind: 'organization', name: 'Uthman Academy Hifz', ...extra }));
+    batch.set(org.collection('members').doc('uidR'), memberDoc({ email }));
+    batch.set(db.collection('users').doc('uidR'), { orgIds: [SCHOOL], updatedAt: null });
+    return batch.commit();
+  };
+  await assertFails(create('rfy.dawood@gmail.com', { domain: DOMAIN }));
+  await assertFails(create(`rafays.dawood@${DOMAIN}`, { domain: 42 }));
+  await assertSucceeds(create(`rafays.dawood@${DOMAIN}`, { domain: DOMAIN }));
+});
+
+test('a personal class cannot be locked to a domain', async () => {
+  const db = testEnv.authenticatedContext('uidR', { email: `r@${DOMAIN}`, email_verified: true }).firestore();
+  const org = db.collection('orgs').doc(ORG_ID);
+  const batch = db.batch();
+  batch.set(org, orgDoc({ domain: DOMAIN }));
+  batch.set(org.collection('members').doc('uidR'), memberDoc());
+  await assertFails(batch.commit());
+});
+
+test('in a school a teacher reads only their own class; admins read every class', async () => {
+  await seedSchool();
+  const paths = (uid) => {
+    const cls = school('x').collection('classes').doc(uid).path;
+    return [cls, `${cls}/students/s0`, `${cls}/days/2026-10-05`, `${cls}/days/2026-10-05/breaks/b1`];
+  };
+  const read = (who, path) => testEnv.authenticatedContext(who).firestore().doc(path).get();
+  for (const p of paths('t1')) {
+    await assertSucceeds(read('t1', p));
+    await assertFails(read('t2', p));                 // another teacher
+    await assertSucceeds(read('admin1', p));
+    await assertSucceeds(read('rafay', p));           // admin and teacher of another class
+  }
+  for (const p of paths('gone')) await assertFails(read('gone', p));   // removed from the school
+  const t1 = school('t1');
+  await assertFails(t1.collection('classes').get());                                         // can't list the school's classes
+  const mine = await assertSucceeds(t1.collection('classes').where('teacherUid', '==', 't1').get());
+  assert.equal(mine.docs.length, 1);
+  await assertFails(t1.collection('classes').doc('t2').collection('days').get());
+  const all = await assertSucceeds(school('admin1').collection('classes').get());
+  assert.equal(all.docs.length, 3);
+  await assertSucceeds(school('t1').get());          // everyone reads the school's settings
+  await assertFails(school('gone').get());
+});
+
+test('a teacher sets up one class of their own (its id is their uid), with its roster and day', async () => {
+  await seedSchool();
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(SCHOOL).collection('members').doc('t3').set(memberDoc({ roles: ['teacher'] }));
+    await ctx.firestore().collection('orgs').doc(SCHOOL).collection('members').doc('adminOnly').set(memberDoc({ roles: ['admin'] }));
+  });
+  const db = testEnv.authenticatedContext('t3').firestore();
+  const org = db.collection('orgs').doc(SCHOOL);
+  await assertFails(org.collection('classes').doc('other-id').set(classDoc({ teacherUid: 't3' })));
+  await assertFails(org.collection('classes').doc('t3').set(classDoc({ teacherUid: 't1' })));
+  const batch = db.batch();
+  const cls = org.collection('classes').doc('t3');
+  batch.set(cls, classDoc({ name: "Ustadh Musa's Hifz Class", teacherUid: 't3' }));
+  batch.set(cls.collection('students').doc('s0'), { name: 'Amina', active: true, order: 0, enrolledFrom: '2026-10-05', enrolledUntil: null });
+  batch.set(cls.collection('days').doc('2026-10-05'), { date: '2026-10-05', yearId: '2026-2027', attendance: {}, roster: {} });
+  await assertSucceeds(batch.commit());
+  await assertSucceeds(cls.update({ name: "Musa's Class" }));                 // may rename it
+  await assertFails(cls.update({ teacherUid: 't1' }));                        // but not hand it over
+  await assertFails(cls.update({ settingsOverride: { startTime: '07:00' } }));
+  await assertFails(org.collection('classes').doc('t1').update({ name: 'Mine now' }));   // nor touch another class
+  // an admin who doesn't teach has no class of their own to set up
+  const adm = testEnv.authenticatedContext('adminOnly').firestore().collection('orgs').doc(SCHOOL);
+  await assertFails(adm.collection('classes').doc('adminOnly').collection('days').doc('2026-10-05')
+    .set({ date: '2026-10-05', yearId: '2026-2027', attendance: {}, roster: {} }));
+  await assertSucceeds(school('admin1').collection('classes').doc('t3').update({ settingsOverride: { startTime: '07:00' } }));
+});
+
+test('in a school only a class\'s own teacher runs it; admins edit rosters and school settings, teachers do neither', async () => {
+  await seedSchool();
+  const day = (who, cls) => school(who).collection('classes').doc(cls).collection('days').doc('2026-10-06');
+  const doc = { date: '2026-10-06', yearId: '2026-2027', attendance: {}, roster: {} };
+  await assertSucceeds(day('t1', 't1').set(doc));
+  await assertFails(day('t2', 't1').set(doc));
+  await assertFails(day('admin1', 't1').set(doc));
+  await assertFails(day('rafay', 't1').set(doc));
+  await assertFails(day('gone', 'gone').set(doc));
+  const brk = (who) => school(who).collection('classes').doc('t1').collection('days').doc('2026-10-05').collection('breaks').doc('b1');
+  await assertFails(brk('admin1').delete());
+  await assertFails(brk('t2').delete());
+  const student = { name: 'Yusuf', active: true, order: 1, enrolledFrom: '2026-10-05', enrolledUntil: null };
+  await assertSucceeds(school('admin1').collection('classes').doc('t1').collection('students').doc('s1').set(student));
+  await assertFails(school('t2').collection('classes').doc('t1').collection('students').doc('s2').set(student));
+  await assertSucceeds(school('admin1').set({ defaults: { startTime: '07:45' }, updatedAt: null }, { merge: true }));
+  await assertFails(school('t1').set({ defaults: { startTime: '07:00' } }, { merge: true }));
+  await assertFails(school('admin1').set({ domain: 7 }, { merge: true }));
+  await assertFails(school('admin1').set({ kind: 'personal' }, { merge: true }));
+});
+
+const schoolInvite = (overrides = {}) => inviteDoc({ email: `musa@${DOMAIN}`, roles: ['teacher'], createdBy: 'admin1', ...overrides });
+
+test('a school locked to a domain invites only addresses in it', async () => {
+  await seedSchool();
+  const inv = (id) => school('admin1').collection('invites').doc(id);
+  await assertFails(inv('i1').set(schoolInvite({ email: 'musa@gmail.com' })));
+  await assertFails(inv('i2').set(schoolInvite({ email: `musa@sub.${DOMAIN}` })));
+  await assertFails(inv('i3').set(schoolInvite({ email: 'no-at-sign' })));
+  await assertSucceeds(inv('i4').set(schoolInvite()));
+  await assertFails(school('t1').collection('invites').doc('i5').set(schoolInvite({ createdBy: 't1' })));
+  // a school that isn't locked takes any address
+  await testEnv.clearFirestore();
+  await seedSchool({ domain: null });
+  await assertSucceeds(school('admin1').collection('invites').doc('i6').set(schoolInvite({ email: 'musa@gmail.com' })));
+});
+
+test('an invite\'s code is its own id; the code doc is written by an admin with it and read by exact code only', async () => {
+  await seedSchool();
+  const CODE = 'QWERT-YUPAS';
+  const db = testEnv.authenticatedContext('admin1').firestore();
+  const make = (code, inviteId, codeDoc = {}) => {
+    const b = db.batch();
+    b.set(db.collection('orgs').doc(SCHOOL).collection('invites').doc(inviteId), schoolInvite({ code }));
+    b.set(db.collection('inviteCodes').doc(code), { orgId: SCHOOL, roles: ['teacher'], ...codeDoc });
+    return b.commit();
+  };
+  await assertFails(make(CODE, 'some-other-id'));
+  await assertFails(make(CODE, CODE, { roles: ['admin'] }));            // roles must be the invite's
+  await assertSucceeds(make(CODE, CODE));
+  // a teacher can't make codes, nor an admin for a school they don't run
+  const t1 = testEnv.authenticatedContext('t1').firestore();
+  await assertFails(t1.collection('inviteCodes').doc('ZZZZZ-ZZZZZ').set({ orgId: SCHOOL, roles: ['teacher'] }));
+  const outsider = testEnv.authenticatedContext('uidZ', { email: 'z@example.com', email_verified: true }).firestore();
+  await assertSucceeds(outsider.collection('inviteCodes').doc(CODE).get());
+  await assertFails(outsider.collection('inviteCodes').get());
+  await assertFails(outsider.collection('inviteCodes').doc(CODE).update({ roles: ['admin'] }));
+  await assertFails(outsider.collection('inviteCodes').doc(CODE).delete());
+  const anon = testEnv.authenticatedContext('anonZ', { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+  await assertFails(anon.collection('inviteCodes').doc(CODE).get());
+});
+
+test('claiming by code: any address in the school\'s domain, while it is pending and unexpired', async () => {
+  await seedSchool();
+  const CODE = 'QWERT-YUPAS';
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const org = ctx.firestore().collection('orgs').doc(SCHOOL);
+    await org.collection('invites').doc(CODE).set(schoolInvite({ code: CODE }));
+    await org.collection('invites').doc('OLDXX-XXXXX').set(schoolInvite({ code: 'OLDXX-XXXXX', expiresAt: firebase.firestore.Timestamp.fromMillis(Date.now() - DAY) }));
+    await org.collection('invites').doc('auto-id-no-code').set(schoolInvite());
+  });
+  const claim = (email, inviteId, member = {}) => {
+    const db = testEnv.authenticatedContext('uidM', { email, email_verified: true }).firestore();
+    const org = db.collection('orgs').doc(SCHOOL);
+    const b = db.batch();
+    b.set(org.collection('members').doc('uidM'), memberDoc({ email, roles: ['teacher'], inviteId, ...member }));
+    b.update(org.collection('invites').doc(inviteId), { status: 'claimed', claimedBy: 'uidM', claimedAt: null });
+    b.set(db.collection('users').doc('uidM'), { orgIds: [SCHOOL], updatedAt: null });
+    return b.commit();
+  };
+  await assertFails(claim('musa.personal@gmail.com', CODE));               // outside the domain
+  await assertFails(claim(`musa2@${DOMAIN}`, 'auto-id-no-code'));          // no code on that invite: email only
+  await assertFails(claim(`musa2@${DOMAIN}`, 'OLDXX-XXXXX'));              // expired
+  await assertFails(claim(`musa2@${DOMAIN}`, CODE, { roles: ['admin'] }));
+  await assertSucceeds(claim(`musa2@${DOMAIN}`, CODE));
+  await assertSucceeds(school('uidM', `musa2@${DOMAIN}`).get());
+  // used once
+  await assertFails(claim(`musa3@${DOMAIN}`, CODE));
+});
+
+test('someone with a code can\'t mark the invite used without becoming a member through it', async () => {
+  await seedSchool();
+  const CODE = 'QWERT-YUPAS';
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(SCHOOL).collection('invites').doc(CODE).set(schoolInvite({ code: CODE }));
+  });
+  await assertFails(school('uidM', `musa2@${DOMAIN}`).collection('invites').doc(CODE)
+    .update({ status: 'claimed', claimedBy: 'uidM', claimedAt: null }));
+});
+
+test('a school is never left without an active admin', async () => {
+  await seedSchool();
+  const m = (who, uid) => school(who).collection('members').doc(uid);
+  // two admins (admin1, rafay): either may demote or remove the other
+  await assertSucceeds(m('admin1', 'rafay').update({ roles: ['teacher'] }));
+  // now admin1 is the only admin: can't step down or leave...
+  await assertFails(m('admin1', 'admin1').update({ roles: ['teacher'] }));
+  await assertFails(m('admin1', 'admin1').update({ status: 'revoked' }));
+  await assertFails(m('admin1', 'admin1').update({ roles: [], steppedDownFor: 't1' }));       // t1 isn't an admin
+  await assertFails(m('admin1', 'admin1').update({ roles: [], steppedDownFor: 'admin1' }));
+  await assertFails(m('admin1', 'admin1').update({ roles: [], steppedDownFor: 'nobody' }));
+  // ...but may change their own roles while staying admin
+  await assertSucceeds(m('admin1', 'admin1').update({ roles: ['admin', 'teacher'] }));
+  // a teacher changes no one's roles, their own included
+  await assertFails(m('t1', 't1').update({ roles: ['admin', 'teacher'] }));
+  await assertFails(m('t1', 't2').update({ status: 'revoked' }));
+  // with a second admin, the first may step down by naming them
+  await assertSucceeds(m('admin1', 'rafay').update({ roles: ['admin', 'teacher'] }));
+  await assertSucceeds(m('rafay', 'rafay').update({ roles: ['teacher'], steppedDownFor: 'admin1' }));
+  await assertFails(m('rafay', 'rafay').update({ roles: ['admin', 'teacher'] }));             // and can't take it back
+  // stepping down naming an admin who is being removed in the same batch fails
+  await assertSucceeds(m('admin1', 'rafay').update({ roles: ['admin', 'teacher'] }));
+  const db = testEnv.authenticatedContext('rafay').firestore();
+  const b = db.batch();
+  b.update(db.collection('orgs').doc(SCHOOL).collection('members').doc('admin1'), { status: 'revoked' });
+  b.update(db.collection('orgs').doc(SCHOOL).collection('members').doc('rafay'), { roles: ['teacher'], steppedDownFor: 'admin1' });
+  await assertFails(b.commit());
+  // an admin may remove a teacher, and put them back
+  await assertSucceeds(m('admin1', 't1').update({ status: 'revoked' }));
+  await assertSucceeds(m('admin1', 't1').update({ status: 'active' }));
+  await assertFails(m('admin1', 't1').update({ status: 'deleted' }));
+  await assertFails(m('admin1', 't1').delete());
+});
+
+test('a removed teacher keeps nothing: no school, no class, no running it', async () => {
+  await seedSchool();
+  await assertSucceeds(school('admin1').collection('members').doc('t1').update({ status: 'revoked' }));
+  await assertFails(school('t1').get());
+  await assertFails(school('t1').collection('classes').doc('t1').get());
+  await assertFails(school('t1').collection('classes').doc('t1').collection('days').doc('2026-10-06')
+    .set({ date: '2026-10-06', yearId: '2026-2027', attendance: {}, roster: {} }));
+  await assertSucceeds(school('admin1').collection('classes').doc('t1').collection('days').doc('2026-10-05').get());   // the class's record stays
 });
