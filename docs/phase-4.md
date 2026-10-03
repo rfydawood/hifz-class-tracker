@@ -253,6 +253,25 @@ Notes for the Part B session:
 
 ## Part B — organizations and teachers (3.8)
 
+### Part B status - built, then parked (2026-10-03)
+
+Built and tested in full (`npm run test:rules` 42/42, `npm run test:e2e`
+64/64, and the non-school tests also green on the Part A rules), then parked
+the same day: the owner is holding off on admin mode and keeps building on
+personal classes. Never released - no merge of it to the website, no native
+build, no rules deploy.
+
+- The work: `ec2016b` (rules + rules tests) and `aad9808` (app, e2e tests in
+  `tests/schools.spec.mjs`, docs including the full status and the 3.8
+  release order). Reverted together by `3a9a65c`.
+- To resume: on a new branch, `git revert 3a9a65c`, then read the "Part B
+  status - built 2026-10-03" section it brings back here. Re-run both suites
+  first: anything built on personal classes since then must still pass, and
+  the school tests must still pass against it.
+- Kept from it, and released separately: the fix for a new device opened
+  again before signing in (it cached an empty board and came back as an
+  empty class with no sign-in screen).
+
 ### Decided by the owner (2026-09-27)
 
 - **Teachers sign in with their school Google accounts, `@uthmanacademy.org`**

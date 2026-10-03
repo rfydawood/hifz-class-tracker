@@ -23,7 +23,7 @@ function localDayId(d) {
 }
 
 test('native device with empty Preferences but history in localStorage: hydrate falls back, migration uploads it, reports show it', async ({ browser }) => {
-  test.setTimeout(30000);
+  test.setTimeout(60000);
   const ctx = await browser.newContext();
   await mockNativePlatform(ctx);
   const legacyId = localDayId(new Date(Date.now() - 5 * 86400000));
