@@ -46,8 +46,9 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 
 Part A (Google sign-in, rules that close the sync-code hole) shipped in 3.7
 on 2026-09-27 - see the status section in `docs/phase-4.md`. Part B
-(organizations, teacher invites, roles) is next and not started; the owner
-wants to begin it in a later session.
+(organizations, teacher invites, roles / admin mode) is ON HOLD as of
+2026-10-02 - the owner asked to hold off on it. Don't start or suggest it
+unless they bring it back up.
 
 ## Working conventions established so far
 
