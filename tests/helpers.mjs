@@ -24,27 +24,15 @@ export async function signInOnGate(page, email) {
 }
 export function emailOf(page) { return emailByPage.get(page); }
 
-// A new account lands on the welcome card (Part B): no invite for it, so
-// it chooses to set up a class of its own.
-export async function chooseOwnClass(page) {
-  await page.locator('#welcome.show').waitFor({ timeout: 20000 });
-  await page.getByRole('button', { name: 'Set up my own class' }).click();
+export async function setupNewClass(page, teacherName, students, email = newEmail()) {
+  await signInOnGate(page, email);
   await page.locator('#setup.show').waitFor({ timeout: 20000 });
-}
-
-export async function fillSetup(page, teacherName, students) {
   await page.locator('#tName').fill(teacherName);
   for (const name of students) {
     await page.locator('#tStudent').fill(name);
     await page.locator('#tStudent').press('Enter');
   }
-  await page.locator('#setup .setup-actions button.dark').click();
-}
-
-export async function setupNewClass(page, teacherName, students, email = newEmail()) {
-  await signInOnGate(page, email);
-  await chooseOwnClass(page);
-  await fillSetup(page, teacherName, students);
+  await page.locator('.setup-actions button.dark').click();
 }
 
 export async function skipTourIfPresent(page) {

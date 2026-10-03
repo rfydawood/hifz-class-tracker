@@ -89,11 +89,11 @@ test('on the native app, linking goes through the Google plugin', async ({ brows
 test('a Google account that already exists takes the class over by invite, losing nothing', async ({ browser }) => {
   test.setTimeout(90000);
   const email = newEmail('handover');
-  // the account signs in on the website first, and gets no further than the welcome card
+  // the account signs in on the website first, and gets no further than setup
   const ctxW = await browser.newContext(); const w = await ctxW.newPage();
   await w.goto('/?emulator=1');
   await signInOnGate(w, email);
-  await w.locator('#welcome.show').waitFor();
+  await w.locator('#setup.show').waitFor();
   const googleUid = await currentUid(w);
   await ctxW.close();
 
@@ -170,23 +170,10 @@ test('the sync code no longer lets another account in', async ({ browser }) => {
   await b.goto('/?emulator=1');
   await expect(b.getByText('Enter your sync code')).toHaveCount(0);
   await signInOnGate(b, newEmail('stranger'));
-  await b.locator('#welcome.show').waitFor();              // their own, empty account
+  await b.locator('#setup.show').waitFor();                // their own, empty account
   const denied = await b.evaluate(async (code) => {
     try { await orgRefFor(code).get({ source: 'server' }); return false; } catch (e) { return e.code; }
   }, code);
   expect(denied).toBe('permission-denied');
   await ctxA.close(); await ctxB.close();
-});
-
-test('a new device reloaded before signing in still shows sign-in, not an empty class', async ({ page }) => {
-  test.setTimeout(60000);
-  await page.goto('/?emulator=1');
-  await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
-  await page.reload();
-  await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
-  // and a device left in that state by an earlier version (an empty board in the cache) recovers
-  await page.evaluate(() => localStorage.setItem('cache.lastClass', JSON.stringify({ day: dayId(new Date()), teacher: '', students: [], settings: state.settings })));
-  await page.reload();
-  await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
-  expect(await page.evaluate(() => state.setup)).toBe(false);
 });

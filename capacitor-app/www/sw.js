@@ -1,4 +1,4 @@
-/*BUILD_STAMP*/const APP_BUILD="cac04ddb10";
+/*BUILD_STAMP*/const APP_BUILD="e2c4c56b1d";
 const CACHE = 'hifz-tracker-' + APP_BUILD;
 const PRECACHE_URLS = [
   './',
