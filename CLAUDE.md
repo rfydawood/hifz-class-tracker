@@ -46,8 +46,12 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 
 Part A (Google sign-in, rules that close the sync-code hole) shipped in 3.7
 on 2026-09-27 - see the status section in `docs/phase-4.md`. Part B
-(organizations, teacher invites, roles) is next and not started; the owner
-wants to begin it in a later session.
+(schools: teacher invites, roles, admin view) was built and tested on
+2026-10-03, then **parked** - the owner is holding off on admin mode and
+keeps building on personal classes for now. It was never released; its code,
+rules and tests are in commits ec2016b and aad9808, reverted by 3a9a65c. To
+resume it, revert 3a9a65c on a new branch and follow "Part B status" in
+`docs/phase-4.md`. Until then, new work builds on the personal-class app.
 
 ## Working conventions established so far
 

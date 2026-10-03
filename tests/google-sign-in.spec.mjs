@@ -177,3 +177,30 @@ test('the sync code no longer lets another account in', async ({ browser }) => {
   expect(denied).toBe('permission-denied');
   await ctxA.close(); await ctxB.close();
 });
+
+test('a new device opened again before signing in still shows sign-in, not an empty class', async ({ page }) => {
+  test.setTimeout(60000);
+  await page.goto('/?emulator=1');
+  await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
+  await page.reload();                                   // or: closed and opened again, or installed to the home screen
+  await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
+  expect(await page.evaluate(() => state.setup)).toBe(false);
+  // a device left in that state by an earlier version (an empty board in its cache) gets sign-in back too
+  await page.evaluate(() => localStorage.setItem('cache.lastClass', JSON.stringify({ day: dayId(new Date()), teacher: '', students: [], settings: state.settings })));
+  await page.reload();
+  await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
+  expect(await page.evaluate(() => state.setup)).toBe(false);
+});
+
+test('a class opened with no instant-paint copy on the device writes one, so the next open paints at once', async ({ page }) => {
+  test.setTimeout(60000);
+  await page.goto('/?emulator=1');
+  await setupNewClass(page, 'Ustadh Cache', ['Amina']);
+  await skipTourIfPresent(page);
+  const code = await orgId(page);
+  await page.evaluate(() => localStorage.removeItem('cache.lastClass'));
+  await page.reload();
+  await page.waitForFunction((c) => window.__hifzOrgId === c && window.__hifzSyncStatus === 'synced', code, { timeout: 20000 });
+  await expect(tileFor(page, 'Amina')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('cache.lastClass') || '{}').students?.length || 0)).toBe(1);
+});

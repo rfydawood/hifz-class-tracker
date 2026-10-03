@@ -468,7 +468,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="e2c4c56b1d",APP_BUILD_TIME="2026-09-27T14:01:29.973Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="4438b0dabc",APP_BUILD_TIME="2026-10-03T04:27:31.844Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1027,6 +1027,7 @@ async function attachToOrg(orgId){
 }
 async function attachListeners(){
   detachListeners();
+  state.setup=true;                                         // a class is open on this device
   const org=orgRef(), cls=classRef();
   // Every data listener below takes includeMetadataChanges - see the note on
   // the breaks listener for why. In short: an answer the cloud computed for an
@@ -2135,6 +2136,11 @@ function render(){
    Cheap localStorage/Preferences write, not a Firestore write, so it has no
    bearing on the "zero writes while idle" rule. */
 function cacheLastClass(){
+  // Only once there is a class. The sign-in screen used to cache its empty
+  // board too, and the next open read that as a class: a new device opened
+  // again before signing in (or installed to the home screen) showed an
+  // empty class with no sign-in screen.
+  if(!state.setup) return;
   try{
     Store.set(CACHE_KEY,JSON.stringify({
       day:dayId(new Date()),
@@ -2149,6 +2155,8 @@ function loadFromCache(){
   try{
     const raw=Store.get(CACHE_KEY); if(!raw) return false;
     const c=JSON.parse(raw);
+    // an empty board cached by the sign-in screen (before the fix above) is not a class
+    if(!(Array.isArray(c.students)&&c.students.length)&&!Store.get(SESSION_ORG_KEY)) return false;
     if(c.teacher) state.teacher=c.teacher;
     if(Array.isArray(c.students)) state.students=c.students;
     state.settings=mergeSettings(c.settings);
