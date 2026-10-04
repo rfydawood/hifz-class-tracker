@@ -1,11 +1,11 @@
 // "Left for the day" used to write status 'absent', so a student who attended
 // all morning and went home at 2pm was recorded as absent for the whole day -
 // the reports counted it against them as if they never came. It is its own
-// status now. See index.html markLeft()/agg()/tap().
+// status now. See index.html markLeft()/crunch()/tap().
 import { test, expect } from '@playwright/test';
 import {
   setupNewClass, skipTourIfPresent, tileFor, logBreak, returnFromBreak,
-  startClass, openDrawer,
+  startClass, openTab, reportsReady,
 } from './helpers.mjs';
 
 async function classWithOneEarlyLeaver(page) {
@@ -32,13 +32,14 @@ test('a student who leaves early is not recorded as absent', async ({ page }) =>
 
   expect(await page.evaluate(() => state.attendance[state.students[0].id].status)).toBe('left');
 
-  // Her break still counts; the day does not count as an absence.
-  await openDrawer(page);
-  await page.getByRole('button', { name: /^Reports/ }).click();
-  await page.getByRole('button', { name: 'Student', exact: true }).click();
-  await expect(page.locator('.chip', { hasText: 'Absent days' })).toContainText('0');
-  await expect(page.locator('.chip', { hasText: 'Left early' })).toContainText('1');
-  await expect(page.locator('.chip', { hasText: 'Breaks' })).toContainText('1');
+  // The day does not count as an absence: she was here, then left early.
+  await openTab(page, 'reports');
+  await page.getByRole('button', { name: 'One student', exact: true }).click();
+  await reportsReady(page);
+  await expect(page.locator('#rptLine')).toContainText('Amina');
+  await expect(page.locator('[data-card="att"]')).toContainText('100% present');
+  await expect(page.locator('[data-card="att"]')).toContainText('0 absent');
+  await expect(page.locator('[data-card="att"]')).toContainText('1 left early');
 });
 
 test('tapping someone who left brings them back without a tardy mark', async ({ page }) => {

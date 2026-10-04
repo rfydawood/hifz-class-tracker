@@ -1,5 +1,6 @@
 // Shared Playwright helpers for tests/*.spec.mjs. Selectors match the real
-// rendered markup in index.html - see render()/drawDrawer()/openReason().
+// rendered markup in index.html - see render()/drawDrawer()/openReason() and
+// the tabs (showTab()/drawSettings()/paintRoster()/paintReports()).
 
 // Every class belongs to a Google account since Phase 4 Part A. The Auth
 // emulator accepts an unsigned Google token, which the app picks up from
@@ -90,21 +91,28 @@ export async function openDrawer(page) {
   if (!alreadyOpen) await page.locator('.menu-btn[aria-label="Teacher menu"]').click();
 }
 
-export async function addStudentViaDrawer(page, name) {
-  await openDrawer(page);
+// The tabs along the bottom (3.8): log | reports | roster | settings.
+export async function openTab(page, name) {
+  await page.locator(`.tab[data-tab="${name}"]`).click();
+  await page.locator(`.app[data-tab="${name}"]`).waitFor();
+}
+
+// Adds on the Roster tab, then goes back to the Log tab and its tiles.
+export async function addStudentViaRoster(page, name) {
+  await openTab(page, 'roster');
   await page.locator('#newName').fill(name);
   await page.locator('#newName').press('Enter');
-  await page.locator('.dhead .menu-btn').click(); // close the drawer - it intercepts clicks on the grid behind it otherwise
+  await openTab(page, 'log');
 }
 
 export async function setWashroomLimit(page, minutes) {
-  await openDrawer(page);
-  await page.locator('.field', { hasText: 'Washroom' }).locator('select').first().selectOption(String(minutes));
+  await openTab(page, 'settings');
+  await page.locator('#viewSettings .field', { hasText: 'Washroom' }).locator('select').first().selectOption(String(minutes));
 }
 
 export async function getWashroomLimit(page) {
-  await openDrawer(page);
-  return page.locator('.field', { hasText: 'Washroom' }).locator('select').first().inputValue();
+  if (!(await page.locator('.app[data-tab="settings"]').count())) await openTab(page, 'settings');
+  return page.locator('#viewSettings .field', { hasText: 'Washroom' }).locator('select').first().inputValue();
 }
 
 export function writeCount(page) {
@@ -154,10 +162,11 @@ export function dayIdBack(page, n) {
   return page.evaluate((n) => dayId(new Date(Date.now() - n * 86400000)), n);
 }
 
-export function seedFirestoreDay(page, id, attendance, breaksArr) {
+// session (optional): e.g. { startedAt, endedAt } in ms, for class-time reports
+export function seedFirestoreDay(page, id, attendance, breaksArr, session) {
   return page.evaluate(
-    ([id, attendance, breaksArr]) => window.__hifzTestSeedDay(id, attendance, breaksArr),
-    [id, attendance, breaksArr]
+    ([id, attendance, breaksArr, session]) => window.__hifzTestSeedDay(id, attendance, breaksArr, session),
+    [id, attendance, breaksArr, session || null]
   );
 }
 
@@ -178,14 +187,18 @@ export function seedLegacyLocalHistory(context, historyMap) {
   }, historyMap);
 }
 
-export async function openDayReport(page, offsetBack) {
-  await openDrawer(page);
-  await page.locator('.dbtn', { hasText: 'Reports' }).click();
-  await page.locator('.rnav').waitFor();
-  for (let i = 0; i < offsetBack; i++) {
-    await page.locator('.rnav button').first().click();
-    await page.locator('.rnav').waitFor();
-  }
+// Opens the Reports tab on the date filter that covers the given day id.
+export async function openReportCovering(page, id) {
+  await openTab(page, 'reports');
+  const key = await page.evaluate((id) => ['today', 'yesterday', 'thisweek', 'lastweek', 'lastmonth']
+    .find((k) => { const r = rangeOf(k); return id >= dayId(r.start) && id <= dayId(r.end); }), id);
+  if (!key) throw new Error(`no date filter covers ${id}`);
+  await page.locator(`.rdate[data-range="${key}"]`).click();
+  await reportsReady(page);
+}
+
+export async function reportsReady(page) {
+  await page.locator('#viewReports[data-ready="1"]').waitFor({ timeout: 15000 });
 }
 
 // ---- Phase 4 Part A: a class made the way every install before 3.7 made it -

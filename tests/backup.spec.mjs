@@ -1,10 +1,10 @@
 // The backup is the escape hatch before the security rules change (see
-// docs/phase-4.md A2), so it has to be one tap away in the teacher menu and
+// docs/phase-4.md A2), so it has to be one tap away on the Settings tab and
 // hold the class's recorded days. On the native app downloads don't work, so
-// it points at the website instead. See index.html backupAll()/drawDrawer().
+// it points at the website instead. See index.html backupAll()/drawSettings().
 import { test, expect } from '@playwright/test';
 import {
-  setupNewClass, skipTourIfPresent, orgId, openDrawer, startClass, logBreak, returnFromBreak,
+  setupNewClass, skipTourIfPresent, orgId, openTab, startClass, logBreak, returnFromBreak,
   mockNativePlatform,
 } from './helpers.mjs';
 import { readFile } from 'node:fs/promises';
@@ -19,7 +19,7 @@ test('Download a backup saves the class and today', async ({ page }) => {
   await logBreak(page, 'Amina', 'Water');
   await returnFromBreak(page, 'Amina');
 
-  await openDrawer(page);
+  await openTab(page, 'settings');
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('.dbtn', { hasText: 'Download a backup' }).click(),
@@ -39,8 +39,8 @@ test('the native app points to the website for backups', async ({ browser }) => 
   await page.goto('/?emulator=1');
   await setupNewClass(page, 'Ustadh Native', ['Amina']);
   await skipTourIfPresent(page);
-  await openDrawer(page);
-  await expect(page.locator('#dbody')).toContainText('Backups download from the website');
+  await openTab(page, 'settings');
+  await expect(page.locator('#viewSettings')).toContainText('Backups download from the website');
   await expect(page.locator('.dbtn', { hasText: 'Download a backup' })).toHaveCount(0);
   await ctx.close();
 });

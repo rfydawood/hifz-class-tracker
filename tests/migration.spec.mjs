@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test';
 import {
   setupNewClass, skipTourIfPresent, joinExistingClass, orgId, dayIdBack,
   seedFirestoreDay, readFirestoreDay, waitForMigration, seedLegacyLocalHistory,
-  openDayReport,
+  openReportCovering,
 } from './helpers.mjs';
 
 test('a device with local history AND Firestore already having some history merges without losing either side', async ({ browser }) => {
@@ -56,9 +56,7 @@ test('a device with local history AND Firestore already having some history merg
       date: exclusiveId, startedAt: null, endedAt: null,
       names: { zzExclusive: 'Exclusive Student' },
       att: { zzExclusive: { status: 'present', note: '' } },
-      // flagged so it surfaces in the class-scope "Flags by student" view
-      // openDayReport() lands on below, without needing to switch to
-      // student scope first.
+      // over 15 seconds, so the reports count it (shorter is an accidental tap)
       breaks: [{ sid: 'zzExclusive', reason: 'wudhu', dur: 120000, over: 0, flag: true, overTrip: false, assignedMin: null }],
     },
   });
@@ -86,9 +84,9 @@ test('a device with local history AND Firestore already having some history merg
   expect(exclusiveDay.breaks.length).toBe(1);
   expect(exclusiveDay.breaks[0].reason).toBe('wudhu');
 
-  await openDayReport(b, 3);
-  await expect(b.locator('.chip', { hasText: 'Days recorded' }).locator('b')).toHaveText('1', { timeout: 10000 });
-  await expect(b.locator('.body')).toContainText('Exclusive Student');
+  await openReportCovering(b, exclusiveId);
+  await expect(b.locator('#rptLine')).toContainText(/[12] class days?/);
+  await expect(b.locator('#viewReports')).toContainText('Exclusive Student');
 
   await ctxA.close();
   await ctxB.close();

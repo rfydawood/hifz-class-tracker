@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import {
   setupNewClass, skipTourIfPresent, joinExistingClass, orgId, tileFor,
-  addStudentViaDrawer, logBreak, startClass,
+  addStudentViaRoster, logBreak, startClass,
 } from './helpers.mjs';
 
 test('mutations made offline apply locally and flush to other devices on reconnect', async ({ browser }) => {
@@ -25,7 +25,7 @@ test('mutations made offline apply locally and flush to other devices on reconne
   // mutate while offline: this must apply immediately from local state -
   // Firestore's offline persistence, not a network round trip, is what
   // makes this instant.
-  await addStudentViaDrawer(a, 'Zayd');
+  await addStudentViaRoster(a, 'Zayd');
   await expect(tileFor(a, 'Zayd')).toBeVisible();
   await startClass(a); // breaks can only be logged once class is in session
   await logBreak(a, 'Amina', 'Washroom');

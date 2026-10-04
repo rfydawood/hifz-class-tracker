@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 import {
   mockNativePlatform, readMockPreference, seedLegacyLocalHistory,
   setupNewClass, skipTourIfPresent, orgId, waitForMigration,
-  readFirestoreDay, openDayReport,
+  readFirestoreDay, openReportCovering,
 } from './helpers.mjs';
 
 function localDayId(d) {
@@ -56,9 +56,9 @@ test('native device with empty Preferences but history in localStorage: hydrate 
   expect(day.breaks.length).toBe(1);
   expect(day.breaks[0].reason).toBe('washroom');
 
-  await openDayReport(page, 5);
-  await expect(page.locator('.chip', { hasText: 'Days recorded' }).locator('b')).toHaveText('1', { timeout: 10000 });
-  await expect(page.locator('.body')).toContainText('Native-Only Student');
+  await openReportCovering(page, legacyId);
+  await expect(page.locator('#rptLine')).toContainText('1 class day');
+  await expect(page.locator('#viewReports')).toContainText('Native-Only Student');
 
   await ctx.close();
 });

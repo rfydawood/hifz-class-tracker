@@ -26,9 +26,15 @@ async function twoDevices(browser) {
 // used to poke an earlier start time straight into memory; the app rightly
 // re-reads the saved record once its writes are confirmed, which undid that.)
 const hhmm = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+// Times are scaled down when it's just after midnight, so the break always
+// falls on today (run at 00:45, "60 minutes ago" was yesterday evening and
+// the break was refused as returning before it started). Longest "ago" used: 90.
 async function loggedBreak(page, name, reason, minsAgo, lengthMin) {
   await logBreak(page, name, reason);
   await tileFor(page, name).click();
+  const sinceMidnight = (Date.now() - new Date().setHours(0, 0, 0, 0)) / 60000;
+  const f = Math.min(1, (sinceMidnight - 2) / 90);
+  minsAgo = Math.max(1, Math.floor(minsAgo * f)); lengthMin = Math.min(lengthMin, minsAgo - 1) || 1;
   const left = new Date(Date.now() - minsAgo * 60000), back = new Date(left.getTime() + lengthMin * 60000);
   await page.locator('#startTime').fill(hhmm(left));
   await page.locator('#endTime').fill(hhmm(back));

@@ -42,6 +42,10 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 - `make_icons.py` — regenerates app icons if the design changes
 - `README.md` — human-facing summary of the above (keep it updated alongside this file when things change)
 
+## App layout: tabs (since 3.8)
+
+`index.html` has four tabs along the bottom (`showTab()`; `.app[data-tab]` picks the visible section): **Log** (the original screen - header, tiles, "Out right now"; the app always opens here; its ☰ drawer, `drawDrawer()`, keeps only the day's actions), **Reports** (`drawReports()` fetches, `paintReports()` draws; read-only - `loadDays()` = bounded `fetchDayRange()` + `snapshot()` for today, for the period and the previous one; counting rules live in `crunch()`/`classMinutes()`: breaks under 15 s ignored, `assigned` is never "time out", bad session times cleaned against class hours; charts are hand-built SVG, no library), **Roster** (`drawRoster()`/`paintRoster()`, this week's numbers per student) and **Settings** (`drawSettings()`). The bar can be tucked away (`setTabsHidden()`, Store key `ui.tabsHidden` - in the hydrate list; `keepClearOfHandle()` keeps tiles out from under the corner handle). The Log tab's badge (`updateLogBadge()`) runs from `tick()` and only reads state. Break-type colours are fixed: washroom #eb6834, water #2a78d6, wudhu #1baf7a, other #eda100, assigned #e87ba4. Layout is checked in `tests/layout.spec.mjs` at the real tablet's 805x504 and 533x781.
+
 ## Phase 4 status
 
 Part A (Google sign-in, rules that close the sync-code hole) shipped in 3.7

@@ -138,11 +138,11 @@ input,select{font:inherit;color:inherit}
 .reason svg{width:40px;height:40px;stroke:var(--ink);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .reason{position:relative}
 .rdot{position:absolute;top:12px;left:12px;width:10px;height:10px;border-radius:50%}
-.washroom{background:#2F8F6B}
-.water{background:#2E7FB5}
-.wudhu{background:#6B5CA5}
-.assigned{background:#C0803A}
-.other{background:#93A3A9}
+.washroom{background:#eb6834}
+.water{background:#2a78d6}
+.wudhu{background:#1baf7a}
+.assigned{background:#e87ba4}
+.other{background:#eda100}
 .bdots{margin-left:auto;margin-right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:6px}
 .bdots .d{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:150px}
 .bdots .d i{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
@@ -194,7 +194,7 @@ input,select{font:inherit;color:inherit}
 .summary .a{background:var(--ember-soft);color:var(--ember)}
 .summary .g{background:#E7EDEF;color:#4A5B63}
 
-.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap;pointer-events:none}
+.toast{position:absolute;left:50%;bottom:calc(68px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap;pointer-events:none}
 /* A full roster reaches the bottom of the screen, so the toast always sits
    over a student's tile. It stays where it is - that's where the eye goes -
    but it must not eat the tap meant for the name underneath it. Only Undo
@@ -225,22 +225,6 @@ input,select{font:inherit;color:inherit}
 .rrow small{font-weight:500;color:var(--mute);font-size:12px}
 .rrow button{font-size:13px;font-weight:700;color:var(--ember);padding:4px 6px}
 .rrow button.back{color:var(--leaf)}
-.rctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 22px 14px}
-.rctl select{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card);font-size:14px;font-weight:700;color:var(--ink)}
-.rnav{display:flex;align-items:center;gap:8px;margin-left:auto}
-.rnav button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:17px;font-weight:800;color:var(--ink)}
-.rnav b{font-size:14px;min-width:150px;text-align:center}
-.chips{display:flex;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
-.chip{flex:1;min-width:104px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;color:var(--mute)}
-.chip b{display:block;font-size:22px;color:var(--ink);letter-spacing:-.02em;margin-top:2px}
-.chip.warn{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
-.chip.warn b{color:var(--ember)}
-.stat{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
-.stat>b{width:94px;font-weight:800}
-.bar{flex:1;height:10px;border-radius:6px;background:var(--paper);overflow:hidden}
-.bar i{display:block;height:100%;border-radius:6px}
-.stat .v{width:172px;text-align:right;font-size:13px;font-weight:700;color:var(--mute)}
-.stat .v em{font-style:normal;color:var(--ember)}
 .two{display:flex;gap:6px}
 .two select,.two input{max-width:104px}
 .row .time.flag{color:var(--ember);font-weight:800}
@@ -275,26 +259,16 @@ input,select{font:inherit;color:inherit}
 .tour-steps i.on{background:var(--leaf)}
 .tour-actions{display:flex;gap:10px;align-items:center}
 .tour-actions .skip{color:var(--mute);font-weight:700;font-size:14px;margin-right:auto}
-.rcols{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
-.rpanes,.rside{display:contents}
-.rh{font-size:13px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px}
 .log{font-size:13px;color:var(--mute);line-height:1.5}
 .log div{padding:6px 0;border-bottom:1px solid var(--line)}
 .log b{color:var(--ink)}
-/* Landscape on a tablet leaves a sheet barely 500px tall, and the reports
-   sheet spends most of that on its own title, tabs and big stat chips - the
-   teacher was left scrolling a 70px window over 800px of report, or turning
-   the tablet on its side to read it. Short screens have width to spare, so
-   trade some: wider sheet, tighter chrome, and side-by-side panes - the
-   controls and counts in a column on the left, the break categories on the
-   right. The first try (content in two columns under a full-width row of
-   controls and counts) still stacked everything above the categories, and at
-   the real tablet's landscape screen the categories got 159px: three of five
-   showed. That screen is ~805x504 - measured from a sheet whose width is known
-   (720px), after an estimate from the header height said 840 and a 820px
-   minimum here left the real tablet out entirely. Landscape plus short is what
-   defines this layout; the width floor only keeps it off screens too narrow
-   for two panes. */
+/* Landscape on a tablet leaves a sheet barely 500px tall. Short screens have
+   width to spare, so trade some: wider sheet, tighter chrome. The real
+   tablet's landscape screen is ~805x504 - measured from a sheet whose width
+   is known (720px), after an estimate from the header height said 840 and a
+   820px minimum here left the real tablet out entirely. Landscape plus short
+   is what defines this layout; the width floor only keeps it off screens too
+   narrow for it. */
 @media (orientation:landscape) and (max-height:760px) and (min-width:700px){
   .sheet{max-width:1060px;padding:16px 20px 18px}
   .sheet h3{font-size:20px}
@@ -302,23 +276,6 @@ input,select{font:inherit;color:inherit}
   .sheet .x{width:38px;height:38px}
   .sheet .body{margin-top:10px}
   .actions{margin-top:12px}
-  .rctl{padding-bottom:10px}
-  .rnav b{min-width:120px}
-  .chips{padding-bottom:10px;flex-wrap:nowrap;gap:8px}
-  .chip{min-width:0;padding:7px 10px;font-size:11px}
-  .chip b{font-size:17px;margin-top:0}
-  .rpanes{display:grid;grid-template-columns:minmax(270px,34%) minmax(0,1fr);gap:0 20px;flex:1;min-height:0;margin-top:10px}
-  .rside{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
-  .rside .rctl{flex-direction:column;align-items:stretch;flex-wrap:nowrap;padding:0;gap:5px}
-  .rside .seg{display:flex}
-  .rside .seg button{flex:1;text-align:center;padding:4px 8px}
-  .rside .rctl select{width:100%;padding:4px 9px}
-  .rside .rnav{margin-left:0;justify-content:space-between}
-  .rside .rnav button{width:28px;height:28px}
-  .rside .rnav b{min-width:0}
-  .rside .chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0;gap:4px}
-  .rside .chip{padding:4px 7px;font-size:10.5px;line-height:1.2}
-  .rside .chip b{font-size:15px}
   /* Break choices in one row of five. As a 3+2 grid they pushed "See or fix
      today's breaks" and "... left for the day" 34px below the bottom of the
      sheet on the real tablet (805x504), with nothing showing they were there. */
@@ -327,14 +284,6 @@ input,select{font:inherit;color:inherit}
   .reason svg{width:32px;height:32px}
   .reason .cap{font-size:11px;line-height:1.25}
   .rdot{top:10px;left:10px;width:9px;height:9px}
-  /* the numbers beside each bar are what the teacher reads; the bar can shrink */
-  .rpanes .stat .bar{min-width:40px}
-  .rpanes .stat .v{width:232px}
-  .rpanes>.body{margin-top:0}
-  .rcols>div>.rh:first-child{margin-top:16px}
-  .stat{padding:7px 0;font-size:13px}
-  .stat>b{width:78px}
-  .stat .v{width:168px;font-size:12px}
   .rowlist{gap:6px}
   .row{padding:7px 11px;gap:8px}
   .row b{font-size:14px}
@@ -365,24 +314,6 @@ input,select{font:inherit;color:inherit}
   .summary{flex-wrap:wrap}
   .summary div{white-space:nowrap;gap:8px}      /* wrap whole counts, never "Left / early" inside one */
 }
-/* Reports on an upright tablet (~533x781): the controls and the eight counts
-   took so much height that only three of the five categories showed. Counts
-   go four to a row and smaller; each category puts its name and numbers on
-   one line with the bar underneath, instead of squeezing all three into a
-   row where the numbers wrapped to three lines. */
-@media (orientation:portrait) and (max-width:620px){
-  .rctl{padding-bottom:8px;gap:6px}
-  .rctl .seg button{padding:5px 9px}
-  .rnav button{width:30px;height:30px}
-  .chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding-bottom:8px}
-  .chip{min-width:0;padding:4px 7px;font-size:10.5px;line-height:1.2}
-  .chip b{font-size:15px;margin-top:1px}
-  .sheet .body{margin-top:8px}
-  .stat{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"name nums" "bar bar";column-gap:10px;row-gap:5px;padding:7px 0}
-  .stat>b{grid-area:name;width:auto}
-  .stat .v{grid-area:nums;width:auto;font-size:12px;line-height:1.3}
-  .stat .bar{grid-area:bar;height:7px}
-}
 @media (max-width:700px){
   /* List rows: name on its own line, the details beneath. As one line these
      ran off the right edge and the list scrolled sideways. */
@@ -396,11 +327,124 @@ input,select{font:inherit;color:inherit}
   .atrow .seg{flex:1 0 100%;display:flex}
   .atrow .seg button{flex:1;text-align:center;padding-left:6px;padding-right:6px}
 }
+
+/* ===== tabs along the bottom (3.8) =====
+   Log is today's class - the header, the tiles and "Out right now", exactly
+   as before. Reports, Roster and Settings each fill the same space. The bar
+   is part of the column, not floating over it, so when it is tucked away
+   the tiles really get its height back (fitGrid() measures the grid). */
+.app:not([data-tab="log"]) .top,.app:not([data-tab="log"]) #banner,.app:not([data-tab="log"]) .stage{display:none}
+.view{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:none;padding:12px clamp(10px,2vw,20px) 18px}
+.app[data-tab="reports"] #viewReports,.app[data-tab="roster"] #viewRoster,.app[data-tab="settings"] #viewSettings{display:block}
+.app.tabs-hidden .view{padding-bottom:44px}
+.vhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.vhead h2{font-size:21px;font-weight:800;letter-spacing:-.02em;margin-right:auto}
+.vhead .btn{flex:none;padding:8px 14px;font-size:14px;border-radius:11px}
+.vsec{max-width:760px;margin:0 auto}
+.vsec h4{font-size:13px;font-weight:700;color:var(--mute);margin:18px 0 8px}
+.vsec h4:first-child{margin-top:4px}
+.vsec .field input{width:142px;max-width:none;padding:7px 8px}
+.vsec .field select{width:100px}
+.vsec .ver{display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:16px;text-align:center}
+.tabbar{flex:none;position:relative;z-index:5;background:#fff;border-top:1px solid #D6DFE2;height:calc(54px + env(safe-area-inset-bottom));overflow:hidden;transition:height .22s ease,border-color .22s ease}
+.tabs{display:flex;align-items:stretch;height:54px;padding:0 4px;transition:transform .22s ease}
+.tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#5B6B73;font-size:11px;font-weight:700;text-align:center;line-height:1.1}
+.tab .ic{position:relative;width:56px;height:28px;border-radius:999px;display:grid;place-items:center}
+.tab svg{width:21px;height:21px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:#0F7B7B}
+.tab.on .ic{background:#DCEDED}
+.badge{position:absolute;top:-2px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--ink);font-size:11px;font-weight:800;line-height:18px;text-align:center;display:none;box-shadow:0 0 0 2px #fff}
+.badge.show{display:block}
+.badge.over{background:#C0503A;color:#fff}
+.tabhide{flex:none;width:40px;display:grid;place-items:center;color:#5B6B73}
+.tabhide svg,.tabhandle svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.app.tabs-hidden .tabbar{height:0;border-top-color:transparent}
+.app.tabs-hidden .tabs{transform:translateY(100%)}
+.tabhandle{position:absolute;right:10px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:15;width:46px;height:26px;border-radius:13px;background:#fff;border:1px solid #D6DFE2;box-shadow:0 2px 8px rgba(31,46,54,.18);display:none;place-items:center;color:#0F7B7B}
+.app.tabs-hidden .tabhandle{display:grid}
+.app.tabs-hidden .toast{bottom:calc(40px + env(safe-area-inset-bottom))}
+@media (prefers-reduced-motion:reduce){.tabbar,.tabs{transition:none}}
+
+/* Roster tab */
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rs{display:grid;grid-template-columns:30px minmax(120px,1fr) auto auto;grid-template-areas:"num name wk rm";align-items:center;column-gap:10px;row-gap:3px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;text-align:left;width:100%}
+.rs .rn{grid-area:num;color:var(--mute);font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+.rs .nm{grid-area:name;font-size:16px;font-weight:800;min-width:0;overflow-wrap:anywhere}
+.rs .wk{grid-area:wk;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;font-weight:600;color:var(--mute);justify-content:flex-end}
+.rs .wk .fl{color:#B42828;font-weight:800}
+.rs .rm{grid-area:rm;font-size:13px;font-weight:700;color:var(--ember);padding:6px 8px;border-radius:8px}
+.rs .rm.back{color:var(--leaf)}
+.rs.gone{background:#EDF1F2;cursor:default}
+.rs.gone .nm{color:#7D8D95}
+.rnote{color:var(--mute);font-size:13px;margin:-4px 0 10px}
+@media (max-width:700px){
+  .rs{grid-template-columns:26px minmax(0,1fr) auto;grid-template-areas:"num name rm" "num wk wk"}
+  .rs .wk{justify-content:flex-start}
+}
+
+/* Reports tab */
+.rtop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.rtop select{border:1px solid #C6D2D6;border-radius:10px;padding:6px 10px;background:var(--card);font-size:14px;font-weight:700;color:var(--ink);max-width:100%;min-width:0}
+.rtop .seg button{padding:6px 11px}
+.rtop .seg button.on{background:var(--leaf);color:#fff}
+.rdates{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.rdate{padding:6px 12px;border-radius:999px;border:1px solid #C6D2D6;background:var(--card);font-size:13px;font-weight:700;color:var(--mute)}
+.rdate.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.rline{margin:9px 0 10px;font-size:13px;font-weight:600;color:var(--mute);line-height:1.4}
+.rline b{color:var(--ink)}
+.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 11px;min-width:0}
+.card h5{font-size:12px;font-weight:800;color:var(--mute);line-height:1.2}
+.card h5.warn{color:#B42828}
+.card>b{display:block;font-size:clamp(17px,2.4vw,22px);font-weight:800;letter-spacing:-.02em;margin:3px 0 2px;line-height:1.15}
+.card small{display:block;font-size:11.5px;font-weight:600;color:var(--mute);line-height:1.35}
+.charts{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.cbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0}
+.chead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:6px}
+.chead h4{font-size:14px;font-weight:800;margin-right:auto}
+.chead .seg button{padding:4px 9px;font-size:12px}
+.chead .seg button.on{background:var(--ink);color:#fff}
+.vs{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--mute)}
+.vs i{width:30px;height:18px;border-radius:9px;background:#C6D2D6;position:relative;transition:background .15s}
+.vs i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
+.vs.on i{background:var(--leaf)}
+.vs.on i::after{left:14px}
+.chart{width:100%;min-width:0;overflow:hidden}
+.chart svg{display:block}
+.chart .ax{font-size:10.5px;fill:#5B6B73;font-weight:600}
+.chart .lb{font-size:10.5px;fill:#1F2E36;font-weight:700}
+.chart .avg{font-size:10.5px;fill:#1F2E36;font-weight:800}
+.chart .hit{cursor:pointer}
+.ckey{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11.5px;font-weight:700;color:var(--mute)}
+.ckey span{display:inline-flex;align-items:center;gap:5px}
+.ckey i,.dleg i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.ckey .tk{width:14px;height:3px;border-radius:2px;background:#1F2E36}
+.ckey .dash{width:14px;height:0;border-top:2px dashed #1F2E36;border-radius:0}
+.cnote{font-size:11.5px;color:var(--mute);margin-top:4px;line-height:1.4}
+.bdown{margin-top:8px;padding:9px 11px;border-radius:12px;background:var(--paper);border:1px solid var(--line);font-size:13px;line-height:1.45}
+.bdown b{font-size:14px}
+.bdown .open{display:inline-block;margin-top:6px;background:var(--ink);color:#fff;border-radius:9px;padding:6px 12px;font-weight:700;font-size:13px}
+.donut{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.donut svg{flex:none;width:120px;height:120px}
+.donut .dn{font-size:22px;font-weight:800;fill:#1F2E36}
+.donut .dnu{font-size:10px;font-weight:700;fill:#5B6B73}
+.dleg{flex:1;min-width:150px;display:flex;flex-direction:column;gap:5px}
+.dleg div{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:7px;align-items:center;font-size:12.5px;font-weight:700}
+.dleg small{grid-column:2;font-weight:600;color:var(--mute);font-size:11.5px}
+.worth{margin-top:8px}
+.worth ul{list-style:none;display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.worth li{font-size:13.5px;line-height:1.45;padding-left:14px;position:relative}
+.worth li::before{content:"";position:absolute;left:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.dlist{margin-top:8px}
+@media (max-width:700px){
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .charts{grid-template-columns:minmax(0,1fr)}
+}
 </style>
 </head>
 <body>
 
-<div class="app booting">
+<div class="app booting" data-tab="log">
   <header class="top">
     <div class="top-left">
       <h1 id="title">Hifz Class</h1>
@@ -428,6 +472,14 @@ input,select{font:inherit;color:inherit}
       <div class="out-list" id="outList"></div>
     </section>
   </main>
+  <section class="view" id="viewReports" aria-label="Reports"></section>
+  <section class="view" id="viewRoster" aria-label="Roster"></section>
+  <section class="view" id="viewSettings" aria-label="Settings"></section>
+  <nav class="tabbar" id="tabbar" aria-label="Sections"><div class="tabs">
+    <button class="tab on" data-tab="log" onclick="showTab('log')" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg><b class="badge" id="logBadge"></b></span>Log</button><button class="tab" data-tab="reports" onclick="showTab('reports')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 19v-7M12 19V5M18 19v-10M3.5 19.5h17"/></svg></span>Reports</button><button class="tab" data-tab="roster" onclick="showTab('roster')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><path d="M15.5 5.1a3.1 3.1 0 0 1 0 5.8M17.6 14.6c1.8.7 3 2.4 3.4 4.9"/></svg></span>Roster</button><button class="tab" data-tab="settings" onclick="showTab('settings')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</button>
+    <button class="tabhide" aria-label="Hide the tabs" onclick="setTabsHidden(true)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+  </div></nav>
+  <button class="tabhandle" id="tabHandle" aria-label="Show the tabs" onclick="setTabsHidden(false)"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
 
   <div class="setup" id="setup"><div class="setup-card">
     <h2>Set up your class</h2>
@@ -468,7 +520,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="4438b0dabc",APP_BUILD_TIME="2026-10-03T04:27:31.844Z";
+/*BUILD_STAMP*/const APP_VERSION="1.0.0",APP_BUILD="7f8adbbb36",APP_BUILD_TIME="2026-10-04T06:04:56.220Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1296,12 +1348,12 @@ async function mergeDayIntoFirestoreIfMissing(id,snap){
    simulating "another device already recorded this day via normal Phase 2
    use" - exercises the real writer path and real rules, never used by any
    production UI. */
-window.__hifzTestSeedDay=async function(id,attendance,breaksArr){
+window.__hifzTestSeedDay=async function(id,attendance,breaksArr,session){
   if(!ORG_ID) return false;
   const ref=dayRef(id);
   await ref.set({
     date:id, yearId:academicYearId(new Date(id+'T00:00:00')),
-    session:{status:'ended',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null},
+    session:Object.assign({status:'ended',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null},session||{}),
     attendance:attendance||{}, roster:fullRosterPlain(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   await Promise.all((breaksArr||[]).map((b,i)=>ref.collection('breaks').doc('seed'+i).set(b)));
@@ -1795,8 +1847,8 @@ const TOUR=[
  {h:'Everyone starts present',p:'Before you begin, every student is assumed to be here. Click anyone who is absent to mark them not here, then press Start class. If they walk in later, clicking them again records them as tardy with the arrival time.'},
  {h:'Logging a break',p:'Click a student and pick a reason: washroom, water, wudhu, other, or a break you assign. The timer starts immediately and the student appears in Out right now. Click them again when they are back.'},
  {h:'Limits and flags',p:'Each reason has its own allowance and a daily trip cap. The timer turns red once a break runs past its limit, and a red flag appears on the student for the rest of the day. An assigned break is excused for the minutes you set; only the overage counts against the student.'},
- {h:'Snack and lunch',p:'Whole-class breaks pause every individual timer, so nothing counts against anyone. When a scheduled break time arrives, a banner offers to start it with one click. You can adjust the times in the teacher menu.'},
- {h:'The teacher menu',p:'Everything else lives behind the menu button: fix attendance, see the day summary, open reports by day, week or month for the whole class or one student, export a CSV, edit your roster, and change the break rules.'}
+ {h:'Snack and lunch',p:'Whole-class breaks pause every individual timer, so nothing counts against anyone. When a scheduled break time arrives, a banner offers to start it with one click. You can adjust the times on the Settings tab.'},
+ {h:'The tabs along the bottom',p:'Log is today\'s class, and its menu button has the day\'s actions: snack, lunch, attendance and the day summary. Reports shows charts for today, a week or a month, for the whole class or one student. Roster is your class list. Settings has class hours, break limits, sign-in and backup. The arrow at the right of the tabs tucks them away; tap the small tab in the corner to bring them back.'}
 ];
 let tourI=0;
 function startTour(){ tourI=0; drawTour(); $('tour').classList.add('show'); }
@@ -1904,113 +1956,305 @@ async function fetchAllDays(){
   if(!ORG_ID) return {};
   return daysQueryToMap(classRef().collection('days'));
 }
-const rpt={scope:'class',sid:null,kind:'day',offset:0};
-function periodDays(kind,offset){
-  const now=new Date(); let start,end,label;
-  if(kind==='day'){ start=new Date(now); start.setDate(start.getDate()+offset); end=new Date(start);
-    label=start.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'}); }
-  else if(kind==='week'){ start=new Date(now); start.setDate(start.getDate()-((start.getDay()+6)%7)+offset*7);
-    end=new Date(start); end.setDate(start.getDate()+6);
-    label=`Week of ${start.toLocaleDateString([],{month:'short',day:'numeric'})}`; }
-  else { start=new Date(now.getFullYear(),now.getMonth()+offset,1); end=new Date(start.getFullYear(),start.getMonth()+1,0);
-    label=start.toLocaleDateString([],{month:'long',year:'numeric'}); }
-  const ids=[]; const c=new Date(start); c.setHours(0,0,0,0); end.setHours(0,0,0,0);
-  while(c<=end){ ids.push(dayId(c)); c.setDate(c.getDate()+1); }
-  return {ids,label};
-}
-async function reportDays(){
-  const {ids,label}=periodDays(rpt.kind,rpt.offset), tid=dayId(new Date());
-  const remote=ids.length?await fetchDayRange(ids[0],ids[ids.length-1]):{};
-  const days=ids.map(id=>(id===tid&&hasActivity())?snapshot():remote[id]).filter(Boolean);
-  return {days,label};
-}
-function agg(days,sid){
-  const per={}, out={trips:0,mins:0,flags:0,over:0,att:{present:0,tardy:0,absent:0,left:0}};
-  REASONS.forEach(r=>per[r.key]={trips:0,mins:0,flags:0,over:0});
-  days.forEach(d=>{
-    Object.entries(d.att||{}).forEach(([id,a])=>{ if(sid&&id!==sid) return; if(out.att[a.status]!==undefined) out.att[a.status]++; });
-    (d.breaks||[]).forEach(b=>{ if(sid&&b.sid!==sid) return;
-      const q=per[b.reason]||(per[b.reason]={trips:0,mins:0,flags:0,over:0});
-      const m=b.dur/60000, ov=(b.over||0)/60000;
-      q.trips++; q.mins+=m; q.flags+=b.flag?1:0; q.over+=ov;
-      out.trips++; out.mins+=m; out.flags+=b.flag?1:0; out.over+=ov;
-    });
-  });
-  return {per,out};
-}
-function setReport(k,v){ if(k==='kind'){ rpt.kind=v; rpt.offset=0; } else if(k==='scope'){ rpt.scope=v; } else if(k==='sid'){ rpt.sid=v; } else if(k==='offset'){ rpt.offset+=v; } openReports(); }
-async function openReports(){
-  closeDrawer();
-  sheetHTML('Reports','',`<div class="body"><div class="empty"><b>Loading…</b></div></div>`);
-  const {days,label}=await reportDays();
-  const sid = rpt.scope==='student' ? (rpt.sid||(roster()[0]||{}).id) : null;
-  if(sid) rpt.sid=sid;
-  const {per,out}=agg(days,sid);
-  const nameFor=id=>nameOf(id)||((days.find(d=>d.names&&d.names[id])||{names:{}}).names[id])||'Student';
-  const r1=Math.round;
-  const maxMins=Math.max(1,...REASONS.map(r=>per[r.key].mins));
-  const bars=REASONS.map(r=>{
-    const q=per[r.key], lim=LIMIT(r.key);
-    const avg=q.trips?q.mins/q.trips:0;
-    const cap=lim?` · limit ${lim.min} min`:'';
-    return `<div class="stat"><b>${r.label}</b><div class="bar"><i class="${r.key}" style="width:${Math.round(q.mins/maxMins*100)}%"></i></div>
-      <span class="v">${q.trips} trip${q.trips===1?'':'s'} · ${r1(q.mins)} min${q.trips?` · avg ${avg.toFixed(1)} min`:''}${cap}${q.flags?` · <em>⚑ ${q.flags}</em>`:''}</span></div>`;
-  }).join('');
+/* ===== Reports tab (3.8) =====
+   Read only: one bounded fetchDayRange() for the period and one for the
+   period before it (for "up from ... last week"), plus snapshot() for today.
+   No listeners, no writes. Charts are plain SVG built here - no library, so
+   they work offline and in the native app.
 
-  let detail;
-  if(sid){
-    detail=`<h4 class="rh">Day by day</h4><div class="rowlist">${days.length?days.slice().reverse().map(d=>{
-      const a=(d.att||{})[sid]||{status:'—'}, bs=(d.breaks||[]).filter(b=>b.sid===sid);
-      const fl=bs.filter(b=>b.flag).length, mins=r1(bs.reduce((x,b)=>x+b.dur,0)/60000);
-      const dd=new Date(d.date+'T00:00:00');
-      return `<div class="row"><b>${dd.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</b>
-        <span class="time">${a.status==='—'?'no record':a.status}</span>
-        <span class="time">${bs.length} break${bs.length===1?'':'s'} · ${mins} min</span>
-        <span class="time flag">${fl?`⚑ ${fl}`:''}</span></div>`;
-    }).join(''):''}</div>`;
-  } else {
-    const tally={};
-    days.forEach(d=>(d.breaks||[]).forEach(b=>{ if(b.flag) tally[b.sid]=(tally[b.sid]||0)+1; }));
-    const top=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-    detail=`<h4 class="rh">Flags by student</h4><div class="rowlist">${top.length?top.map(([id,n])=>{
-      const mins=r1(days.reduce((x,d)=>x+(d.breaks||[]).filter(b=>b.sid===id).reduce((y,b)=>y+(b.over||0),0),0)/60000);
-      // A break is flagged for running long OR for being one trip too many. With
-      // no minutes shown, a trip-cap flag reads as a flag for nothing at all.
-      return `<div class="row"><b>${nameFor(id)}</b><span class="time">${n} flagged break${n===1?'':'s'}</span><span class="time flag">${mins?`${mins} min over`:'past trip limit'}</span>
-        <button class="btn ghost" style="padding:7px 11px;font-size:13px" onclick="rpt.scope='student';setReport('sid','${id}')">Open</button></div>`;
-    }).join(''):'<div class="row"><b>No flags in this period</b></div>'}</div>`;
+   Counting rules, used everywhere on this tab and on the Roster tab:
+   - A break under 15 seconds is an accidental tap and is ignored.
+   - "Assigned" is time the teacher sent the student out for. It shows in
+     "Where the time went" as Assigned (excused) and counts as a break, but it
+     is never "time out of class".
+   - A class day is a day that was started, or has breaks on record (days
+     migrated from before syncing have no start time).
+   - Class time is start to end minus the snack and lunch windows inside it.
+     Records are cleaned first: a start more than an hour outside class hours
+     (a class restarted at night) uses the scheduled start; a missing end, or
+     one after class hours, uses the scheduled end (today: now, if earlier). */
+const MIN_BREAK_MS=15000;
+const TYPE_COLOR={washroom:'#eb6834',water:'#2a78d6',wudhu:'#1baf7a',other:'#eda100',assigned:'#e87ba4'};
+const OUT_TYPES=['washroom','water','wudhu','other'];        // what counts as time out of class
+const ALL_TYPES=[...OUT_TYPES,'assigned'];
+const typeLabel=k=>k==='assigned'?'Assigned (excused)':RSN(k).label;
+const counted=b=>(+b.dur||0)>=MIN_BREAK_MS;
+const typeOf=b=>ALL_TYPES.includes(b.reason)?b.reason:'other';
+/* 8.4, 12, 0.7 - one decimal only while it still means something */
+function fmtMin(v){ const r=Math.round(v*10)/10; return Math.abs(r)<10&&r%1!==0?r.toFixed(1):String(Math.round(r)); }
+function plural(n,word){ const t=fmtMin(n); return `${t} ${+t===1?word:word+'s'}`; }
+function fmtHours(min){ const t=Math.round(min), h=Math.floor(t/60), m=t%60; return h?`${h} h${m?` ${m} min`:''}`:`${m} min`; }
+function median(a){ if(!a.length) return 0; const x=[...a].sort((p,q)=>p-q), m=x.length>>1; return x.length%2?x[m]:(x[m-1]+x[m])/2; }
+const shortDate=d=>(typeof d==='string'?new Date(d+'T00:00:00'):d).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+const rangeText=(a,b)=>dayId(a)===dayId(b)?shortDate(a):`${shortDate(a)} to ${shortDate(b)}`;
+
+const rpt={scope:'class',sid:null,range:'thisweek',mode:'total',vs:false,sort:'roll',sel:null};
+const RANGES=[['today','Today'],['yesterday','Yesterday'],['thisweek','This week'],['lastweek','Last week'],['lastmonth','Last month']];
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+/* Weeks run Monday to Sunday; "This week" is Monday to today; "Last month"
+   is the previous calendar month. prev is the period to compare with: the
+   week or month before, or for a single day the last class day before it. */
+function rangeOf(key){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const mon=addDays(t,-((t.getDay()+6)%7));
+  if(key==='today') return {start:t,end:t,prev:{start:addDays(t,-14),end:addDays(t,-1),lastDay:true}};
+  if(key==='yesterday'){ const y=addDays(t,-1); return {start:y,end:y,prev:{start:addDays(y,-14),end:addDays(y,-1),lastDay:true}}; }
+  if(key==='lastweek') return {start:addDays(mon,-7),end:addDays(mon,-1),prev:{start:addDays(mon,-14),end:addDays(mon,-8),name:'the week before'}};
+  if(key==='lastmonth'){
+    const s=new Date(t.getFullYear(),t.getMonth()-1,1), e=new Date(t.getFullYear(),t.getMonth(),0);
+    const ps=new Date(t.getFullYear(),t.getMonth()-2,1), pe=new Date(t.getFullYear(),t.getMonth()-1,0);
+    return {start:s,end:e,prev:{start:ps,end:pe,name:'in '+ps.toLocaleDateString([],{month:'long'})}};
   }
+  return {start:mon,end:t,prev:{start:addDays(mon,-7),end:addDays(mon,-1),name:'last week'}};
+}
+function idsBetween(a,b){ const out=[], c=new Date(a), e=new Date(b); c.setHours(0,0,0,0); e.setHours(0,0,0,0); while(c<=e){ out.push(dayId(c)); c.setDate(c.getDate()+1); } return out; }
+async function loadDays(a,b){
+  const ids=idsBetween(a,b); if(!ids.length) return [];
+  const remote=await fetchDayRange(ids[0],ids[ids.length-1]), tid=dayId(new Date());
+  return ids.map(id=>(id===tid&&hasActivity())?snapshot():remote[id]).filter(Boolean);
+}
+function isClassDay(d){ return !!d.startedAt||(d.breaks||[]).some(counted); }
+function classMinutes(d){
+  const S=state.settings, base=+new Date(d.date+'T00:00:00'), at=t=>base+toMin(t)*60000;
+  const s0=at(S.startTime), e0=at(S.endTime);
+  let s=d.startedAt, e=d.endedAt;
+  if(!s||s<s0-3600000||s>=e0) s=s0;
+  if(!e) e=d.date===dayId(new Date())?Math.min(Date.now(),e0):e0;
+  else if(e>e0||e<=s) e=e0;
+  let ms=Math.max(0,e-s);
+  [[S.snack.start,S.snack.end],[S.lunch.start,S.lunch.end]].forEach(([a,b])=>{ ms-=Math.max(0,Math.min(e,at(b))-Math.max(s,at(a))); });
+  return Math.max(0,ms)/60000;
+}
+/* Everything the tab shows, for the whole class (sid null) or one student.
+   The whole class means today's roster, plus anyone on record who is no
+   longer known to this device at all (e.g. history migrated from another
+   tablet) - but not students the teacher removed. */
+function crunch(days,sid){
+  const active=new Set(roster().map(x=>x.id)), known=new Set(state.students.map(x=>x.id));
+  const inScope=id=>sid?id===sid:(active.has(id)||!known.has(id));
+  const types=()=>Object.fromEntries(ALL_TYPES.map(k=>[k,{ms:0,trips:0}]));
+  const R={classDays:0,classMin:0,seatMin:0,outMs:0,trips:0,flags:0,durs:[],wash:[],type:types(),att:{present:0,tardy:0,absent:0,left:0},per:{},days:[],names:{}};
+  const P=id=>R.per[id]||(R.per[id]={outMs:0,trips:0,flags:0,present:0,type:types()});
+  days.forEach(d=>{
+    if(!isClassDay(d)) return;
+    const cm=classMinutes(d); R.classDays++; R.classMin+=cm;
+    Object.assign(R.names,d.names||{});
+    const day={date:d.date,outMs:0,trips:0,flags:0,type:types(),status:null};
+    Object.entries(d.att||{}).forEach(([id,a])=>{
+      if(!inScope(id)||R.att[a.status]===undefined) return;
+      R.att[a.status]++; if(sid) day.status=a.status;
+      if(a.status!=='absent'){ R.seatMin+=cm; P(id).present++; }
+    });
+    (d.breaks||[]).forEach(b=>{
+      if(!inScope(b.sid)||!counted(b)) return;
+      const k=typeOf(b);
+      [R,P(b.sid),day].forEach(x=>{ x.trips++; if(b.flag) x.flags++; x.type[k].ms+=b.dur; x.type[k].trips++; if(k!=='assigned') x.outMs+=b.dur; });
+      R.durs.push(b.dur); if(k==='washroom') R.wash.push(b.dur);
+    });
+    R.days.push(day);
+  });
+  return R;
+}
 
-  const seg=(k,opts)=>`<div class="seg">${opts.map(o=>`<button class="${rpt[k]===o[0]?'on present':''}" onclick="setReport('${k}','${o[0]}')">${o[1]}</button>`).join('')}</div>`;
-  sheetHTML('Reports', sid?`${nameFor(sid)} · ${label}`:`Whole class · ${label}`,
-   `<div class="rpanes"><div class="rside"><div class="rctl">
-      ${seg('kind',[['day','Daily'],['week','Weekly'],['month','Monthly']])}
-      ${seg('scope',[['class','Class'],['student','Student']])}
-      ${rpt.scope==='student'?`<select onchange="setReport('sid',this.value)">${roster().map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${x.name}</option>`).join('')}</select>`:''}
-      <div class="rnav"><button onclick="setReport('offset',-1)">‹</button><b>${label}</b><button onclick="setReport('offset',1)">›</button></div>
+let rptData=null, rptSeq=0;
+function setRpt(k,v){
+  rpt[k]=v; if(k!=='sel') rpt.sel=null;
+  if(k==='range') return drawReports();
+  if(k==='scope'&&v==='student'&&!rpt.sid) rpt.sid=(roster()[0]||{}).id||null;
+  paintReports();
+}
+async function drawReports(){
+  const seq=++rptSeq, r=rangeOf(rpt.range);
+  if(rpt.scope==='student'&&!rpt.sid) rpt.sid=(roster()[0]||{}).id||null;
+  rptData=null; paintReports();
+  let days=[], prev=[];
+  try{ [days,prev]=await Promise.all([loadDays(r.start,r.end),loadDays(r.prev.start,r.prev.end)]); }catch(e){}
+  if(seq!==rptSeq) return;
+  if(r.prev.lastDay){ const last=prev.filter(isClassDay).pop(); prev=last?[last]:[]; r.prevName=last?'on '+shortDate(last.date):''; }
+  else r.prevName=r.prev.name;
+  rptData={days,prev,r};
+  if(TAB==='reports') paintReports();
+}
+const nameFor=id=>nameOf(id)||(rptData&&crunchNames()[id])||'Student';
+function crunchNames(){ const n={}; (rptData?rptData.days.concat(rptData.prev):[]).forEach(d=>Object.assign(n,d.names||{})); return n; }
+
+function paintReports(){
+  const v=$('viewReports'); if(!v) return;
+  const r=rangeOf(rpt.range), sid=rpt.scope==='student'?rpt.sid:null;
+  const seg=(k,opts)=>`<div class="seg">${opts.map(([val,lbl])=>`<button class="${rpt[k]===val?'on':''}" onclick="setRpt('${k}','${val}')">${lbl}</button>`).join('')}</div>`;
+  let picker='';
+  if(rpt.scope==='student'){
+    const opts=roster().map(x=>[x.id,x.name]);
+    if(sid&&!opts.some(o=>o[0]===sid)) opts.push([sid,nameFor(sid)]);
+    picker=`<select aria-label="Student" onchange="setRpt('sid',this.value)">${opts.map(([id,n])=>`<option value="${id}" ${id===sid?'selected':''}>${n}</option>`).join('')}</select>`;
+  }
+  const head=`<div class="vhead"><h2>Reports</h2><button class="btn ghost" onclick="exportCSV()">Export CSV</button></div>
+    <div class="rtop">${seg('scope',[['class','Whole class'],['student','One student']])}${picker}${seg('mode',[['total','Total'],['avg','Daily average']])}</div>
+    <div class="rdates">${RANGES.map(([k,l])=>`<button class="rdate ${rpt.range===k?'on':''}" data-range="${k}" onclick="setRpt('range','${k}')">${l}</button>`).join('')}</div>`;
+  if(!rptData){ v.innerHTML=head+`<div class="empty"><b>Loading…</b></div>`; v.dataset.ready=''; return; }
+  const {days,prev}=rptData, rp=rptData.r;
+  const R=crunch(days,sid), Pv=crunch(prev,sid);
+  const who=sid?`<b>${nameFor(sid)}</b>`:`<b>Whole class</b> · ${plural(roster().length,'student')}`;
+  const line=`<p class="rline" id="rptLine">${who} · ${rangeText(r.start,r.end)} · ${plural(R.classDays,'class day')}</p>`;
+  if(!R.classDays){
+    v.innerHTML=head+line+`<div class="empty"><b>No class days in this period</b>Days fill in here as you use the tracker.</div>`;
+    v.dataset.ready='1'; return;
+  }
+  v.innerHTML=head+line+cardsHTML(R,Pv,rp)+`<div class="charts">
+      <div class="cbox"><div class="chead"><h4>${sid?'Minutes out, by class day':'Minutes out, by student'}</h4>
+        ${sid?'':`${seg('sort',[['roll','Class list'],['most','Most out']])}<button class="vs ${rpt.vs?'on':''}" role="switch" aria-checked="${rpt.vs}" onclick="setRpt('vs',${!rpt.vs})"><i></i>vs ${vsName(rp)}</button>`}</div>
+        <div class="chart" id="chart1"></div>
+        <div class="ckey">${OUT_TYPES.map(k=>`<span><i style="background:${TYPE_COLOR[k]}"></i>${typeLabel(k)}</span>`).join('')}<span><i class="dash"></i>${sid?'their average':'class average'}</span>${!sid&&rpt.vs?`<span><i class="tk"></i>${vsName(rp)}</span>`:''}</div>
+        <p class="cnote">Assigned (excused) time is not counted as time out.${rpt.mode==='avg'?' Minutes per class day.':''} Tap a bar for its breakdown.</p>
+        <div id="bdown"></div></div>
+      <div class="cbox"><div class="chead"><h4>Where the time went</h4></div>${donutHTML(R)}</div>
     </div>
-    <div class="chips">
-      <div class="chip">Days recorded<b>${days.length}</b></div>
-      <div class="chip">Breaks<b>${out.trips}</b></div>
-      <div class="chip">Time out<b>${r1(out.mins)} min</b></div>
-      <div class="chip ${out.flags?'warn':''}">Flagged<b>${out.flags}</b></div>
-      <div class="chip ${out.over?'warn':''}">Over limit<b>${r1(out.over)} min</b></div>
-      ${sid?`<div class="chip">Tardy days<b>${out.att.tardy}</b></div><div class="chip">Absent days<b>${out.att.absent}</b></div>`
-           :`<div class="chip">Tardy marks<b>${out.att.tardy}</b></div><div class="chip">Absences<b>${out.att.absent}</b></div>`}
-      ${out.att.left?`<div class="chip">Left early<b>${out.att.left}</b></div>`:''}
-    </div></div>
-    <div class="body">${days.length?`<div class="rcols"><div>${bars}</div><div>${detail}</div></div>`:`<div class="empty"><b>Nothing recorded in this period</b>Days are archived as you use the tracker, so reports fill in from here on.</div>`}</div></div>
-    <div class="actions"><button class="btn ghost" onclick="exportCSV()">Export CSV</button><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+    ${sid?dayListHTML(R):worthHTML(R,Pv,rp)}`;
+  drawChart1(R,Pv);
+  v.dataset.ready='1';
+}
+const vsName=rp=>rpt.range==='thisweek'?'last week':rpt.range==='lastweek'?'the week before':rpt.range==='lastmonth'?rp.prev.name.replace(/^in /,''):'the class day before';
+
+function cardsHTML(R,Pv,rp){
+  const avg=rpt.mode==='avg', per=v=>avg?v/R.classDays:v, aday=avg?' a day':'';
+  const outMin=R.outMs/60000, pct=R.seatMin?outMin/R.seatMin*100:0;
+  const nowDay=outMin/R.classDays, prevDay=Pv.classDays?Pv.outMs/60000/Pv.classDays:null;
+  const unit=rp.prev.lastDay?' min':' min a day';
+  let cmp;
+  if(prevDay==null) cmp=rp.prev.lastDay?'No earlier class day to compare':`No class days ${rp.prevName} to compare`;
+  else if(Math.abs(nowDay-prevDay)<0.05) cmp=`Same as ${rp.prevName} (${fmtMin(prevDay)}${unit})`;
+  else cmp=`${nowDay>prevDay?'Up':'Down'} from ${fmtMin(prevDay)}${unit} ${rp.prevName}`;
+  const a=R.att, marks=a.present+a.tardy+a.absent+a.left, here=a.present+a.tardy+a.left;
+  const card=(id,title,big,...notes)=>`<div class="card" data-card="${id}"><h5${id==='over'?' class="warn"':''}>${title}</h5><b>${big}</b>${notes.map(n=>`<small>${n}</small>`).join('')}</div>`;
+  return `<div class="cards">
+    ${card('class','Class in session',fmtHours(per(R.classMin))+aday,`${avg?'Average of ':''}${plural(R.classDays,'class day')}, lunch and snack not counted`)}
+    ${card('out','Time out of class',`${fmtMin(per(outMin))} min${aday}`,`${fmtMin(pct)}% of class time`,cmp)}
+    ${card('breaks','Breaks',`${fmtMin(per(R.trips))}${aday}`,R.durs.length?`Typical length ${fmtMin(median(R.durs)/60000)} min`:'No breaks')}
+    ${card('over','Over the limit',`${fmtMin(per(R.flags))}${aday}`,`${R.trips?Math.round(R.flags/R.trips*100):0}% of all breaks`)}
+    ${card('att','Attendance',marks?`${Math.round(here/marks*100)}% present`:'—',`${fmtMin(per(a.tardy))} tardy · ${fmtMin(per(a.absent))} absent · ${fmtMin(per(a.left))} left early${aday}`)}
+  </div>`;
+}
+
+/* Chart 1: stacked bars, one per student (or per class day for one
+   student), split by break type. Built at the box's real width, so it fits
+   any screen without scrolling sideways; redrawn on resize. */
+function chartItems(R,Pv){
+  const sid=rpt.scope==='student'?rpt.sid:null, avg=rpt.mode==='avg';
+  const mins=t=>Object.fromEntries(OUT_TYPES.map(k=>[k,t[k].ms/60000]));
+  if(sid){
+    return R.days.map(d=>{ const dd=new Date(d.date+'T00:00:00');
+      return {id:d.date,label:`${dd.toLocaleDateString([],{weekday:'short'})} ${dd.getDate()}`,segs:mins(d.type),val:d.outMs/60000,day:d}; });
+  }
+  const ids=roster().map(x=>x.id);
+  Object.keys(R.per).forEach(id=>{ if(!ids.includes(id)&&R.per[id].trips) ids.push(id); });
+  const div=avg?R.classDays:1, pdiv=avg?Math.max(1,Pv.classDays):1;
+  const items=ids.map(id=>{ const p=R.per[id];
+    const segs=p?Object.fromEntries(OUT_TYPES.map(k=>[k,p.type[k].ms/60000/div])):{};
+    return {id,label:nameFor(id),segs,val:p?p.outMs/60000/div:0,prev:Pv.classDays?((Pv.per[id]||{outMs:0}).outMs/60000/pdiv):null}; });
+  if(rpt.sort==='most') items.sort((x,y)=>y.val-x.val);
+  return items;
+}
+function niceStep(max){ const raw=max/4, p=Math.pow(10,Math.floor(Math.log10(raw))); for(const m of [1,2,5,10]) if(m*p>=raw) return m*p; return 10*p; }
+function drawChart1(R,Pv){
+  const box=$('chart1'); if(!box) return;
+  const sid=rpt.scope==='student'?rpt.sid:null, items=chartItems(R,Pv);
+  const avgVal=items.length?items.reduce((a,i)=>a+i.val,0)/items.length:0;
+  const W=Math.max(200,Math.floor(box.clientWidth)), H=Math.round(Math.max(170,Math.min(250,innerHeight*.36)));
+  const L=36, Rm=8, T=16, n=Math.max(1,items.length), slot=(W-L-Rm)/n, rot=slot<56, B=rot?76:22;
+  const ph=H-T-B, vs=!sid&&rpt.vs;
+  const max=Math.max(1,avgVal,...items.map(i=>Math.max(i.val,vs&&i.prev||0)));
+  const step=Math.max(1,niceStep(max)), top=Math.ceil(max/step-1e-9)*step, y=v=>T+ph-(v/top)*ph;
+  const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  let g='';
+  for(let v=0;v<=top+1e-9;v+=step) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="${v?'#E4EBED':'#B9C6CB'}"/><text class="ax" x="${L-6}" y="${y(v)+3.5}" text-anchor="end">${Math.round(v)}</text>`;
+  const bw=Math.max(4,Math.min(24,slot*.6));
+  items.forEach((it,i)=>{
+    const cx=L+slot*(i+.5), x=cx-bw/2;
+    if(rpt.sel===it.id) g+=`<rect x="${cx-slot/2+1}" y="${T-4}" width="${slot-2}" height="${ph+4}" rx="6" fill="#EEF4F5"/>`;
+    let base=y(0), first=true;
+    OUT_TYPES.forEach(k=>{ const v=it.segs[k]||0; if(v<=0) return;
+      const h=v/top*ph, hh=h-(first?0:2);
+      if(hh>0.5) g+=`<rect x="${x.toFixed(1)}" y="${(base-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${TYPE_COLOR[k]}"/>`;
+      base-=h; first=false; });
+    if(vs&&it.prev!=null) g+=`<line x1="${(cx-bw/2-5).toFixed(1)}" x2="${(cx+bw/2+5).toFixed(1)}" y1="${y(it.prev)}" y2="${y(it.prev)}" stroke="#1F2E36" stroke-width="3" stroke-linecap="round"/>`;
+    const maxCh=rot?10:Math.max(3,Math.floor(slot/6.6)), txt=it.label.length>maxCh?it.label.slice(0,maxCh-1)+'…':it.label;
+    g+=rot?`<text class="lb" text-anchor="end" transform="translate(${(cx+3).toFixed(1)},${T+ph+9}) rotate(-60)">${esc(txt)}</text>`
+          :`<text class="lb" x="${cx.toFixed(1)}" y="${T+ph+15}" text-anchor="middle">${esc(txt)}</text>`;
+    g+=`<rect class="hit" x="${(cx-slot/2).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H}" fill="transparent" onclick="rptSelect('${it.id}')"><title>${esc(it.label)}</title></rect>`;
+  });
+  if(items.length){
+    const ya=y(avgVal), lbl=`${sid?'their':'class'} average ${fmtMin(avgVal)} min`;
+    g+=`<line x1="${L}" x2="${W-Rm}" y1="${ya}" y2="${ya}" stroke="#1F2E36" stroke-width="1.5" stroke-dasharray="5 4" pointer-events="none"/>`;
+    g+=`<text class="avg" x="${W-Rm-2}" y="${Math.max(11,ya-5)}" text-anchor="end" paint-order="stroke" stroke="#fff" stroke-width="4" stroke-linejoin="round" pointer-events="none">${lbl}</text>`;
+  }
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Minutes out chart">${g}</svg>`;
+  const it=items.find(i=>i.id===rpt.sel);
+  $('bdown').innerHTML=it?breakdownHTML(it,R,sid):'';
+}
+/* First tap on a bar: its breakdown. Tap it again (or Open) for that student. */
+function rptSelect(id){
+  if(rpt.scope==='class'&&rpt.sel===id) return openStudentReport(id);
+  rpt.sel=rpt.sel===id&&rpt.scope==='student'?null:id; paintReports();
+}
+function breakdownHTML(it,R,sid){
+  const avg=rpt.mode==='avg', div=!sid&&avg?R.classDays:1;
+  const t=sid?it.day.type:(R.per[it.id]||{type:Object.fromEntries(ALL_TYPES.map(k=>[k,{ms:0,trips:0}]))}).type;
+  const parts=ALL_TYPES.filter(k=>t[k].trips).map(k=>`${typeLabel(k)} ${fmtMin(t[k].ms/60000/div)} min (${plural(t[k].trips/div,'trip')})`);
+  const title=sid?shortDate(it.id):it.label;
+  return `<div class="bdown"><b>${title}</b> · ${fmtMin(it.val)} min out${!sid&&avg?' a day':''}${!sid&&rpt.vs&&it.prev!=null?` · ${fmtMin(it.prev)} min ${vsName(rptData.r)}`:''}<br>${parts.join(' · ')||'No breaks'}
+    ${sid?'':`<br><button class="open" onclick="openStudentReport('${it.id}')">Open ${it.label}'s report</button>`}</div>`;
+}
+function donutHTML(R){
+  const avg=rpt.mode==='avg', div=avg?R.classDays:1;
+  const tot=ALL_TYPES.reduce((a,k)=>a+R.type[k].ms,0), C=2*Math.PI*42;
+  if(!tot) return `<div class="empty" style="padding:14px"><b>No breaks</b></div>`;
+  let off=0, arcs='';
+  ALL_TYPES.forEach(k=>{ const v=R.type[k].ms; if(!v) return;
+    const len=v/tot*C, gap=len>6?1.5:0;
+    arcs+=`<circle cx="60" cy="60" r="42" fill="none" stroke="${TYPE_COLOR[k]}" stroke-width="18" stroke-dasharray="${(len-gap).toFixed(2)} ${(C-len+gap).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"/>`;
+    off+=len; });
+  const leg=ALL_TYPES.filter(k=>R.type[k].trips).map(k=>{ const q=R.type[k];
+    return `<div data-type="${k}"><i style="background:${TYPE_COLOR[k]}"></i>${typeLabel(k)}<small>${fmtMin(q.ms/60000/div)} min${avg?' a day':''} · ${Math.round(q.ms/tot*100)}% · ${plural(q.trips/div,'trip')}</small></div>`; }).join('');
+  return `<div class="donut"><svg viewBox="0 0 120 120" role="img" aria-label="Where the time went">${arcs}<text class="dn" x="60" y="62" text-anchor="middle">${fmtMin(tot/60000/div)}</text><text class="dnu" x="60" y="77" text-anchor="middle">min${avg?' a day':''}</text></svg><div class="dleg">${leg}</div></div>`;
+}
+function worthHTML(R,Pv,rp){
+  const items=[];
+  const top=Object.entries(R.per).filter(([,p])=>p.flags>0).sort((a,b)=>b[1].flags-a[1].flags);
+  if(top.length){ const [id,p]=top[0];
+    items.push(`${nameFor(id)} had the most over-limit breaks: ${p.flags} of ${plural(p.trips,'trip')}.`); }
+  else if(R.trips) items.push('No breaks went over the limit.');
+  if(Pv.classDays){
+    const unit=rp.prev.lastDay?' min':' min a day';
+    let best=null;
+    Object.entries(R.per).forEach(([id,p])=>{
+      const now=p.outMs/60000/R.classDays, was=((Pv.per[id]||{}).outMs||0)/60000/Pv.classDays, up=now-was;
+      if(up>=0.05&&(!best||up>best.up)) best={id,now,was,up};
+    });
+    items.push(best?`${nameFor(best.id)}'s time out went up the most: ${fmtMin(best.now)}${unit}, up from ${fmtMin(best.was)}${unit} ${rp.prevName}.`
+                   :`Nobody's time out went up compared with ${rp.prevName}.`);
+  }
+  if(R.wash.length){
+    const m=median(R.wash)/60000, lim=LIMIT('washroom');
+    items.push(`A typical washroom trip took ${fmtMin(m)} min${lim?`, ${m>lim.min?'over':'against'} the ${lim.min} min limit`:''} (${plural(R.wash.length,'trip')}).`);
+  }
+  return items.length?`<div class="cbox worth"><div class="chead"><h4>Worth a look</h4></div><ul>${items.map(t=>`<li>${t}</li>`).join('')}</ul></div>`:'';
+}
+function dayListHTML(R){
+  const label={present:'present',tardy:'tardy',absent:'absent',left:'left early'};
+  return `<div class="cbox dlist"><div class="chead"><h4>Day by day</h4></div><div class="rowlist">${R.days.slice().reverse().map(d=>
+    `<div class="row"><b>${shortDate(d.date)}</b><span class="time">${d.status?label[d.status]:'no record'}</span>
+      <span class="time">${plural(d.trips,'break')} · ${fmtMin(d.outMs/60000)} min out</span><span class="time flag">${d.flags?`⚑ ${d.flags} over limit`:''}</span></div>`).join('')}</div></div>`;
 }
 async function exportCSV(){
-  const {days,label}=await reportDays();
+  const r=rangeOf(rpt.range);
+  const days=rptData?rptData.days:await loadDays(r.start,r.end).catch(()=>[]);
   const rows=[['date','student','reason','minutes','allowed_minutes','minutes_over','flagged','past_daily_limit']];
   days.forEach(d=>(d.breaks||[]).forEach(b=>rows.push([d.date,(d.names||{})[b.sid]||b.sid,b.reason,(b.dur/60000).toFixed(1),b.assignedMin||'',((b.over||0)/60000).toFixed(1),b.flag?'yes':'no',b.overTrip?'yes':'no'])));
-  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv=rows.map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   try{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-    a.download=`hifz-breaks-${label.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.csv`; a.click();
+    a.download=`hifz-breaks-${dayId(r.start)}-to-${dayId(r.end)}.csv`; a.click();
     toast('CSV downloaded');
   }catch(e){ toast('Export is not available in this preview'); }
 }
@@ -2022,16 +2266,16 @@ function addStudent(){
   const s={id,name:n,active:true};
   state.students.push(s);
   state.attendance[id]={status:started?'absent':'present',at:null,note:started?'Added after class started':''};
-  el.value=''; logIt(`<b>${n}</b> added to the class list`); writeRosterStudent(s); render(); drawDrawer();
+  el.value=''; logIt(`<b>${n}</b> added to the class list`); writeRosterStudent(s); render(); paintRoster(); toast(`${n} added to the class list`);
 }
 function archiveStudent(sid){
   const s=state.students.find(x=>x.id===sid); if(!s) return;
   if(state.active[sid]) ret(sid,true);
-  s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); writeRosterStudent(s); render(); drawDrawer(); toast(`${s.name} removed from the list`);
+  s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); writeRosterStudent(s); render(); paintRoster(); toast(`${s.name} removed from the list`);
 }
 function restoreStudent(sid){
   const s=state.students.find(x=>x.id===sid); if(!s) return;
-  s.active=true; logIt(`<b>${s.name}</b> put back on the class list`); writeRosterStudent(s); render(); drawDrawer();
+  s.active=true; logIt(`<b>${s.name}</b> put back on the class list`); writeRosterStudent(s); render(); paintRoster();
 }
 
 /* ===== drawer ===== */
@@ -2040,7 +2284,6 @@ function closeDrawer(){ $('drawer').classList.remove('show'); $('drawerScrim').c
 function drawDrawer(){
   const s=st(), set=state.settings;
   $('dbody').innerHTML=`
-   ${isGoogleUser()?'':`<button class="dbtn gold" onclick="signInToKeepClass()">Sign in with Google<small>Keeps this class on your Google account, safe and on every device you use</small></button>`}
    <h4>Class-wide</h4>
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Snack break','${set.snack.end}')">Start snack break<small>Scheduled ${hm(set.snack.start)} to ${hm(set.snack.end)}</small></button>`:''}
    ${s==='live'?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
@@ -2051,30 +2294,141 @@ function drawDrawer(){
    <h4>Review</h4>
    <button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, left early, absent</small></button>
    <button class="dbtn" onclick="openDaySummary()">Day summary<small>Attendance and break totals per student</small></button>
-   <button class="dbtn" onclick="openReports()">Reports<small>Daily, weekly, monthly · class or one student</small></button>
-   <h4>Class list</h4>
-   ${state.students.filter(x=>x.active).map((x,i)=>`<div class="rrow"><b>${i+1}. ${x.name}</b><button onclick="archiveStudent('${x.id}')">Remove</button></div>`).join('')}
-   ${state.students.some(x=>!x.active)?`${state.students.filter(x=>!x.active).map(x=>`<div class="rrow"><b>${x.name}</b><small>removed</small><button class="back" onclick="restoreStudent('${x.id}')">Put back</button></div>`).join('')}`:''}
-   <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>
-   <h4>Settings</h4>
-   <div class="field"><div>Class hours<small>Monday to Friday</small></div><span class="two"><input type="time" value="${set.startTime}" onchange="state.settings.startTime=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.endTime}" onchange="state.settings.endTime=this.value;writeSettings();render();drawDrawer()"></span></div>
-   <div class="field"><div>Snack break<small>School-wide</small></div><span class="two"><input type="time" value="${set.snack.start}" onchange="state.settings.snack.start=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.snack.end}" onchange="state.settings.snack.end=this.value;writeSettings();render();drawDrawer()"></span></div>
-   <div class="field"><div>Lunch and recess<small>School-wide</small></div><span class="two"><input type="time" value="${set.lunch.start}" onchange="state.settings.lunch.start=this.value;writeSettings();render();drawDrawer()"><input type="time" value="${set.lunch.end}" onchange="state.settings.lunch.end=this.value;writeSettings();render();drawDrawer()"></span></div>
-   <h4>Break limits</h4>
-   ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
-     <select onchange="state.settings.limits.${k}.min=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
-     <select onchange="state.settings.limits.${k}.trips=+this.value;writeSettings();render();drawDrawer()">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
    <h4>Today's log</h4>
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
-   <h4>Sync</h4>
+   <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin-top:14px">Reports, the class list and settings are on the tabs along the bottom.</small>`;
+}
+
+/* ===== tabs along the bottom (3.8) =====
+   Log is today's class and is where the app always opens. Reports, Roster and
+   Settings took over what used to be crammed into the teacher menu - the menu
+   keeps only the day's actions. The bar can be tucked away to give the tiles
+   its height; that choice is a screen preference for this device, kept with
+   Store (never in the class's data). */
+const TABS_HIDDEN_KEY='ui.tabsHidden';
+let TAB='log';
+function showTab(t){
+  TAB=t; closeDrawer();
+  const app=document.querySelector('.app'); app.dataset.tab=t;
+  document.querySelectorAll('.tab').forEach(b=>{ const on=b.dataset.tab===t; b.classList.toggle('on',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  if(t==='log'){ fitHeader.key=null; fitHeader(); fitGrid(); }
+  else document.querySelector('#view'+t[0].toUpperCase()+t.slice(1)).scrollTop=0;
+  if(t==='reports') drawReports();
+  if(t==='roster') drawRoster();
+  if(t==='settings') drawSettings();
+  updateLogBadge();
+}
+function setTabsHidden(hide){
+  document.querySelector('.app').classList.toggle('tabs-hidden',hide);
+  Store.set(TABS_HIDDEN_KEY,hide?'1':'0');
+  // the tiles grow into the freed space, or shrink back - now, and again once
+  // the bar has finished sliding (fitGrid measures the grid as it is)
+  const refit=()=>{ fitHeader.key=null; fitHeader(); fitGrid(); if(TAB==='reports') paintReports(); };
+  refit(); setTimeout(refit,260);
+}
+/* Who is out, on the Log tab's icon, while the teacher is looking at another
+   tab. Gold; red once anyone is past their limit. Runs every second from
+   tick() - it only reads state, never writes. */
+function updateLogBadge(){
+  const el=$('logBadge'); if(!el) return;
+  const outs=Object.values(state.active), show=TAB!=='log'&&outs.length>0;
+  el.classList.toggle('show',show);
+  if(!show) return;
+  if(el.textContent!==String(outs.length)) el.textContent=outs.length;
+  el.classList.toggle('over',outs.some(isLong));
+}
+/* The handle that brings the bar back sits in the bottom-right corner. It
+   must never cover a tile (or a Back in button): wherever the grid or the out
+   list reaches under it, that box gets extra room at the bottom, and
+   fitGrid() then fits the tiles into what is left. */
+function keepClearOfHandle(){
+  const h=$('tabHandle');
+  for(const [id,pad] of [['grid',10],['outList',12]]){
+    const el=$(id); if(!el) continue;
+    el.style.paddingBottom='';
+    if(!document.querySelector('.app').classList.contains('tabs-hidden')) continue;
+    const r=el.getBoundingClientRect(), hr=h.getBoundingClientRect();
+    if(!r.width||!hr.width) continue;
+    const overlapX=hr.left<r.right&&hr.right>r.left;
+    if(overlapX&&hr.top<r.bottom) el.style.paddingBottom=Math.max(pad,Math.ceil(r.bottom-hr.top)+6)+'px';
+  }
+}
+/* A tab redrawn by a sync event must not throw away what the teacher is in the middle of typing. */
+function editingIn(id){ const a=document.activeElement; return !!(a&&$(id)&&$(id).contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
+
+/* ===== Settings tab ===== */
+function drawSettings(){
+  const v=$('viewSettings'); if(!v) return;
+  const set=state.settings, re='writeSettings();render();drawSettings()';
+  const pair=(label,note,a,b)=>`<div class="field"><div>${label}<small>${note}</small></div><span class="two"><input type="time" aria-label="${label} from" value="${a[1]}" onchange="${a[0]}=this.value;${re}"><input type="time" aria-label="${label} to" value="${b[1]}" onchange="${b[0]}=this.value;${re}"></span></div>`;
+  v.innerHTML=`<div class="vsec">
+   <div class="vhead"><h2>Settings</h2></div>
+   ${isGoogleUser()?'':`<button class="dbtn gold" onclick="signInToKeepClass()">Sign in with Google<small>Keeps this class on your Google account, safe and on every device you use</small></button>`}
+   <h4>School day</h4>
+   ${pair('Class hours','Monday to Friday',['state.settings.startTime',set.startTime],['state.settings.endTime',set.endTime])}
+   ${pair('Snack break','School-wide',['state.settings.snack.start',set.snack.start],['state.settings.snack.end',set.snack.end])}
+   ${pair('Lunch and recess','School-wide',['state.settings.lunch.start',set.lunch.start],['state.settings.lunch.end',set.lunch.end])}
+   <h4>Break limits</h4>
+   ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
+     <select aria-label="${RSN(k).label} minutes" onchange="state.settings.limits.${k}.min=+this.value;${re}">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
+     <select aria-label="${RSN(k).label} trips" onchange="state.settings.limits.${k}.trips=+this.value;${re}">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
+   <h4>Sign-in and sync</h4>
    <button class="dbtn" onclick="openSyncInfo()">${isGoogleUser()?`Signed in as ${myEmail()}<small>${syncStatusLabel()}</small>`:ORG_ID?`Not signed in with Google<small>${syncStatusLabel()}</small>`:`Not synced yet<small>${syncStatusLabel()}</small>`}</button>
    <h4>Backup</h4>
    ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
-     :`<button class="dbtn" onclick="closeDrawer();backupAll()">Download a backup<small>Every day this class has recorded, saved as a file</small></button>`}
+     :`<button class="dbtn" onclick="backupAll()">Download a backup<small>Every day this class has recorded, saved as a file</small></button>`}
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
-   <small style="display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:14px;text-align:center">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>`;
+   <small class="ver">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>
+  </div>`;
+}
+
+/* ===== Roster tab =====
+   The class list in roll order, with each student's week so far. The week is
+   read once when the tab opens (a bounded read, like the reports); today's
+   part comes from the screen, so it stays current while the tab is open. */
+let rosterDays=null, rosterSeq=0;
+async function drawRoster(){
+  paintRoster();
+  const seq=++rosterSeq, r=rangeOf('thisweek');
+  let days=[]; try{ days=await loadDays(r.start,r.end); }catch(e){}
+  if(seq!==rosterSeq) return;
+  rosterDays=days; if(TAB==='roster') paintRoster();
+}
+function paintRoster(){
+  const v=$('viewRoster'); if(!v) return;
+  const typed=$('newName')?$('newName').value:'', typing=document.activeElement===$('newName');
+  const tid=dayId(new Date());
+  let R=null;
+  if(rosterDays){
+    const days=rosterDays.filter(d=>d.date!==tid);
+    if(hasActivity()) days.push(snapshot());
+    R=crunch(days,null);
+  }
+  const r=rangeOf('thisweek');
+  const week=id=>{
+    if(!R) return '<span>…</span>';
+    const p=R.per[id]||{present:0,outMs:0,trips:0,flags:0};
+    return `<span>${plural(p.present,'day')} here</span><span>${fmtMin(p.outMs/60000)} min out</span><span>${plural(p.trips,'break')}</span>${p.flags?`<span class="fl">${p.flags} over limit</span>`:'<span>0 over limit</span>'}`;
+  };
+  const gone=state.students.filter(x=>!x.active);
+  v.innerHTML=`<div class="vsec">
+   <div class="vhead"><h2>Roster</h2></div>
+   <p class="rnote">Numbers are for this week, ${rangeText(r.start,r.end)}${R?` · ${plural(R.classDays,'class day')}`:''}. Tap a student for their report.</p>
+   <div class="rlist">${roster().map((x,i)=>`<div class="rs" role="button" tabindex="0" onclick="openStudentReport('${x.id}')"><span class="rn">${i+1}</span><b class="nm">${x.name}</b><span class="wk">${week(x.id)}</span><button class="rm" onclick="event.stopPropagation();archiveStudent('${x.id}')">Remove</button></div>`).join('')
+     ||'<div class="empty"><b>No students yet</b>Add your first student below.</div>'}</div>
+   <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>
+   ${gone.length?`<h4>Removed</h4><div class="rlist">${gone.map(x=>`<div class="rs gone"><span class="rn"></span><b class="nm">${x.name}</b><span class="wk"><span>removed</span></span><button class="rm back" onclick="restoreStudent('${x.id}')">Put back</button></div>`).join('')}</div>`:''}
+  </div>`;
+  if(typed) $('newName').value=typed;
+  if(typing) $('newName').focus();
+}
+function openStudentReport(sid){
+  if(TAB==='roster') rpt.range='thisweek';                  // the roster's numbers are this week's
+  rpt.scope='student'; rpt.sid=sid; rpt.sel=null;
+  if(TAB==='reports'){ $('viewReports').scrollTop=0; paintReports(); }
+  else showTab('reports');
 }
 
 /* ===== render ===== */
@@ -2129,6 +2483,9 @@ function render(){
   // in `state` correctly but never reach the screen until the drawer was
   // closed and reopened.
   if($('drawer').classList.contains('show')) drawDrawer();
+  if(TAB==='roster') paintRoster();
+  if(TAB==='settings'&&!editingIn('viewSettings')) drawSettings();
+  updateLogBadge();
   tick(); cacheLastClass();
 }
 /* Local-only instant-paint cache (plan 2.9) - never a source of truth, just
@@ -2203,7 +2560,8 @@ function resetLocalDayState(){
    the same screen. Falls back to the densest legible layout (and scrolling)
    only when a roster genuinely cannot fit. */
 function fitGrid(){
-  const g=$('grid'); if(!g) return;
+  const g=$('grid'); if(!g||TAB!=='log') return;
+  keepClearOfHandle();
   const n=roster().length; if(!n) return;
   const cs=getComputedStyle(g), GAP=8, MINW=96, MINH=56;
   const W=g.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
@@ -2253,7 +2611,7 @@ function fitGrid(){
    screen right now - otherwise the header would flip between one row and two
    mid-lesson and the whole roster would jump. */
 function fitHeader(){
-  const top=document.querySelector('.top'), h1=$('title'), sub=$('sub'); if(!top||!h1||!sub) return;
+  const top=document.querySelector('.top'), h1=$('title'), sub=$('sub'); if(!top||!h1||!sub||TAB!=='log') return;
   const S=state.settings, late='12:59 PM';                  // the widest time a clock can show
   const longest=[`Before class · ${hm(S.startTime)}-${hm(S.endTime)}`, `Since ${late} · next snack ${hm(S.snack.start)}`,
     `Since ${late} · next lunch ${hm(S.lunch.start)}`, `Since ${late} · next ends ${hm(S.endTime)}`,
@@ -2277,7 +2635,7 @@ function fitHeader(){
   mb.textContent=label;
   top.classList.toggle('stacked', stack);
 }
-let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(()=>{ fitHeader(); fitGrid(); },120); });
+let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(()=>{ fitHeader(); fitGrid(); if(TAB==='reports') paintReports(); },120); });
 /* Manrope arrives from Google Fonts after the first paint, and it is a little
    larger than the fallback font the screen was first fitted with: the header
    grew by a few pixels and the roster's last row no longer fitted. Fit again
@@ -2295,6 +2653,7 @@ function tick(){
   const now=Date.now();
   document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
   document.querySelectorAll('[data-long]').forEach(el=>{const lim=+el.dataset.lim||0; el.classList.toggle('long',lim>0&&now-(+el.dataset.long)>lim);});
+  updateLogBadge();
   const due=st()==='live'&&dueBreak()?dueBreak().kind:''; if(due!==render.nudge) return render();
   const d=new Date(); $('clock').textContent=clockStr(d); $('date').textContent=dateStr(d);
 }
@@ -2308,7 +2667,8 @@ function tick(){
   const reveal=()=>document.querySelector('.app').classList.remove('booting');
   const failsafe=setTimeout(reveal,3000);
   try{
-    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY]);
+    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY]);
+    document.querySelector('.app').classList.toggle('tabs-hidden',Store.get(TABS_HIDDEN_KEY)==='1');
     if(!loadFromCache()){ loadProfile(); load(); DAY_STATE_ID=dayId(new Date()); }
     render();
   } finally { clearTimeout(failsafe); reveal(); }

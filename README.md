@@ -7,6 +7,15 @@ Classroom attendance and break tracker for hifz teachers. Pure client-side app �
 - **Web app / PWA:** https://rfydawood.github.io/hifz-class-tracker/
   Open on any tablet, then "Add to Home Screen" for an installable, offline-capable app. This is the recommended way to install — no security prompts, always up to date automatically.
 
+## Using the app: the tabs along the bottom (since 3.8)
+
+- **Log** - today's class: the header, the student tiles and "Out right now". The app always opens here. Its ☰ menu has the day's actions only: start snack/lunch, end/resume/start class, Attendance today, Day summary, Today's log.
+- **Reports** - charts and numbers, read-only from the cloud: Whole class or One student; Today, Yesterday, This week (Monday to today), Last week, Last month; Total or Daily average. Cards for class time, time out of class (with the change against the previous period), breaks, over the limit and attendance; "Minutes out" stacked bars (with a "vs last week" tick and a Most out sort); "Where the time went" donut; "Worth a look". Export CSV is here. Breaks under 15 seconds are ignored as mis-taps, and Assigned (excused) time is not counted as time out.
+- **Roster** - the class list in roll order with each student's week so far; Add, Remove, Put back. Tap a student for their report.
+- **Settings** - class hours, snack, lunch, break limits, sign-in and sync, backup, Reset the day, and the version line.
+
+The chevron at the right end of the bar tucks it away (remembered on that device); a small handle in the bottom-right corner brings it back. The Log tab shows a gold count of students out while you're on another tab, red when anyone is past their limit.
+
 ## Native Android app (optional)
 
 A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`capacitor-app/`), for teachers who want it to look like a Play Store–style app. The web app's HTML/CSS/JS is bundled directly inside the app at build time and runs in a plain WebView — no browser chrome, no address bar, no install-time website verification of any kind.
@@ -21,8 +30,8 @@ A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`c
 
 Every class lives in Firestore from the moment it's set up (see `IMPLEMENTATION_PLAN.md` Phase 2). The app still works fully offline (Firestore's local cache queues writes and flushes them on reconnect); there just isn't a separate localStorage copy competing with it.
 
-- Since 3.7 (Phase 4 Part A, `docs/phase-4.md`) a class belongs to a **Google account**. A new install starts with **Sign in with Google**; the class is saved to that account, and signing in with the same account on any other device opens the same live class. Teacher menu → **Sync** shows who is signed in, and **Sign out**.
-- Installs from before 3.7 were anonymous. They keep working as they are, and the teacher menu offers **Sign in with Google**, which *links* the account to the same user - nothing is moved.
+- Since 3.7 (Phase 4 Part A, `docs/phase-4.md`) a class belongs to a **Google account**. A new install starts with **Sign in with Google**; the class is saved to that account, and signing in with the same account on any other device opens the same live class. Settings tab → **Sign-in and sync** shows who is signed in, and **Sign out**.
+- Installs from before 3.7 were anonymous. They keep working as they are, and the Settings tab offers **Sign in with Google**, which *links* the account to the same user - nothing is moved.
 - The old **sync code** (e.g. `AB3XQ-7KLMN`) is still the class's id in the cloud, but it no longer grants access to anything: the rules let in active members only. Becoming a member means creating the class, or claiming an invite sent to your own verified Google email (used for the handover described in `docs/phase-4.md` A4; teacher invites are Part B).
 - Backend: Firebase project `hifz-class-tracker-dece7`, Firestore (`firestore.rules` - an `orgs/{orgId}` tree per class, `users/{uid}` listing each account's classes; `firestore.indexes.json` - the invites email index), Firebase Auth with the Google provider (and Anonymous, still enabled for pre-3.7 installs - never disable it). Deploy with `firebase deploy --only firestore --project hifz-class-tracker-dece7`.
 - Test rule changes against the emulator before deploying: `npm run test:rules`. Test the live sync/offline behavior itself with `npm run test:e2e` (Playwright; starts and stops the Firestore + Auth emulators itself).
@@ -49,7 +58,7 @@ npm run verify    # same, then fails if the result differs from what's committed
 
 A GitHub Action (`.github/workflows/verify.yml`) runs `npm run verify` on every PR and on pushes to `main` — if someone edits `index.html` and forgets to run `npm run build` before committing, CI fails.
 
-The current build/version is shown at the bottom of the teacher menu in the app itself (`vN.N.N · build <id>`), so "which build is this tablet on?" is answerable by looking at the screen.
+The current build/version is shown at the bottom of the Settings tab in the app itself (`vN.N.N · build <id>`), so "which build is this tablet on?" is answerable by looking at the screen.
 
 ## Release checklist
 

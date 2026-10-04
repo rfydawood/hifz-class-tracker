@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test';
 import {
   setupNewClass, skipTourIfPresent, orgId, tileFor, startClass, logBreak, returnFromBreak,
-  newEmail, useGoogleAccount, signInOnGate, joinExistingClass, openDrawer, mockNativePlatform,
+  newEmail, useGoogleAccount, signInOnGate, joinExistingClass, openTab, mockNativePlatform,
   createAnonymousClass, readAs, currentUid,
 } from './helpers.mjs';
 
@@ -25,8 +25,9 @@ const breaksOf = (page, code, day) => page.evaluate(async ([code, day]) => {
 }, [code, day]);
 
 async function linkFromMenu(page) {
-  await openDrawer(page);
-  await page.locator('.dbtn.gold', { hasText: 'Sign in with Google' }).click();
+  await openTab(page, 'settings');
+  await page.locator('#viewSettings .dbtn.gold', { hasText: 'Sign in with Google' }).click();
+  await openTab(page, 'log');
 }
 
 test('linking the anonymous tablet to Google keeps the uid, membership, teacher, days and breaks', async ({ browser }) => {
@@ -55,8 +56,8 @@ test('linking the anonymous tablet to Google keeps the uid, membership, teacher,
   // still runs the class
   await returnFromBreak(page, 'Bilal');
   await expect(tileFor(page, 'Bilal')).not.toHaveClass(/out/);
-  await openDrawer(page);
-  await expect(page.locator('#dbody')).toContainText(`Signed in as ${email}`);
+  await openTab(page, 'settings');
+  await expect(page.locator('#viewSettings')).toContainText(`Signed in as ${email}`);
 
   // a second device signing in with that account lands in the same class
   const ctxB = await browser.newContext(); const b = await ctxB.newPage();
@@ -145,7 +146,7 @@ test('a new user signs in, gets a personal class, and finds it again after signi
   expect(await readAs(page, `orgs/${code}/members/${uid}`)).toMatchObject({ email, roles: ['admin', 'teacher'] });
   expect((await readAs(page, `users/${uid}`)).orgIds).toEqual([code]);
 
-  await openDrawer(page);
+  await openTab(page, 'settings');
   await page.locator('.dbtn', { hasText: `Signed in as ${email}` }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.locator('.sheet h3')).toHaveText('Sign out on this device?');
