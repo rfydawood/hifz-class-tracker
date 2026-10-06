@@ -5,7 +5,7 @@ Classroom attendance/break tracker for a hifz teacher (Rafaye's contact: rfy.daw
 ## Live things
 
 - **Web app (primary, recommended install method):** https://rfydawood.github.io/hifz-class-tracker/ — "Add to Home Screen" on a tablet installs it as a PWA, works offline.
-- **GitHub repo:** rfydawood/hifz-class-tracker (public; `gh` CLI already authenticated as this account on this machine). Hosted via GitHub Pages, **legacy branch-based deploy — pushes to `main` do NOT auto-rebuild the Pages site.** After every push that should go live, run:
+- **GitHub repo:** rfydawood/hifz-class-tracker (public; `gh` CLI already authenticated as this account on this machine). Hosted via GitHub Pages, legacy branch-based deploy from `main`. **A push to `main` DOES start a Pages build on its own** (seen 2026-10-06: pushing 4.0 put it on the website for ~30 s before it was reverted) - so anything pushed to `main` goes live; to hold a release back from the website, don't push it to `main` (use a branch). After every push that should go live, also run:
   ```
   gh api -X POST repos/rfydawood/hifz-class-tracker/pages/builds
   ```
