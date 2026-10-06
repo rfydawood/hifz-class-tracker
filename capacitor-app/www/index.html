@@ -335,7 +335,7 @@ input,select{font:inherit;color:inherit}
    the tiles really get its height back (fitGrid() measures the grid). */
 .app:not([data-tab="log"]) .top,.app:not([data-tab="log"]) #banner,.app:not([data-tab="log"]) .stage{display:none}
 .view{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:none;padding:12px clamp(10px,2vw,20px) 18px}
-.app[data-tab="reports"] #viewReports,.app[data-tab="roster"] #viewRoster,.app[data-tab="settings"] #viewSettings,.app[data-tab="profile"] #viewProfile{display:block}
+.app[data-tab="reports"] #viewReports,.app[data-tab="roster"] #viewRoster,.app[data-tab="settings"] #viewSettings{display:block}
 .app.tabs-hidden .view{padding-bottom:44px}
 .vhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .vhead h2{font-size:21px;font-weight:800;letter-spacing:-.02em;margin-right:auto}
@@ -361,8 +361,7 @@ input,select{font:inherit;color:inherit}
 .app.tabs-hidden .tabbar{height:0;border-top-color:transparent}
 .app.tabs-hidden .tabs{transform:translateY(100%)}
 .tabhandle{position:absolute;right:10px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:15;width:46px;height:26px;border-radius:13px;background:#fff;border:1px solid #D6DFE2;box-shadow:0 2px 8px rgba(31,46,54,.18);display:none;place-items:center;color:#0F7B7B}
-.app.tabs-hidden.handle-on .tabhandle{display:grid}
-#barProbe{position:absolute;left:0;top:0;width:1px;height:calc(54px + env(safe-area-inset-bottom));visibility:hidden;pointer-events:none}
+.app.tabs-hidden .tabhandle{display:grid}
 .app.tabs-hidden .toast{bottom:calc(40px + env(safe-area-inset-bottom))}
 @media (prefers-reduced-motion:reduce){.tabbar,.tabs{transition:none}}
 
@@ -441,101 +440,6 @@ input,select{font:inherit;color:inherit}
   .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
   .charts{grid-template-columns:minmax(0,1fr)}
 }
-
-/* ===== 4.0: Profile, My classes, Add a class, Schedule ===== */
-/* the open class's name wraps rather than being cut short - it's how the teacher knows which class this is */
-.cpill{display:inline-block;max-width:100%;overflow-wrap:anywhere;line-height:1.3;padding:4px 11px;border-radius:999px;background:#DCEDED;color:#0F7B7B;font-size:12.5px;font-weight:800;margin-right:auto}
-.vhead h2+.cpill{margin-left:-2px}
-.vhead:has(.cpill) h2{margin-right:0}
-.ini{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#0F7B7B;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.02em;line-height:1}
-.ini.big{width:58px;height:58px;font-size:21px;flex:none}
-.tab.tabprof{flex:0 0 auto;min-width:64px}
-.tab.tabprof .ic{width:44px}
-.tab.tabprof.on .ini{box-shadow:0 0 0 2px #DCEDED,0 0 0 4px #0F7B7B}
-.vsec.wide{max-width:1100px}
-.pgrid{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:14px;align-items:start}
-.pcard,.pclasses{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
-.pcard h4,.pclasses h4{font-size:13px;font-weight:700;color:var(--mute);margin:16px 0 8px}
-.pwho{display:flex;align-items:center;gap:12px;margin:2px 0 12px}
-.pid{min-width:0;display:flex;flex-direction:column;gap:2px}
-.pid b{font-size:18px;font-weight:800;overflow-wrap:anywhere}
-.pid small{font-size:12.5px;color:var(--mute);font-weight:600;overflow-wrap:anywhere}
-.pid small.ok{color:#0F7B7B;font-weight:700}
-.pbtns{display:flex;flex-wrap:wrap;gap:8px}
-.pbtns .btn{flex:1 1 auto;padding:9px 12px;font-size:14px;border-radius:11px}
-.pcard .ver{display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:12px;text-align:center}
-.pclasses h3{font-size:18px;font-weight:800;letter-spacing:-.01em}
-.pclasses .rnote{margin:4px 0 12px}
-.clist{display:flex;flex-direction:column;gap:8px}
-.ccard{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--card);display:flex;flex-direction:column;gap:4px;min-width:0}
-.ccard.open{border-color:#0F7B7B;box-shadow:inset 0 0 0 1px #0F7B7B;background:#F6FBFB}
-.ccard.gone{background:#EDF1F2}
-.ccard .ctop{display:flex;align-items:center;gap:8px}
-.ccard .ctop b{flex:1;min-width:0;font-size:16px;font-weight:800;overflow-wrap:anywhere}
-.ccard small{font-size:12.5px;color:var(--mute);font-weight:600}
-.cmore{width:34px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--paper);font-size:18px;font-weight:800;line-height:1;text-align:center;flex:none}
-.cfoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.cchips{display:flex;flex-wrap:wrap;gap:5px;margin-right:auto}
-.chip2{display:inline-block;padding:3px 9px;border-radius:999px;background:#E7EDEF;color:#4A5B63;font-size:11.5px;font-weight:800}
-.chip2.open{background:#DCEDED;color:#0F7B7B}
-.chip2.run{background:var(--gold-soft);color:#6B4B0C}
-.copen{flex:none;padding:7px 16px;font-size:14px;border-radius:10px}
-.addcls{display:block;width:100%;margin-top:10px;padding:12px;border-radius:14px;border:2px dashed #B9C6CB;background:transparent;font-weight:800;font-size:15px;color:#0F7B7B;text-align:center}
-.showarch{display:block;margin:12px 0 6px;font-size:13px;font-weight:700;color:var(--mute);text-decoration:underline}
-.swnote{margin-top:10px;font-size:14px;color:var(--mute);line-height:1.45}
-@media (max-width:700px){ .pgrid{grid-template-columns:minmax(0,1fr)} }
-/* Add a class: the first-run setup's look, but scrolls from the top on a short screen */
-.setup.addclass{place-items:start center;padding:14px}
-.addclass .setup-card{padding:18px 20px;margin:auto 0}
-.achead{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-bottom:12px}
-.achead h2{font-size:23px}
-.acstep{font-size:13px;font-weight:700;color:var(--mute)}
-.addclass .setup-card label{margin-bottom:10px}
-.aclabel{font-weight:800;font-size:14px;margin:10px 0 6px}
-.daychips{display:flex;flex-wrap:wrap;gap:6px}
-.dchip{min-width:46px;padding:7px 9px;border-radius:999px;border:1px solid #C6D2D6;background:var(--card);font-size:13px;font-weight:800;color:var(--mute);text-align:center}
-.dchip.on{background:#0F7B7B;border-color:#0F7B7B;color:#fff}
-.actimes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.actimes input,.brow2 input,.dpick{border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:var(--paper);font-size:14px;font-weight:600;font-family:inherit;color:inherit;min-width:0}
-.actimes span,.btimes span{color:var(--mute);font-weight:700;font-size:13px}
-.addclass .setup-card .actimes input,.addclass .setup-card .brow2 input{display:inline-block;width:auto;margin-top:0;padding:8px 9px;font-size:14px}
-.brks{display:flex;flex-direction:column;gap:6px}
-.brow2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.brow2 .bname{flex:1 1 140px}
-.addclass .setup-card .brow2 .bname{flex:1 1 140px;width:auto}
-.btimes{display:flex;align-items:center;gap:6px}
-.btimes input{width:118px}
-.brow2 .rmv{font-size:13px;font-weight:700;color:var(--ember);padding:6px 6px}
-.addbrk{display:inline-block;margin-top:8px;padding:7px 12px;border-radius:10px;border:1px dashed #B9C6CB;font-size:13.5px;font-weight:800;color:#0F7B7B;background:transparent}
-.addclass .hint{font-weight:600;color:var(--mute);font-size:13px;margin-top:10px}
-.addclass .err{min-height:0;margin-top:8px}
-/* Back / Next / Create stay in reach while a long step scrolls on a short screen */
-.addclass .setup-actions{margin-top:12px;position:sticky;bottom:-18px;background:var(--card);padding:10px 0 4px;z-index:1}
-.addclass .setup-actions .btn{flex:none;padding:12px 18px;font-size:15px}
-.addclass .setup-actions .btn.dark{margin-left:auto}
-.addclass .roster-list{max-height:min(34vh,260px);margin:10px 0}
-.addclass select{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--paper);font-size:14px;font-weight:700}
-.acseg{display:flex;width:100%}
-.acseg button{flex:1;text-align:center;padding:8px 10px}
-.acseg button.on{background:#0F7B7B;color:#fff}
-.acnum{font-weight:800;font-size:14px;color:var(--ink)}
-.radio{display:flex !important;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px !important;font-weight:800;font-size:15px;cursor:pointer}
-.radio input{width:auto !important;display:inline-block !important;margin-top:3px !important;accent-color:#0F7B7B}
-.radio small{display:block;font-weight:600;color:var(--mute);font-size:12.5px;margin-top:2px}
-.acsum{margin-top:10px;padding:9px 11px;border-radius:11px;background:var(--leaf-soft);color:#0C5C5C;font-size:13.5px;font-weight:700;line-height:1.45}
-/* Settings -> Schedule */
-.srow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
-.srow .sinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.srow b{font-size:14px;font-weight:800}
-.srow small{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.4;overflow-wrap:anywhere}
-.srow small.grey{color:#7D8D95}
-.stag{flex:none;padding:3px 9px;border-radius:999px;background:var(--gold-soft);color:#6B4B0C;font-size:11.5px;font-weight:800}
-.stag.once{background:#DCEDED;color:#0F7B7B}
-.sedit{flex:none;padding:7px 13px;font-size:13px;border-radius:10px}
-.sched .actimes input{width:124px}
-.sched .dpick{width:180px}
-.sched .acseg{margin-top:4px}
-.sched .err{min-height:0}
 </style>
 </head>
 <body>
@@ -571,13 +475,10 @@ input,select{font:inherit;color:inherit}
   <section class="view" id="viewReports" aria-label="Reports"></section>
   <section class="view" id="viewRoster" aria-label="Roster"></section>
   <section class="view" id="viewSettings" aria-label="Settings"></section>
-  <section class="view" id="viewProfile" aria-label="Profile"></section>
   <nav class="tabbar" id="tabbar" aria-label="Sections"><div class="tabs">
     <button class="tab on" data-tab="log" onclick="showTab('log')" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg><b class="badge" id="logBadge"></b></span>Log</button><button class="tab" data-tab="reports" onclick="showTab('reports')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 19v-7M12 19V5M18 19v-10M3.5 19.5h17"/></svg></span>Reports</button><button class="tab" data-tab="roster" onclick="showTab('roster')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><path d="M15.5 5.1a3.1 3.1 0 0 1 0 5.8M17.6 14.6c1.8.7 3 2.4 3.4 4.9"/></svg></span>Roster</button><button class="tab" data-tab="settings" onclick="showTab('settings')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</button>
-    <button class="tab tabprof" data-tab="profile" onclick="showTab('profile')"><span class="ic"><b class="ini" id="tabIni">?</b></span>Profile</button>
     <button class="tabhide" aria-label="Hide the tabs" onclick="setTabsHidden(true)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
   </div></nav>
-  <div id="barProbe" aria-hidden="true"></div>
   <button class="tabhandle" id="tabHandle" aria-label="Show the tabs" onclick="setTabsHidden(false)"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
 
   <div class="setup" id="setup"><div class="setup-card">
@@ -604,7 +505,6 @@ input,select{font:inherit;color:inherit}
     <button class="btn dark" id="signinBtn" style="width:100%" onclick="signInFromGate()">Sign in with Google</button>
     <p class="err" id="signinErr"></p>
   </div></div>
-  <div class="setup addclass" id="addClass"><div class="setup-card" id="acCard"></div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
   <div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
@@ -620,7 +520,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.0",APP_BUILD="d51af77547",APP_BUILD_TIME="2026-10-06T04:18:14.782Z";
+/*BUILD_STAMP*/const APP_VERSION="3.8",APP_BUILD="7f8adbbb36",APP_BUILD_TIME="2026-10-04T06:04:56.220Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -643,20 +543,6 @@ const state={
   attendance:{}, active:{}, breaks:[], log:[], lastAction:null
 };
 state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''});
-const DEFAULT_SETTINGS=JSON.parse(JSON.stringify(state.settings));
-/* A class's settings are read, never migrated: the org's defaults, with the
-   class's own settingsOverride on top. A class made before 4.0 has no
-   override, so it reads exactly what it always did. The override is only
-   written when the teacher changes a setting, or adds a class. */
-let orgDefaults=null, classOverride=null;
-function computeSettings(){
-  const a=orgDefaults||{}, o=classOverride||{};
-  const x=Object.assign({},a,o);
-  x.limits=Object.assign({},a.limits||{},o.limits||{});
-  x.snack=Object.assign({},a.snack||{},o.snack||{});
-  x.lunch=Object.assign({},a.lunch||{},o.lunch||{});
-  return JSON.parse(JSON.stringify(mergeSettings(x)));
-}
 
 const $=id=>document.getElementById(id);
 const clockStr=d=>d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
@@ -687,65 +573,16 @@ const isLong=a=>!!a.allowMs&&Date.now()-a.startAt>a.allowMs;
 const toMin=t=>{const[h,m]=String(t).split(':').map(Number);return h*60+m};
 const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
 const hm=t=>{const[h,m]=String(t).split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return clockStr(d)};
-/* ===== the schedule: different times on different days (4.0, per class) =====
-   settings.schedule = { usual:{start,end,breaks:[{name,start,end}]},
-                         days:{1..7 (Mon..Sun): same shape - absent means the usual day},
-                         dates:{'YYYY-MM-DD': same shape + note} }
-   and settings.classDays = the weekdays the class meets (1..7).
-   A class saved before 4.0 has no schedule: its usual day is built here, in
-   memory only, from startTime/endTime/snack/lunch - nothing is written back,
-   so its data reads exactly as it did. */
-const WEEKDAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const isoDay=d=>((d.getDay()+6)%7)+1;
-const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-function legacyUsual(S){ return {start:S.startTime,end:S.endTime,breaks:[{name:'Snack',start:S.snack.start,end:S.snack.end},{name:'Lunch and recess',start:S.lunch.start,end:S.lunch.end}]}; }
-function scheduleOf(S){ const sc=(S&&S.schedule)||{}; return {usual:sc.usual||legacyUsual(S), days:sc.days||{}, dates:sc.dates||{}}; }
-function classDaysOf(S){ return Array.isArray(S.classDays)&&S.classDays.length?S.classDays.slice().sort((a,b)=>a-b):[1,2,3,4,5]; }
-const byStart=(a,b)=>toMin(a.start)-toMin(b.start);
-/* One date's times: a one-off date beats its weekday, which beats the usual day. */
-function scheduleFor(date,S){
-  S=S||state.settings;
-  const d=typeof date==='string'?new Date(date+'T00:00:00'):date, id=dayId(d), sc=scheduleOf(S);
-  const kind=sc.dates[id]?'date':sc.days[isoDay(d)]?'day':'usual', p=kind==='date'?sc.dates[id]:kind==='day'?sc.days[isoDay(d)]:sc.usual;
-  return {start:p.start,end:p.end,breaks:(p.breaks||[]).map(b=>({name:b.name,start:b.start,end:b.end})).sort(byStart),note:p.note||'',kind};
-}
-/* "snack" and "lunch" read as ordinary words mid-sentence; a named break
-   (Jumu'ah, Assembly) keeps its own spelling. */
-function breakWord(name){ return /^(snack|lunch)\b/i.test(name)?String(name).toLowerCase():name; }
-/* the header's short form: "next snack", "next lunch" (as it always read) */
-function shortBreak(name){ const m=String(name).match(/^(snack|lunch)\b/i); return m?m[1].toLowerCase():name; }
 function dueBreak(){
-  const n=nowMin(), b=scheduleFor(new Date()).breaks.find(b=>n>=toMin(b.start)&&n<toMin(b.end));
-  return b?{kind:b.name,start:b.start,end:b.end}:null;
+  const S=state.settings,n=nowMin();
+  if(n>=toMin(S.snack.start)&&n<toMin(S.snack.end)) return {kind:'Snack break',start:S.snack.start,end:S.snack.end};
+  if(n>=toMin(S.lunch.start)&&n<toMin(S.lunch.end)) return {kind:'Lunch and recess',start:S.lunch.start,end:S.lunch.end};
+  return null;
 }
 function nextUp(){
-  const sc=scheduleFor(new Date()), n=nowMin();
-  const items=[...sc.breaks.map(b=>[toMin(b.start),`next ${shortBreak(b.name)} ${hm(b.start)}`]),[toMin(sc.end),`ends ${hm(sc.end)}`]].sort((a,b)=>a[0]-b[0]);
+  const S=state.settings,n=nowMin();
+  const items=[[toMin(S.snack.start),'snack '+hm(S.snack.start)],[toMin(S.lunch.start),'lunch '+hm(S.lunch.start)],[toMin(S.endTime),'ends '+hm(S.endTime)]];
   const nx=items.find(i=>i[0]>n); return nx?nx[1]:'';
-}
-/* When today isn't the usual day, the Log tab says how - or shows the date's own note. */
-function dayDifference(){
-  const now=new Date(), sc=scheduleFor(now); if(sc.kind==='usual') return '';
-  const u=scheduleOf(state.settings).usual, wd=WEEKDAYS[isoDay(now)-1];
-  if(sc.note) return `${wd}: ${esc(sc.note)}`;
-  const parts=[];
-  if(toMin(sc.end)<toMin(u.end)) parts.push(`early dismissal at ${hm(sc.end)}`);
-  else if(sc.start!==u.start||sc.end!==u.end) parts.push(`class ${hm(sc.start)} to ${hm(sc.end)}`);
-  if(sc.start!==u.start&&toMin(sc.end)<toMin(u.end)) parts.push(`class starts ${hm(sc.start)}`);
-  sc.breaks.forEach(b=>{ if(!u.breaks.some(x=>x.name===b.name&&x.start===b.start&&x.end===b.end)) parts.push(`${esc(b.name)} ${hm(b.start)} to ${hm(b.end)}`); });
-  u.breaks.forEach(x=>{ if(!sc.breaks.some(b=>b.name===x.name)) parts.push(`no ${esc(breakWord(x.name))}`); });
-  if(!parts.length) return '';
-  return `${wd}: ${parts[0]}.${parts.slice(1).map(p=>' '+p[0].toUpperCase()+p.slice(1)+'.').join('')}`;
-}
-/* The usual day also stays in the old fields (startTime, endTime, snack,
-   lunch), which older versions of the app - and org.defaults - still read. */
-function syncLegacyFields(S){
-  const u=scheduleOf(S).usual, find=re=>u.breaks.find(b=>re.test(b.name));
-  S.startTime=u.start; S.endTime=u.end;
-  const sn=find(/snack/i)||u.breaks[0], lu=find(/lunch/i)||u.breaks.find(b=>b!==sn);
-  if(sn) S.snack={start:sn.start,end:sn.end};
-  if(lu) S.lunch={start:lu.start,end:lu.end};
-  return S;
 }
 const att=sid=>state.attendance[sid];
 const st=()=>state.session.status;
@@ -808,7 +645,7 @@ const Store=(function(){
    plan section 4/9 - do not delete them here. */
 const KEY='hifz.guest.day', PKEY='hifz.guest.profile', todayKey=()=>new Date().toDateString();
 function mergeSettings(x){
-  const def=DEFAULT_SETTINGS, out=Object.assign({},def,x||{});
+  const def=state.settings, out=Object.assign({},def,x||{});
   out.limits=Object.assign({},def.limits,(x||{}).limits||{});
   out.snack=Object.assign({},def.snack,(x||{}).snack||{});
   out.lunch=Object.assign({},def.lunch,(x||{}).lunch||{});
@@ -865,15 +702,8 @@ const FIREBASE_CONFIG={
   authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
   messagingSenderId:"726082000637"
 };
-/* The open class. One class is open at a time: Log, Reports, Roster and
-   Settings only ever show this one. 'default' is the first class, where every
-   class before 4.0 lives; others get generated ids. Saved in SESSION_CLASS_KEY
-   and reopened at boot. */
-let CLASS_ID='default';
+const CLASS_ID='default';                       // one class per personal org - Phase 2 scope
 const SESSION_ORG_KEY='session.orgId', SESSION_CLASS_KEY='session.classId', CACHE_KEY='cache.lastClass';
-/* The instant-paint copy is kept per class, so switching paints the right class
-   at once. The first class keeps the key it always had. */
-const cacheKey=cid=>cid==='default'?CACHE_KEY:`${CACHE_KEY}.${cid}`;
 const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const DEFAULT_FLAG_THRESHOLD=2;                  // org.defaults.flagThreshold - only consumed by the Phase 5 admin dashboard, stored now so the schema doesn't need a later migration
 let fbApp=null, fbDb=null, fbUid=null, fbUser=null, fbReady=null;
@@ -888,10 +718,7 @@ const EMULATOR=!!new URLSearchParams(location.search).get('emulator');
    morning still showing yesterday's ended class and yesterday's absent/tardy
    marks. Set wherever day state is established; checked every tick. */
 let DAY_STATE_ID=null;
-let unsubOrg=null, unsubClass=null, unsubStudents=null, unsubDay=null, unsubBreaks=null, unsubClasses=null;
-/* The class doc's own settings arrive separately from the org's defaults;
-   until they have, the org's alone would paint the wrong class's times. */
-let classSeen=false;
+let unsubOrg=null, unsubClass=null, unsubStudents=null, unsubDay=null, unsubBreaks=null;
 
 /* Test hook only (tests/write-count.spec.mjs): every real Firestore write
    funnels through fsWrite() so a test can assert "zero writes while idle"
@@ -947,10 +774,8 @@ function initFirestore(){
 
 function orgRefFor(code){ return fbDb.collection('orgs').doc(code); }
 function orgRef(){ return orgRefFor(ORG_ID); }
-function classRefFor(cid){ return orgRef().collection('classes').doc(cid); }
-function classRef(){ return classRefFor(CLASS_ID); }
+function classRef(){ return orgRef().collection('classes').doc(CLASS_ID); }
 function dayRef(id){ return classRef().collection('days').doc(id||TODAY_ID); }
-function dayRefFor(cid,id){ return classRefFor(cid).collection('days').doc(id); }
 
 /* One-time creation of a brand-new personal org from whatever is currently
    in `state` (either just-entered setup, or an existing local class being
@@ -967,7 +792,6 @@ async function bootstrapOrg(){
   if(!isGoogleUser()){ syncStatus='signedout'; render(); return false; }
   try{
     const code=genSyncCode(), now=firebase.firestore.FieldValue.serverTimestamp(), today=dayId(new Date());
-    CLASS_ID='default';
     const org=orgRefFor(code), cls=org.collection('classes').doc(CLASS_ID), b=fbDb.batch();
     b.set(org,{
       schemaVersion:3, name:`${state.teacher||'My'}'s Hifz Class`, kind:'personal',
@@ -1196,7 +1020,7 @@ async function routeSignedIn(){
   openSetup();
 }
 async function enterOrg(orgId){
-  if(Store.get(SESSION_ORG_KEY)!==orgId){ held=[]; Store.remove(CACHE_KEY); CLASS_ID='default'; }     // unsent changes belonged to another class
+  if(Store.get(SESSION_ORG_KEY)!==orgId){ held=[]; Store.remove(CACHE_KEY); }     // unsent changes belonged to another class
   PENDING_ORG=null; hideSignIn(); closeSheet(); $('setup').classList.remove('show');
   Store.set(SESSION_ORG_KEY,orgId); Store.set(SESSION_CLASS_KEY,CLASS_ID);
   state.setup=true;
@@ -1222,7 +1046,7 @@ async function signOut(){
   location.reload();
 }
 
-function detachListeners(){ [unsubOrg,unsubClass,unsubStudents,unsubDay,unsubBreaks,unsubClasses].forEach(u=>u&&u()); unsubOrg=unsubClass=unsubStudents=unsubDay=unsubBreaks=unsubClasses=null; }
+function detachListeners(){ [unsubOrg,unsubClass,unsubStudents,unsubDay,unsubBreaks].forEach(u=>u&&u()); unsubOrg=unsubClass=unsubStudents=unsubDay=unsubBreaks=null; }
 async function attachToOrg(orgId){
   syncStatus='connecting'; render();
   const ok=await initFirestore();
@@ -1262,26 +1086,14 @@ async function attachListeners(){
   // earlier change can arrive just after a newer change was made on screen,
   // without it, and overwrite it. Hearing each confirmation means the newer
   // change is put back a moment later, instead of staying wrong on screen.
-  classSeen=false;
   unsubOrg=org.onSnapshot({includeMetadataChanges:true},snap=>{
     if(!snap.exists||snap.metadata.hasPendingWrites) return;
-    const d=snap.data(); orgDefaults=d.defaults||null;
-    if(classSeen) state.settings=computeSettings();
+    const d=snap.data(); if(d.defaults) state.settings=mergeSettings(d.defaults);
     render();
   },()=>{ syncStatus='error'; render(); });
   unsubClass=cls.onSnapshot(snap=>{
-    if(snap.metadata.hasPendingWrites) return;
-    if(!snap.exists){ if(!snap.metadata.fromCache&&CLASS_ID!=='default') switchClass('default',{quiet:true}); return; }
-    const d=snap.data();
-    if(d.status==='archived'&&CLASS_ID!=='default') return switchClass('default',{quiet:true});
-    state.className=d.name||''; classOverride=d.settingsOverride||null; classSeen=true;
-    state.settings=computeSettings();
+    if(!snap.exists||snap.metadata.hasPendingWrites) return;
     render();
-  },()=>{});
-  // every class of this account's org - names and status, for Profile
-  unsubClasses=org.collection('classes').onSnapshot(qs=>{
-    state.classes=qs.docs.map(doc=>Object.assign({id:doc.id},doc.data())).sort(classOrder);
-    if(TAB==='profile'&&!editingIn('viewProfile')) paintProfile();
   },()=>{});
   unsubStudents=cls.collection('students').onSnapshot({includeMetadataChanges:true},qs=>{
     if(qs.metadata.hasPendingWrites) return;
@@ -1292,9 +1104,8 @@ async function attachListeners(){
   },()=>{});
   attachDayListeners();
   syncStatus='synced'; render();
-  if(CLASS_ID==='default') migrateLegacyHistoryIfNeeded();      // history from before syncing belongs to the first class
+  migrateLegacyHistoryIfNeeded();
   ensureUserIndex(ORG_ID);
-  loadMyName();
 }
 function attachDayListeners(){
   if(unsubDay) unsubDay(); if(unsubBreaks) unsubBreaks();
@@ -1329,7 +1140,6 @@ function applyDay(snap){
   const data=snap.data();
   if(data.session) state.session=plainToSession(data.session);
   if(data.attendance) state.attendance=plainToAttendance(data.attendance);
-  state.daySchedule=data.schedule||null;
   ensureAttendance(); render();
 }
 function applyBreaks(qs){
@@ -1358,14 +1168,9 @@ function applyBreaks(qs){
    cache once, so another device's change that arrived meanwhile isn't missed
    and a refused write can't leave the screen showing something unsaved. */
 const inflight={day:0,breaks:0};
-/* Counts belong to the open class. Switching starts a new generation, so a
-   write still settling for the class just left never holds back (or
-   re-reads into) the class now open. */
-let inflightGen=0;
-function tracked(kind,p,cid){
-  if(cid&&cid!==CLASS_ID) return p;
-  const gen=inflightGen; inflight[kind]++;
-  const settle=()=>{ if(gen!==inflightGen) return; if(--inflight[kind]===0) resync(kind); };
+function tracked(kind,p){
+  inflight[kind]++;
+  const settle=()=>{ if(--inflight[kind]===0) resync(kind); };
   p.then(settle,settle);
   return p;
 }
@@ -1406,50 +1211,23 @@ function sendHeld(){
    break start/stop, session changes, roster edits) write immediately.
    Settings debounce ~700ms since a teacher taps through several fields in a
    row. Never called from render() or tick(). */
-/* A class's settings live in its own settingsOverride (written in full the
-   first time the teacher changes anything). The first class also keeps
-   writing its usual day and limits to org.defaults, as before 4.0, so an
-   older version of the app on another device still reads them. */
-function overrideOf(S){ return {startTime:S.startTime,endTime:S.endTime,snack:S.snack,lunch:S.lunch,longMin:S.longMin,limits:S.limits,schedule:scheduleOf(S),classDays:classDaysOf(S)}; }
-/* now: a whole-schedule save is one action, so it goes straight out; the
-   ~700ms wait is for tapping through several limits in a row. */
-function writeSettings(now){
-  const cid=CLASS_ID, S=syncLegacyFields(JSON.parse(JSON.stringify(state.settings)));
-  state.settings=S; classOverride=overrideOf(S);
-  writeSettings._t=writeSettings._t||{};
-  clearTimeout(writeSettings._t[cid]);
-  writeSettings._t[cid]=setTimeout(()=>{
-    send(()=>{
-      const b=fbDb.batch(), now=firebase.firestore.FieldValue.serverTimestamp();
-      // update, not a merge: the override is replaced whole, so a weekday or
-      // date taken out of the schedule is really gone from it
-      b.update(classRefFor(cid),{settingsOverride:overrideOf(S)});
-      if(cid==='default') b.set(orgRef(),{defaults:settingsToDefaults(S),updatedAt:now},{merge:true});
-      return fsWrite(b.commit()).catch(()=>{});
-    });
-  },now===true?0:700);
+function writeSettings(){
+  clearTimeout(writeSettings._t);
+  writeSettings._t=setTimeout(()=>{
+    const defaults=settingsToDefaults(state.settings);
+    send(()=>fsWrite(orgRef().set({defaults,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(()=>{}));
+  },700);
 }
 function writeRosterStudent(s){
-  const cid=CLASS_ID, order=Math.max(0,state.students.findIndex(x=>x.id===s.id));
+  const order=Math.max(0,state.students.findIndex(x=>x.id===s.id));
   const doc={name:s.name, active:!!s.active, order, enrolledFrom:dayId(new Date()), enrolledUntil:null};
-  send(()=>fsWrite(classRefFor(cid).collection('students').doc(s.id).set(doc,{merge:true})).catch(()=>{}));
+  send(()=>fsWrite(classRef().collection('students').doc(s.id).set(doc,{merge:true})).catch(()=>{}));
 }
-/* The class and the day are fixed at the tap: a change held while offline,
-   or still on its way when the teacher switches class, goes to the class it
-   was made in. */
 function writeDay(patch){
-  const cid=CLASS_ID, id=dayId(new Date()), yearId=academicYearId(new Date());
-  send(()=>tracked('day',fsWrite(dayRefFor(cid,id).set(Object.assign({date:id,yearId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true})),cid).catch(()=>{}));
+  const yearId=academicYearId(new Date());
+  send(()=>tracked('day',fsWrite(dayRef().set(Object.assign({date:TODAY_ID,yearId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},patch),{merge:true}))).catch(()=>{}));
 }
-function writeSessionAndAttendance(withSchedule){
-  const patch={session:sessionToPlain(state.session),attendance:fullAttendancePlain(),roster:fullRosterPlain()};
-  if(withSchedule){ state.daySchedule=daySchedulePlain(); patch.schedule=state.daySchedule; }
-  writeDay(patch);
-}
-/* Today's times as they stand, saved into the day when class starts (and on
-   Resume, or a change while it runs) - so changing the schedule later never
-   changes what an old day's report says. */
-function daySchedulePlain(){ const sc=scheduleFor(new Date()); const o={start:sc.start,end:sc.end,breaks:sc.breaks}; if(sc.note) o.note=sc.note; return o; }
+function writeSessionAndAttendance(){ writeDay({session:sessionToPlain(state.session),attendance:fullAttendancePlain(),roster:fullRosterPlain()}); }
 function writeAttendance(sid){
   const a=state.attendance[sid];
   writeDay({attendance:{[sid]:{status:a.status,at:a.at?+a.at:null,note:a.note||''}},roster:{[sid]:nameOf(sid)}});
@@ -1462,28 +1240,24 @@ function writeBreakStart(sid){
   const id=a._id||breakDocId(sid,a.startAt); a._id=id;    // keep the original id if the start time was corrected since
   const doc={sid, reason:a.reason, startAt:+a.startAt, endAt:null, dur:null, over:null, flag:null,
     overTrip:!!a.overTrip, assignedMin:a.assignedMin||null};
-  const cid=CLASS_ID, day=dayId(new Date(a.startAt));
-  send(()=>tracked('breaks',fsWrite(dayRefFor(cid,day).collection('breaks').doc(id).set(doc)),cid).catch(()=>{}));
+  send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).set(doc))).catch(()=>{}));
 }
 function writeBreakEnd(rec){
   const id=rec._id||breakDocId(rec.sid,rec.startAt);
   const doc={sid:rec.sid, reason:rec.reason, startAt:+rec.startAt, endAt:+rec.endAt, dur:rec.dur,
     over:rec.over||0, flag:!!rec.flag, overTrip:!!rec.overTrip, assignedMin:rec.assignedMin||null};
-  const cid=CLASS_ID, day=dayId(new Date(rec.startAt));
-  send(()=>tracked('breaks',fsWrite(dayRefFor(cid,day).collection('breaks').doc(id).set(doc)),cid).catch(()=>{}));
+  send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).set(doc))).catch(()=>{}));
 }
 function writeBreakCancel(id){
   if(!id) return;
-  const cid=CLASS_ID, day=dayId(new Date());
-  send(()=>tracked('breaks',fsWrite(dayRefFor(cid,day).collection('breaks').doc(id).delete()),cid).catch(()=>{}));
+  send(()=>tracked('breaks',fsWrite(dayRef().collection('breaks').doc(id).delete())).catch(()=>{}));
 }
 /* One batch, so the cloud's answer is all-or-nothing: separate deletes each
    raise their own in-between answer, and a list of breaks shrinking one at a
    time on screen is exactly the flicker the listeners have to smooth over. */
 function writeBreakCancelAll(ids){
   if(!ids.length) return;
-  const cid=CLASS_ID, day=dayId(new Date());
-  send(()=>{ const b=fbDb.batch(); ids.forEach(id=>b.delete(dayRefFor(cid,day).collection('breaks').doc(id))); return tracked('breaks',fsWrite(b.commit()),cid).catch(()=>{}); });
+  send(()=>{ const b=fbDb.batch(); ids.forEach(id=>b.delete(dayRef().collection('breaks').doc(id))); return tracked('breaks',fsWrite(b.commit())).catch(()=>{}); });
 }
 
 /* ===== legacy local-history migration (Phase 3, plan section 4) =====
@@ -1865,14 +1639,14 @@ function resumeClass(){
   const now=new Date();
   state.session.status='live'; state.session.endedAt=null;
   logIt('Class resumed');
-  writeSessionAndAttendance(true); closeSheet(); closeDrawer(); toast(`Class resumed at ${clockStr(now)}`); render();
+  writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast(`Class resumed at ${clockStr(now)}`); render();
 }
 function doStart(){
   const now=new Date(); state.session={status:'live',startedAt:now,endedAt:null,lunchAt:null};
   state.students.forEach(s=>{ const a=att(s.id); if(a.status==='present'){ a.at=now; } });
   const abs=roster().filter(s=>['absent','left'].includes(att(s.id).status)).length;
   logIt(`Class started · ${roster().length-abs} present, ${abs} not here`);
-  writeSessionAndAttendance(true); closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
+  writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
 }
 function endClass(){
   confirmSheet('End class for today?','Open breaks will be closed. Students still deactivated stay marked absent.','End class',()=>{
@@ -1881,12 +1655,8 @@ function endClass(){
     writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast('Class ended'); render();
   },'warn');
 }
-/* By position in today's schedule, so a name like Jumu'ah never has to be
-   quoted inside an onclick. */
-function startScheduledBreak(i){ const b=scheduleFor(new Date()).breaks[i]; if(b) startPause(b.name,b.end); }
-function startDueBreak(){ const d=dueBreak(); if(d) startPause(d.kind,d.end); }
 function startPause(kind,resumeAt){
-  confirmSheet(`Start ${esc(breakWord(kind))} for the whole class?`,'Open breaks are closed and individual timers stop. This time is not counted against anyone.',`Start ${esc(breakWord(kind))}`,()=>{
+  confirmSheet(`Start ${kind.toLowerCase()} for the whole class?`,'Open breaks are closed and individual timers stop. This time is not counted against anyone.',`Start ${kind.toLowerCase()}`,()=>{
     Object.keys(state.active).forEach(sid=>ret(sid,true));
     state.session.status='lunch'; state.session.lunchAt=new Date(); state.session.pauseLabel=kind; state.session.resumeAt=resumeAt||null;
     logIt(`${kind} started`); writeSessionAndAttendance(); closeSheet(); closeDrawer(); toast(`${kind} started`); render();
@@ -2097,27 +1867,11 @@ function drawTour(){
    locally, since Firestore is the merged, authoritative copy across every
    device by now (Phase 3). Falls back to this device's local HKEY entries
    for any date Firestore doesn't have (e.g. offline, or not yet migrated). */
-/* Every class, each with its own days, students and settings, under its
-   name in `classes`. `profile` and `history` are still the first class, as
-   before 4.0, so restoring a backup into an older version (or this one)
-   reads the same file the same way. */
 async function backupAll(){
-  const list=(state.classes&&state.classes.length?state.classes:[{id:CLASS_ID,name:classTitle(),status:'active'}]);
-  const classes={}, today=dayId(new Date());
-  let first=null;
-  for(const c of list){
-    const remote=await fetchAllDays(c.id).catch(()=>({}));
-    const history=c.id==='default'?Object.assign({},readHistory(),remote):remote;
-    if(c.id===CLASS_ID&&hasActivity()) history[today]=snapshot();
-    let students=c.id===CLASS_ID?state.students:[];
-    if(c.id!==CLASS_ID&&ORG_ID){ try{ const qs=await classRefFor(c.id).collection('students').get(); students=qs.docs.map(d=>({id:d.id,name:d.data().name,active:d.data().active!==false,order:d.data().order||0})).sort((a,b)=>a.order-b.order).map(({order,...x})=>x); }catch(e){} }
-    const settings=c.id===CLASS_ID?state.settings:settingsForClass(c);
-    let key=c.name||c.id, n=2; while(classes[key]) key=`${c.name||c.id} (${n++})`;
-    classes[key]={id:c.id,status:c.status||'active',students,settings,history};
-    if(c.id==='default') first=classes[key];
-  }
-  first=first||Object.values(classes)[0];
-  const data={saved:new Date().toISOString(),profile:{teacher:state.teacher,setup:state.setup,students:first.students,settings:first.settings},history:first.history,classes};
+  const remote=await fetchAllDays();
+  const history=Object.assign({},readHistory(),remote);
+  if(hasActivity()) history[dayId(new Date())]=snapshot();
+  const data={saved:new Date().toISOString(),profile:{teacher:state.teacher,setup:state.setup,students:state.students,settings:state.settings},history};
   try{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
@@ -2163,8 +1917,7 @@ function snapshot(){
     endedAt:state.session.endedAt?+state.session.endedAt:null,
     names:Object.fromEntries(state.students.map(x=>[x.id,x.name])),
     att:Object.fromEntries(roster().map(x=>[x.id,{status:att(x.id).status,note:att(x.id).note||''}])),
-    breaks:state.breaks.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null})),
-    schedule:state.daySchedule||null
+    breaks:state.breaks.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null}))
   };
 }
 
@@ -2178,8 +1931,7 @@ function dayDocToSnapshot(data,breaksArr){
     endedAt:(data.session&&data.session.endedAt)||null,
     names:data.roster||{},
     att:Object.fromEntries(Object.entries(data.attendance||{}).map(([id,a])=>[id,{status:a.status,note:a.note||''}])),
-    breaks:breaksArr.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null})),
-    schedule:data.schedule||null
+    breaks:breaksArr.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null}))
   };
 }
 async function daysQueryToMap(query){
@@ -2200,9 +1952,9 @@ async function fetchDayRange(startId,endId){
    not a listener or something that runs on a schedule, so a full history
    read here doesn't fight the "bounded get() over a date range" rule that
    applies to reports (plan 2.3). */
-async function fetchAllDays(cid){
+async function fetchAllDays(){
   if(!ORG_ID) return {};
-  return daysQueryToMap(classRefFor(cid||CLASS_ID).collection('days'));
+  return daysQueryToMap(classRef().collection('days'));
 }
 /* ===== Reports tab (3.8) =====
    Read only: one bounded fetchDayRange() for the period and one for the
@@ -2230,9 +1982,6 @@ const counted=b=>(+b.dur||0)>=MIN_BREAK_MS;
 const typeOf=b=>ALL_TYPES.includes(b.reason)?b.reason:'other';
 /* 8.4, 12, 0.7 - one decimal only while it still means something */
 function fmtMin(v){ const r=Math.round(v*10)/10; return Math.abs(r)<10&&r%1!==0?r.toFixed(1):String(Math.round(r)); }
-/* Two numbers that read the same, or are within 5% of each other, are "about
-   the same" - "Up from 107" next to 107 is noise, not a change. */
-function aboutSame(now,was){ return fmtMin(now)===fmtMin(was)||(was>0&&Math.abs(now-was)<0.05*was); }
 function plural(n,word){ const t=fmtMin(n); return `${t} ${+t===1?word:word+'s'}`; }
 function fmtHours(min){ const t=Math.round(min), h=Math.floor(t/60), m=t%60; return h?`${h} h${m?` ${m} min`:''}`:`${m} min`; }
 function median(a){ if(!a.length) return 0; const x=[...a].sort((p,q)=>p-q), m=x.length>>1; return x.length%2?x[m]:(x[m-1]+x[m])/2; }
@@ -2266,14 +2015,14 @@ async function loadDays(a,b){
 }
 function isClassDay(d){ return !!d.startedAt||(d.breaks||[]).some(counted); }
 function classMinutes(d){
-  const sch=d.schedule||scheduleFor(d.date), base=+new Date(d.date+'T00:00:00'), at=t=>base+toMin(t)*60000;
-  const s0=at(sch.start), e0=at(sch.end);
+  const S=state.settings, base=+new Date(d.date+'T00:00:00'), at=t=>base+toMin(t)*60000;
+  const s0=at(S.startTime), e0=at(S.endTime);
   let s=d.startedAt, e=d.endedAt;
   if(!s||s<s0-3600000||s>=e0) s=s0;
   if(!e) e=d.date===dayId(new Date())?Math.min(Date.now(),e0):e0;
   else if(e>e0||e<=s) e=e0;
   let ms=Math.max(0,e-s);
-  (sch.breaks||[]).forEach(b=>{ ms-=Math.max(0,Math.min(e,at(b.end))-Math.max(s,at(b.start))); });
+  [[S.snack.start,S.snack.end],[S.lunch.start,S.lunch.end]].forEach(([a,b])=>{ ms-=Math.max(0,Math.min(e,at(b))-Math.max(s,at(a))); });
   return Math.max(0,ms)/60000;
 }
 /* Everything the tab shows, for the whole class (sid null) or one student.
@@ -2339,7 +2088,7 @@ function paintReports(){
     if(sid&&!opts.some(o=>o[0]===sid)) opts.push([sid,nameFor(sid)]);
     picker=`<select aria-label="Student" onchange="setRpt('sid',this.value)">${opts.map(([id,n])=>`<option value="${id}" ${id===sid?'selected':''}>${n}</option>`).join('')}</select>`;
   }
-  const head=`<div class="vhead"><h2>Reports</h2>${classPill()}<button class="btn ghost" onclick="exportCSV()">Export CSV</button></div>
+  const head=`<div class="vhead"><h2>Reports</h2><button class="btn ghost" onclick="exportCSV()">Export CSV</button></div>
     <div class="rtop">${seg('scope',[['class','Whole class'],['student','One student']])}${picker}${seg('mode',[['total','Total'],['avg','Daily average']])}</div>
     <div class="rdates">${RANGES.map(([k,l])=>`<button class="rdate ${rpt.range===k?'on':''}" data-range="${k}" onclick="setRpt('range','${k}')">${l}</button>`).join('')}</div>`;
   if(!rptData){ v.innerHTML=head+`<div class="empty"><b>Loading…</b></div>`; v.dataset.ready=''; return; }
@@ -2373,7 +2122,7 @@ function cardsHTML(R,Pv,rp){
   const unit=rp.prev.lastDay?' min':' min a day';
   let cmp;
   if(prevDay==null) cmp=rp.prev.lastDay?'No earlier class day to compare':`No class days ${rp.prevName} to compare`;
-  else if(aboutSame(nowDay,prevDay)) cmp=`About the same as ${rp.prevName.replace(/^on /,'')} (${fmtMin(nowDay)}${unit})`;
+  else if(Math.abs(nowDay-prevDay)<0.05) cmp=`Same as ${rp.prevName} (${fmtMin(prevDay)}${unit})`;
   else cmp=`${nowDay>prevDay?'Up':'Down'} from ${fmtMin(prevDay)}${unit} ${rp.prevName}`;
   const a=R.att, marks=a.present+a.tardy+a.absent+a.left, here=a.present+a.tardy+a.left;
   const card=(id,title,big,...notes)=>`<div class="card" data-card="${id}"><h5${id==='over'?' class="warn"':''}>${title}</h5><b>${big}</b>${notes.map(n=>`<small>${n}</small>`).join('')}</div>`;
@@ -2382,7 +2131,7 @@ function cardsHTML(R,Pv,rp){
     ${card('out','Time out of class',`${fmtMin(per(outMin))} min${aday}`,`${fmtMin(pct)}% of class time`,cmp)}
     ${card('breaks','Breaks',`${fmtMin(per(R.trips))}${aday}`,R.durs.length?`Typical length ${fmtMin(median(R.durs)/60000)} min`:'No breaks')}
     ${card('over','Over the limit',`${fmtMin(per(R.flags))}${aday}`,`${R.trips?Math.round(R.flags/R.trips*100):0}% of all breaks`)}
-    ${card('att','Attendance',marks?`${Math.round(here/marks*100)}% present`:'—',`${a.tardy} tardy · ${a.absent} absent · ${a.left} left early`)}
+    ${card('att','Attendance',marks?`${Math.round(here/marks*100)}% present`:'—',`${fmtMin(per(a.tardy))} tardy · ${fmtMin(per(a.absent))} absent · ${fmtMin(per(a.left))} left early${aday}`)}
   </div>`;
 }
 
@@ -2455,24 +2204,18 @@ function breakdownHTML(it,R,sid){
   return `<div class="bdown"><b>${title}</b> · ${fmtMin(it.val)} min out${!sid&&avg?' a day':''}${!sid&&rpt.vs&&it.prev!=null?` · ${fmtMin(it.prev)} min ${vsName(rptData.r)}`:''}<br>${parts.join(' · ')||'No breaks'}
     ${sid?'':`<br><button class="open" onclick="openStudentReport('${it.id}')">Open ${it.label}'s report</button>`}</div>`;
 }
-/* The ring and its middle number are time out of class - the same four
-   types as the "Time out of class" card, so the two always agree. Assigned
-   (excused) is listed under it with its minutes and trips, but takes no
-   share of the ring: it isn't time out. */
 function donutHTML(R){
-  const avg=rpt.mode==='avg', div=avg?R.classDays:1, aday=avg?' a day':'';
-  const tot=OUT_TYPES.reduce((a,k)=>a+R.type[k].ms,0), C=2*Math.PI*42, as=R.type.assigned;
-  if(!tot&&!as.trips) return `<div class="empty" style="padding:14px"><b>No breaks</b></div>`;
+  const avg=rpt.mode==='avg', div=avg?R.classDays:1;
+  const tot=ALL_TYPES.reduce((a,k)=>a+R.type[k].ms,0), C=2*Math.PI*42;
+  if(!tot) return `<div class="empty" style="padding:14px"><b>No breaks</b></div>`;
   let off=0, arcs='';
-  OUT_TYPES.forEach(k=>{ const v=R.type[k].ms; if(!v) return;
+  ALL_TYPES.forEach(k=>{ const v=R.type[k].ms; if(!v) return;
     const len=v/tot*C, gap=len>6?1.5:0;
     arcs+=`<circle cx="60" cy="60" r="42" fill="none" stroke="${TYPE_COLOR[k]}" stroke-width="18" stroke-dasharray="${(len-gap).toFixed(2)} ${(C-len+gap).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"/>`;
     off+=len; });
-  if(!tot) arcs=`<circle cx="60" cy="60" r="42" fill="none" stroke="#E4EBED" stroke-width="18"/>`;
-  const leg=OUT_TYPES.filter(k=>R.type[k].trips).map(k=>{ const q=R.type[k];
-    return `<div data-type="${k}"><i style="background:${TYPE_COLOR[k]}"></i>${typeLabel(k)}<small>${fmtMin(q.ms/60000/div)} min${aday} · ${tot?Math.round(q.ms/tot*100):0}% · ${plural(q.trips/div,'trip')}</small></div>`; }).join('')
-    +(as.trips?`<div data-type="assigned"><i style="background:${TYPE_COLOR.assigned}"></i>${typeLabel('assigned')}<small>${fmtMin(as.ms/60000/div)} min${aday} · ${plural(as.trips/div,'trip')}</small></div>`:'');
-  return `<div class="donut"><svg viewBox="0 0 120 120" role="img" aria-label="Where the time went">${arcs}<text class="dn" x="60" y="62" text-anchor="middle">${fmtMin(tot/60000/div)}</text><text class="dnu" x="60" y="77" text-anchor="middle">min out${aday}</text></svg><div class="dleg">${leg}</div></div>`;
+  const leg=ALL_TYPES.filter(k=>R.type[k].trips).map(k=>{ const q=R.type[k];
+    return `<div data-type="${k}"><i style="background:${TYPE_COLOR[k]}"></i>${typeLabel(k)}<small>${fmtMin(q.ms/60000/div)} min${avg?' a day':''} · ${Math.round(q.ms/tot*100)}% · ${plural(q.trips/div,'trip')}</small></div>`; }).join('');
+  return `<div class="donut"><svg viewBox="0 0 120 120" role="img" aria-label="Where the time went">${arcs}<text class="dn" x="60" y="62" text-anchor="middle">${fmtMin(tot/60000/div)}</text><text class="dnu" x="60" y="77" text-anchor="middle">min${avg?' a day':''}</text></svg><div class="dleg">${leg}</div></div>`;
 }
 function worthHTML(R,Pv,rp){
   const items=[];
@@ -2485,7 +2228,7 @@ function worthHTML(R,Pv,rp){
     let best=null;
     Object.entries(R.per).forEach(([id,p])=>{
       const now=p.outMs/60000/R.classDays, was=((Pv.per[id]||{}).outMs||0)/60000/Pv.classDays, up=now-was;
-      if(up>0&&!aboutSame(now,was)&&(!best||up>best.up)) best={id,now,was,up};
+      if(up>=0.05&&(!best||up>best.up)) best={id,now,was,up};
     });
     items.push(best?`${nameFor(best.id)}'s time out went up the most: ${fmtMin(best.now)}${unit}, up from ${fmtMin(best.was)}${unit} ${rp.prevName}.`
                    :`Nobody's time out went up compared with ${rp.prevName}.`);
@@ -2511,7 +2254,7 @@ async function exportCSV(){
   try{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-    a.download=`hifz-breaks-${slug(classTitle())}-${dayId(r.start)}-to-${dayId(r.end)}.csv`; a.click();
+    a.download=`hifz-breaks-${dayId(r.start)}-to-${dayId(r.end)}.csv`; a.click();
     toast('CSV downloaded');
   }catch(e){ toast('Export is not available in this preview'); }
 }
@@ -2526,13 +2269,6 @@ function addStudent(){
   el.value=''; logIt(`<b>${n}</b> added to the class list`); writeRosterStudent(s); render(); paintRoster(); toast(`${n} added to the class list`);
 }
 function archiveStudent(sid){
-  const s=state.students.find(x=>x.id===sid); if(!s) return;
-  const o=state.active[sid];
-  confirmSheet(`Remove ${s.name} from the class list?`,
-    `Their past reports stay, and you can put them back at the bottom of Roster.${o?` ${s.name} is out right now - their ${o.label.toLowerCase()} break will end.`:''}`,
-    'Remove',()=>{ closeSheet(); removeStudent(sid); },'warn','Keep them');
-}
-function removeStudent(sid){
   const s=state.students.find(x=>x.id===sid); if(!s) return;
   if(state.active[sid]) ret(sid,true);
   s.active=false; logIt(`<b>${s.name}</b> removed from the class list`); writeRosterStudent(s); render(); paintRoster(); toast(`${s.name} removed from the list`);
@@ -2549,12 +2285,12 @@ function drawDrawer(){
   const s=st(), set=state.settings;
   $('dbody').innerHTML=`
    <h4>Class-wide</h4>
-   ${s==='live'?scheduleFor(new Date()).breaks.map((b,i)=>`<button class="dbtn gold" onclick="startScheduledBreak(${i})">Start ${esc(breakWord(b.name))}<small>Scheduled ${hm(b.start)} to ${hm(b.end)}</small></button>`).join(''):''}
-   ${s==='lunch'?`<button class="dbtn leaf" onclick="endPause()">End ${esc(breakWord(state.session.pauseLabel||'break'))}</button>`:''}
+   ${s==='live'?`<button class="dbtn gold" onclick="startPause('Snack break','${set.snack.end}')">Start snack break<small>Scheduled ${hm(set.snack.start)} to ${hm(set.snack.end)}</small></button>`:''}
+   ${s==='live'?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
+   ${s==='lunch'?`<button class="dbtn leaf" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button>`:''}
    ${s==='live'||s==='lunch'?`<button class="dbtn ember" onclick="endClass()">End class<small>Closes open breaks</small></button>`:''}
    ${canResume()?`<button class="dbtn leaf" onclick="resumeClass()">Resume class<small>Carries on today's class from ${clockStr(state.session.startedAt)}</small></button>`
      :s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}
-   <button class="dbtn" onclick="openDayEditor('date','${dayId(new Date())}')">Change today's times<small>Just today - the usual day stays as it is</small></button>
    <h4>Review</h4>
    <button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, left early, absent</small></button>
    <button class="dbtn" onclick="openDaySummary()">Day summary<small>Attendance and break totals per student</small></button>
@@ -2562,400 +2298,6 @@ function drawDrawer(){
    <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin-top:14px">Reports, the class list and settings are on the tabs along the bottom.</small>`;
 }
-
-/* ===== My classes (4.0) =====
-   One teacher, one personal org, any number of classes - and ONE open at a
-   time. Log, Reports, Roster and Settings only ever show the open class
-   (CLASS_ID); another class's data is never read into them. The only way to
-   see another class is to open it from Profile -> My classes. Nothing here is
-   Phase 4 Part B: no invites, roles or schools. */
-state.classes=[]; state.className='';
-const classOrder=(a,b)=>a.id==='default'?-1:b.id==='default'?1:String(a.name||'').localeCompare(String(b.name||''));
-function classTitle(){ return state.className||(state.teacher?`${state.teacher}'s Hifz Class`:'Hifz Class'); }
-function classPill(){ return `<span class="cpill" title="The open class">${esc(classTitle())}</span>`; }
-const slug=t=>String(t).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'class';
-const cleanName=t=>String(t||'').replace(/[<>"`]/g,'').replace(/\s+/g,' ').trim().slice(0,80);
-const classById=cid=>(state.classes||[]).find(c=>c.id===cid);
-const classNameOf=cid=>cid===CLASS_ID?classTitle():((classById(cid)||{}).name||'that class');
-/* Another class's settings, read the same way as the open one's. */
-function settingsFrom(override){ const keep=classOverride; classOverride=override||null; try{ return computeSettings(); } finally{ classOverride=keep; } }
-function settingsForClass(c){ return c.id===CLASS_ID?state.settings:settingsFrom(c.settingsOverride); }
-function daysText(days){
-  const n=WEEKDAYS.map(w=>w.slice(0,3)), d=days.slice().sort((a,b)=>a-b);
-  const run=d.length>=3&&d.every((x,i)=>!i||x===d[i-1]+1);
-  return !d.length?'No days':run?`${n[d[0]-1]}–${n[d[d.length-1]-1]}`:d.map(x=>n[x-1]).join(', ');
-}
-
-/* ----- the teacher ----- */
-function initials(){
-  const w=String(state.teacher||(fbUser&&fbUser.displayName)||myEmail()||'').split(/[\s@._-]+/).filter(Boolean);
-  return w.length?((w[0][0]||'')+(w.length>1?w[w.length-1][0]:'')).toUpperCase():'?';
-}
-function paintInitials(){ const el=$('tabIni'); if(el&&el.textContent!==initials()) el.textContent=initials(); }
-/* A device that has never had the teacher's name (signed in fresh) reads it
-   once from their member doc. A read only. */
-async function loadMyName(){
-  if(state.teacher||!fbUid||!ORG_ID) return;
-  try{ const m=await orgRef().collection('members').doc(fbUid).get(); const n=m.exists&&m.data().displayName; if(n&&!state.teacher){ state.teacher=n; render(); } }catch(e){}
-}
-function writeMyName(name){
-  if(!fbUid) return;
-  send(()=>fsWrite(orgRef().collection('members').doc(fbUid).update({displayName:name})).catch(()=>{}));
-}
-function changeName(){
-  sheetHTML('Change your name','Shown on your Profile and used for your initials.',
-    `<div class="body"><div class="note" style="margin-top:0"><input id="myName" value="${esc(state.teacher)}" placeholder="e.g. Ustadh Bilal" onkeydown="if(event.key==='Enter')saveMyName()"></div></div>
-     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="saveMyName()">Save</button></div>`);
-}
-function saveMyName(){
-  const n=cleanName($('myName').value); if(!n) return toast('Please type your name.');
-  state.teacher=n; writeMyName(n); closeSheet(); render(); toast('Name saved');
-}
-
-/* ----- Profile ----- */
-let classInfo={}, showArchived=false;
-/* Other classes' student counts and today's status, read once each time
-   Profile is drawn - never a listener on another class. */
-async function drawProfile(){
-  paintProfile();
-  const today=dayId(new Date()), others=(state.classes||[]).filter(c=>c.id!==CLASS_ID&&c.status!=='archived');
-  if(!ORG_ID||!fbDb) return;
-  await Promise.all(others.map(async c=>{
-    const info={};
-    try{ const qs=await classRefFor(c.id).collection('students').get(); info.students=qs.docs.filter(d=>d.data().active!==false).length; }catch(e){}
-    try{ const d=await dayRefFor(c.id,today).get(); info.session=d.exists?(d.data().session||null):null; }catch(e){}
-    classInfo[c.id]=info;
-  }));
-  if(TAB==='profile') paintProfile();
-}
-function statusChips(c){
-  if(c.id===CLASS_ID){
-    const s=st(), out=[`<span class="chip2 open">Open now</span>`];
-    if(s==='live'||s==='lunch') out.push(`<span class="chip2 run">Running · ${Object.keys(state.active).length} out</span>`);
-    else if(s==='ended'&&state.session.endedAt) out.push(`<span class="chip2">Ended ${clockStr(state.session.endedAt)}</span>`);
-    else out.push(`<span class="chip2">Not started today</span>`);
-    return out.join('');
-  }
-  const ss=(classInfo[c.id]||{}).session;
-  if(ss&&(ss.status==='live'||ss.status==='lunch')) return `<span class="chip2 run">Running</span>`;
-  if(ss&&ss.status==='ended'&&ss.endedAt) return `<span class="chip2">Ended ${clockStr(new Date(ss.endedAt))}</span>`;
-  return `<span class="chip2">Not started today</span>`;
-}
-function classCard(c){
-  const open=c.id===CLASS_ID, S=settingsForClass(c), u=scheduleOf(S).usual;
-  const n=open?roster().length:(classInfo[c.id]||{}).students, name=open?classTitle():(c.name||'Class');
-  return `<div class="ccard${open?' open':''}" data-class="${c.id}">
-    <div class="ctop"><b>${esc(name)}</b><button class="cmore" aria-label="More for ${esc(name)}" onclick="classMenu('${c.id}')">…</button></div>
-    <small>${daysText(classDaysOf(S))} · ${hm(u.start)}–${hm(u.end)}${n!=null?` · ${plural(n,'student')}`:''}</small>
-    <div class="cfoot"><span class="cchips">${statusChips(c)}</span>${open?'':`<button class="btn dark copen" onclick="openClass('${c.id}')">Open</button>`}</div>
-  </div>`;
-}
-function paintProfile(){
-  const v=$('viewProfile'); if(!v) return;
-  const google=isGoogleUser();
-  let list=(state.classes||[]).slice();
-  if(!list.some(c=>c.id===CLASS_ID)) list.unshift({id:CLASS_ID,name:classTitle(),status:'active',settingsOverride:classOverride});
-  const active=list.filter(c=>c.status!=='archived'), archived=list.filter(c=>c.status==='archived');
-  v.innerHTML=`<div class="vsec wide"><div class="vhead"><h2>Profile</h2></div><div class="pgrid">
-   <section class="pcard">
-     ${google?'':`<button class="dbtn gold" onclick="signInToKeepClass()">Sign in with Google<small>Keeps this class on your Google account, safe and on every device you use</small></button>`}
-     <div class="pwho"><b class="ini big">${esc(initials())}</b><div class="pid"><b>${esc(state.teacher||'Your name')}</b>${google?`<small>${esc(myEmail())}</small><small class="ok">Signed in with Google</small>`:`<small>Not signed in with Google</small>`}</div></div>
-     <div class="pbtns"><button class="btn ghost" onclick="changeName()">Change your name</button>${google?`<button class="btn ghost" onclick="confirmSignOut()">Sign out</button>`:''}</div>
-     <h4>Sign-in and sync</h4>
-     <button class="dbtn" onclick="openSyncInfo()">${google?`Signed in as ${esc(myEmail())}<small>${syncStatusLabel()}</small>`:ORG_ID?`Not signed in with Google<small>${syncStatusLabel()}</small>`:`Not synced yet<small>${syncStatusLabel()}</small>`}</button>
-     <h4>Backup</h4>
-     ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
-       :`<button class="dbtn" onclick="backupAll()">Download a backup<small>Every class and every day it has recorded, saved as a file</small></button>`}
-     <small class="ver">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>
-   </section>
-   <section class="pclasses">
-     <h3>My classes</h3>
-     <p class="rnote">One class is open at a time. Log, Reports, Roster and Settings show only the open class.</p>
-     <div class="clist">${active.map(classCard).join('')}</div>
-     <button class="addcls" onclick="openAddClass()">+ Add a class</button>
-     ${archived.length?`<button class="showarch" onclick="showArchived=!showArchived;paintProfile()">${showArchived?'Hide':'Show'} archived (${archived.length})</button>
-       ${showArchived?`<div class="clist">${archived.map(c=>`<div class="ccard gone" data-class="${c.id}"><div class="ctop"><b>${esc(c.name||'Class')}</b><button class="btn ghost copen" onclick="restoreClass('${c.id}')">Restore</button></div><small>Archived - its days and students are kept</small></div>`).join('')}</div>`:''}`:''}
-   </section></div></div>`;
-}
-
-/* ----- rename, archive, restore: never a delete ----- */
-function writeClassMeta(cid,patch){
-  const c=classById(cid); if(c) Object.assign(c,patch);
-  send(()=>fsWrite(classRefFor(cid).set(patch,{merge:true})).catch(()=>{}));
-}
-function classMenu(cid){
-  const name=classNameOf(cid), open=cid===CLASS_ID;
-  sheetHTML(esc(name),'',`<div class="body"><div class="rowlist">
-    <button class="dbtn" onclick="renameClass('${cid}')">Rename</button>
-    ${open?`<button class="dbtn" disabled style="opacity:.6">Archive<small>The open class can't be archived. Open another class first.</small></button>`
-          :`<button class="dbtn" onclick="archiveClass('${cid}')">Archive<small>It moves under Show archived, with all its days and students. Nothing is deleted.</small></button>`}
-  </div></div><div class="actions"><button class="btn ghost" onclick="closeSheet()">Close</button></div>`);
-}
-function renameClass(cid){
-  sheetHTML('Rename class','',`<div class="body"><div class="note" style="margin-top:0"><input id="className" value="${esc(classNameOf(cid))}" onkeydown="if(event.key==='Enter')saveRename('${cid}')"></div></div>
-    <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="saveRename('${cid}')">Save</button></div>`);
-}
-function saveRename(cid){
-  const n=cleanName($('className').value); if(!n) return toast('Please type a name.');
-  writeClassMeta(cid,{name:n}); if(cid===CLASS_ID) state.className=n;
-  closeSheet(); render(); paintProfile(); toast(`Renamed to ${n}`);
-}
-function archiveClass(cid){
-  if(cid===CLASS_ID) return toast("The open class can't be archived.");
-  const name=classNameOf(cid);
-  confirmSheet(`Archive ${esc(name)}?`,'It leaves My classes and moves under Show archived, with all its days and students. Nothing is deleted, and you can restore it any time.','Archive',()=>{
-    writeClassMeta(cid,{status:'archived'}); closeSheet(); paintProfile(); toast(`${name} archived`);
-  },'warn','Keep it');
-}
-function restoreClass(cid){ writeClassMeta(cid,{status:'active'}); paintProfile(); toast(`${classNameOf(cid)} restored`); }
-
-/* ----- switching: one class open at a time ----- */
-function openClass(cid){
-  if(cid===CLASS_ID) return showTab('log');
-  const name=classNameOf(cid), s=st();
-  if(s!=='live'&&s!=='lunch') return switchClass(cid);
-  const outs=Object.entries(state.active).sort((a,b)=>a[1].startAt-b[1].startAt);
-  const rows=outs.map(([sid,a])=>`<div class="row"><b>${esc(nameOf(sid))}</b><span class="time">${esc(a.label)} · out ${fmtDur(Date.now()-a.startAt)}</span></div>`).join('');
-  sheetHTML(`Open ${esc(name)}?`,`${esc(classTitle())} is still running.`,
-    `<div class="body">${rows?`<div class="rowlist">${rows}</div>`:''}<p class="swnote">${outs.length?'They are marked back in and the class ends.':'The class ends.'} You can resume it later today.</p></div>
-     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Stay here</button><button class="btn warn" onclick="endAndSwitch('${cid}')">${outs.length?`Bring them back, end class and open ${esc(name)}`:`End class and open ${esc(name)}`}</button></div>`);
-}
-function endAndSwitch(cid){
-  Object.keys(state.active).forEach(sid=>ret(sid,true));
-  state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended');
-  writeSessionAndAttendance();                    // saved to this class - the writers fix the class at the tap
-  switchClass(cid);
-}
-async function switchClass(cid,opts){
-  opts=opts||{};
-  const c=classById(cid);
-  detachListeners();
-  inflightGen++; inflight.day=0; inflight.breaks=0;
-  CLASS_ID=cid; Store.set(SESSION_CLASS_KEY,cid);
-  classOverride=c?c.settingsOverride||null:null; classSeen=false;
-  state.className=c?c.name||'':'';
-  state.settings=computeSettings();
-  // a clean board for the class being opened - unsent changes (held) stay
-  // queued for the class they were made in
-  state.students=[]; state.attendance={}; state.lastAction=null;
-  DAY_STATE_ID=dayId(new Date());
-  state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
-  state.active={}; state.breaks=[]; state.log=[]; state.daySchedule=null;
-  rptData=null; rosterDays=null; rptSeq++; rosterSeq++; Object.assign(rpt,{scope:'class',sid:null,sel:null});
-  await Store.hydrate([cacheKey(cid)]);
-  loadFromCache();                                // this class as this device last saw it, if it has
-  if(c&&c.name) state.className=c.name;
-  closeSheet(); showTab('log'); render();
-  if(ORG_ID&&fbUid) await attachListeners();
-  if(!opts.quiet) toast(`${classTitle()} is open`);
-}
-
-/* ----- whole-class breaks: one editor for Add a class and Settings -> Schedule ----- */
-function validateDay(d){
-  if(!d.start||!d.end) return 'Please set both class times.';
-  if(toMin(d.end)<=toMin(d.start)) return 'Class has to end after it starts.';
-  const bs=(d.breaks||[]).slice().sort(byStart);
-  for(const b of bs){
-    const n=esc(b.name||'A break');
-    if(!String(b.name||'').trim()) return 'Give every break a name.';
-    if(!b.start||!b.end) return `Set both times for ${n}.`;
-    if(toMin(b.end)<=toMin(b.start)) return `${n} has to end after it starts.`;
-    if(toMin(b.start)<toMin(d.start)||toMin(b.end)>toMin(d.end)) return `${n} has to be inside class hours (${hm(d.start)} to ${hm(d.end)}).`;
-  }
-  for(let i=1;i<bs.length;i++) if(toMin(bs[i].start)<toMin(bs[i-1].end)) return `${esc(bs[i-1].name)} and ${esc(bs[i].name)} overlap.`;
-  return '';
-}
-const brkModel={};                                 // 'ac' -> Add a class, 'ed' -> the schedule editor
-function breakRows(key){
-  const list=brkModel[key]();
-  return `<div class="brks">${list.map((b,i)=>`<div class="brow2">
-      <input class="bname" aria-label="Break name" value="${esc(b.name)}" placeholder="Name, e.g. Snack" oninput="brkModel.${key}()[${i}].name=this.value">
-      <span class="btimes"><input type="time" aria-label="${esc(b.name||'Break')} from" value="${b.start||''}" oninput="brkModel.${key}()[${i}].start=this.value"><span>to</span><input type="time" aria-label="${esc(b.name||'Break')} to" value="${b.end||''}" oninput="brkModel.${key}()[${i}].end=this.value"></span>
-      <button class="rmv" onclick="brkModel.${key}().splice(${i},1);brkRepaint('${key}')">Remove</button></div>`).join('')}</div>
-    <button class="addbrk" onclick="brkModel.${key}().push({name:'',start:'',end:''});brkRepaint('${key}')">+ Add a break</button>`;
-}
-function brkRepaint(key){ if(key==='ac') acPaint(); else paintDayEditor(); }
-
-/* ----- Add a class: three steps ----- */
-let ac=null;
-brkModel.ac=()=>ac.breaks;
-function firstClassSettings(){ const f=classById('default'); return CLASS_ID==='default'?state.settings:settingsFrom(f&&f.settingsOverride); }
-function openAddClass(){
-  const fs=firstClassSettings(), u=scheduleOf(fs).usual;
-  ac={step:1,name:'',days:[1,2,3,4,5],start:u.start,end:u.end,breaks:[],how:'type',typed:[],copyFrom:'',copied:[],limits:'same',own:JSON.parse(JSON.stringify(fs.limits)),err:''};
-  $('addClass').classList.add('show'); acPaint();
-  setTimeout(()=>{ const n=$('acName'); if(n) n.focus(); },50);
-}
-function closeAddClass(){ $('addClass').classList.remove('show'); $('acCard').innerHTML=''; ac=null; }
-function acToggleDay(d){ ac.days=ac.days.includes(d)?ac.days.filter(x=>x!==d):[...ac.days,d].sort((a,b)=>a-b); acPaint(); }
-function acStudents(){ return ac.how==='copy'?(ac.copied||[]):ac.typed; }
-function acAddTyped(){
-  const el=$('acStudent'), n=cleanName((el.value||'').replace(/^\s*\d+[.)]\s*/,'')).replace(/'/g,'');
-  if(n&&!ac.typed.includes(n)) ac.typed.push(n);
-  el.value=''; acPaint(); const again=$('acStudent'); if(again) again.focus();
-}
-async function acCopyFrom(cid){
-  ac.copyFrom=cid; ac.copied=null; acPaint();
-  if(!cid) { ac.copied=[]; return acPaint(); }
-  let names=[];
-  if(cid===CLASS_ID) names=roster().map(x=>x.name);
-  else{ try{ const qs=await classRefFor(cid).collection('students').get(); names=qs.docs.map(d=>d.data()).filter(x=>x.active!==false).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>x.name); }catch(e){} }
-  if(ac&&ac.copyFrom===cid){ ac.copied=names; acPaint(); }
-}
-function limitsLine(L){ return ['washroom','water','wudhu'].map(k=>`${RSN(k).label} ${L[k].min} min, ${L[k].trips} a day`).join(' · '); }
-function acNext(){
-  ac.err='';
-  if(ac.step===1){
-    ac.name=cleanName(ac.name);
-    if(!ac.name) ac.err='Please give the class a name.';
-    else if((state.classes||[]).some(c=>c.status!=='archived'&&String(c.name).toLowerCase()===ac.name.toLowerCase())) ac.err='You already have a class with that name.';
-    else if(!ac.days.length) ac.err='Pick at least one day.';
-    else ac.err=validateDay({start:ac.start,end:ac.end,breaks:ac.breaks});
-  }
-  if(ac.step===2&&!acStudents().length) ac.err=ac.how==='copy'?'Pick a class to copy from.':'Add at least one student.';
-  if(!ac.err) ac.step++;
-  acPaint();
-}
-function acPaint(){
-  if(!ac) return;
-  const card=$('acCard'), first=classNameOf('default'), fs=firstClassSettings();
-  const steps=['Name and times','Students','Break limits'];
-  const head=`<div class="achead"><h2>Add a class</h2><span class="acstep">Step ${ac.step} of 3 · ${steps[ac.step-1]}</span></div>`;
-  const foot=(next)=>`<p class="err">${ac.err||''}</p><div class="setup-actions">${ac.step>1?`<button class="btn ghost" onclick="ac.step--;ac.err='';acPaint()">Back</button>`:`<button class="btn ghost" onclick="closeAddClass()">Cancel</button>`}${next}</div>`;
-  let body='';
-  if(ac.step===1){
-    body=`<label>Class name<input id="acName" value="${esc(ac.name)}" placeholder="e.g. Period 5" oninput="ac.name=this.value"></label>
-      <div class="aclabel">Days</div>
-      <div class="daychips">${WEEKDAYS.map((w,i)=>`<button class="dchip${ac.days.includes(i+1)?' on':''}" aria-pressed="${ac.days.includes(i+1)}" onclick="acToggleDay(${i+1})">${w.slice(0,3)}</button>`).join('')}</div>
-      <div class="aclabel">Class times</div>
-      <div class="actimes"><input type="time" aria-label="Class starts" value="${ac.start}" oninput="ac.start=this.value"><span>to</span><input type="time" aria-label="Class ends" value="${ac.end}" oninput="ac.end=this.value"></div>
-      <div class="aclabel">Whole-class breaks</div>${breakRows('ac')}
-      <p class="hint">Different times on some days? Change them any time in Settings → Schedule.</p>`;
-    card.innerHTML=head+body+foot(`<button class="btn dark" onclick="acNext()">Next</button>`);
-  } else if(ac.step===2){
-    const others=(state.classes||[]).filter(c=>c.status!=='archived');
-    if(!others.some(c=>c.id===CLASS_ID)) others.unshift({id:CLASS_ID,name:classTitle()});
-    const list=acStudents();
-    body=`<div class="seg acseg"><button class="${ac.how==='type'?'on':''}" onclick="ac.how='type';ac.err='';acPaint()">Type their names</button><button class="${ac.how==='copy'?'on':''}" onclick="ac.how='copy';ac.err='';acPaint()">Copy from another class</button></div>
-      ${ac.how==='type'?`<div class="roster-list">${ac.typed.length?ac.typed.map((n,i)=>`<div class="roster-item"><span>${esc(n)}</span><button onclick="ac.typed.splice(${i},1);acPaint()">Remove</button></div>`).join(''):`<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">No students yet</div>`}</div>
-        <div class="roster-add"><input id="acStudent" placeholder="Type a name and press Enter" onkeydown="if(event.key==='Enter')acAddTyped()"><button class="btn ghost" onclick="acAddTyped()">Add</button></div>`
-      :`<select id="acCopy" aria-label="Copy from" onchange="acCopyFrom(this.value)"><option value="">Pick a class</option>${others.map(c=>`<option value="${c.id}" ${ac.copyFrom===c.id?'selected':''}>${esc(c.id===CLASS_ID?classTitle():c.name)}</option>`).join('')}</select>
-        <div class="roster-list">${ac.copied===null?`<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">Loading…</div>`:list.length?list.map(n=>`<div class="roster-item"><span>${esc(n)}</span></div>`).join(''):`<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">${ac.copyFrom?'No students in that class':'Pick a class to copy its students'}</div>`}</div>
-        <p class="hint">They are copied as new students of ${esc(ac.name)} - the other class doesn't change.</p>`}
-      <p class="acnum" id="acCount">${plural(list.length,'student')}</p>`;
-    card.innerHTML=head+body+foot(`<button class="btn dark" onclick="acNext()">Next</button>`);
-  } else {
-    const L=ac.limits==='same'?fs.limits:ac.own;
-    body=`<label class="radio"><input type="radio" name="aclim" ${ac.limits==='same'?'checked':''} onchange="ac.limits='same';acPaint()"><span>Same as ${esc(first)}<small>${limitsLine(fs.limits)}</small></span></label>
-      <label class="radio"><input type="radio" name="aclim" ${ac.limits==='own'?'checked':''} onchange="ac.limits='own';acPaint()"><span>Set different limits</span></label>
-      ${ac.limits==='own'?['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
-        <select aria-label="${RSN(k).label} minutes" onchange="ac.own.${k}.min=+this.value;acPaint()">${[1,2,3,5,7,10].map(m=>`<option ${ac.own[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
-        <select aria-label="${RSN(k).label} trips" onchange="ac.own.${k}.trips=+this.value;acPaint()">${[1,2,3,4,5].map(m=>`<option ${ac.own[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join(''):''}
-      <p class="acsum">${esc(ac.name)} · ${daysText(ac.days)} · ${hm(ac.start)}–${hm(ac.end)} · ${plural(acStudents().length,'student')} · ${ac.limits==='same'?`limits as ${esc(first)}`:limitsLine(L)}</p>`;
-    card.innerHTML=head+body+foot(`<button class="btn dark" onclick="acCreate()">Create ${esc(ac.name)}</button>`);
-  }
-}
-function acCreate(){
-  if(!ORG_ID||!fbDb) return toast('Adding a class needs your class to be connected first. Check the internet and try again.');
-  const fs=firstClassSettings();
-  const S=JSON.parse(JSON.stringify(fs));
-  S.limits=JSON.parse(JSON.stringify(ac.limits==='same'?fs.limits:ac.own));
-  S.schedule={usual:{start:ac.start,end:ac.end,breaks:ac.breaks.map(b=>({name:cleanName(b.name),start:b.start,end:b.end})).sort(byStart)},days:{},dates:{}};
-  S.classDays=ac.days.slice();
-  syncLegacyFields(S);
-  const name=ac.name, names=acStudents().slice();
-  writeClass(name,S,names);
-  closeAddClass(); paintProfile(); drawProfile();
-  toast(`${name} is ready. Open it when its class starts.`);
-}
-/* A new class and its students, in one batch. It does not open the class. */
-function writeClass(name,S,names){
-  const ref=orgRef().collection('classes').doc(), cid=ref.id, today=dayId(new Date());
-  const doc={name,teacherUid:fbUid||'',settingsOverride:overrideOf(S),status:'active'};
-  state.classes=[...(state.classes||[]),Object.assign({id:cid},doc)].sort(classOrder);
-  send(()=>{
-    const b=fbDb.batch();
-    b.set(ref,doc);
-    names.forEach((n,i)=>b.set(ref.collection('students').doc('s'+i),{name:n,active:true,order:i,enrolledFrom:today,enrolledUntil:null}));
-    return fsWrite(b.commit()).catch(()=>{});
-  });
-  return cid;
-}
-
-/* ===== Settings -> Schedule (4.0, per class) =====
-   The usual day, any weekday that differs, and one-off dates. Saving writes
-   the class's settings (writeSettings); if today's times changed while class
-   is running, today's day doc gets them too, so its report keeps the times it
-   really had. */
-const dayLine=d=>`${hm(d.start)}–${hm(d.end)}${(d.breaks||[]).length?' · '+d.breaks.slice().sort(byStart).map(b=>`${esc(b.name)} ${hm(b.start)}–${hm(b.end)}`).join(' · '):''}`;
-function scheduleSection(){
-  const S=state.settings, sc=scheduleOf(S), u=sc.usual, today=dayId(new Date());
-  const days=classDaysOf(S).map(n=>{
-    const d=sc.days[n], tag=d?(toMin(d.end)<toMin(u.end)?'Early dismissal':'Different'):'';
-    return `<div class="srow" data-day="${n}"><div class="sinfo"><b>${WEEKDAYS[n-1]}</b>${d?`<small>${dayLine(d)}</small>`:`<small class="grey">Usual day</small>`}</div>${tag?`<span class="stag">${tag}</span>`:''}<button class="btn ghost sedit" onclick="openDayEditor('day',${n})">Edit</button></div>`;
-  }).join('');
-  const dates=Object.keys(sc.dates).filter(id=>id>=today).sort().map(id=>{ const d=sc.dates[id];
-    return `<div class="srow" data-date="${id}"><div class="sinfo"><b>${shortDate(id)}</b><small>${d.note?esc(d.note)+' · ':''}${dayLine(d)}</small></div><span class="stag once">Once</span><button class="btn ghost sedit" onclick="openDayEditor('date','${id}')">Edit</button></div>`; }).join('');
-  return `<h4>Schedule</h4>
-   <div class="srow usual"><div class="sinfo"><b>Usual day</b><small>${dayLine(u)}</small></div><button class="btn ghost sedit" onclick="openDayEditor('usual')">Edit</button></div>
-   ${days}
-   <h4>Just one date</h4>
-   ${dates||'<p class="rnote" style="margin:0 0 8px">No one-off dates coming up.</p>'}
-   <button class="addbrk" onclick="openDayEditor('date')">+ Change one date</button>`;
-}
-let edit=null;
-brkModel.ed=()=>edit.draft.breaks;
-const copyDay=d=>({start:d.start,end:d.end,breaks:(d.breaks||[]).map(b=>({name:b.name,start:b.start,end:b.end})),note:d.note||''});
-function openDayEditor(kind,key){
-  closeDrawer();
-  const sc=scheduleOf(state.settings);
-  let own=null, base;
-  if(kind==='usual'){ own=sc.usual; base=sc.usual; }
-  else if(kind==='day'){ own=sc.days[key]||null; base=own||sc.usual; }
-  else { key=key||''; own=key?sc.dates[key]||null:null; base=own||(key?scheduleFor(key):sc.usual); }
-  edit={kind,key,own:!!own,same:kind==='day'&&!own,draft:copyDay(base),err:''};
-  paintDayEditor();
-}
-function editPickDate(id){
-  const sc=scheduleOf(state.settings); edit.key=id; edit.own=!!sc.dates[id];
-  edit.draft=copyDay(sc.dates[id]||(id?scheduleFor(id):sc.usual)); edit.err=''; paintDayEditor();
-}
-function paintDayEditor(){
-  const e=edit, d=e.draft, wd=e.kind==='day'?WEEKDAYS[e.key-1]:'';
-  const title=e.kind==='usual'?'Usual day':e.kind==='day'?wd:e.key?`${new Date(e.key+'T00:00:00').toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}`:'Change one date';
-  const sub=e.kind==='usual'?'The times every class day uses, unless a weekday or a date says otherwise.':e.kind==='day'?`Every ${wd}.`:'Just this one date. Its weekday and the usual day stay as they are.';
-  const times=`<div class="aclabel">Class times</div>
-    <div class="actimes"><input type="time" aria-label="Class starts" value="${d.start}" oninput="edit.draft.start=this.value"><span>to</span><input type="time" aria-label="Class ends" value="${d.end}" oninput="edit.draft.end=this.value"></div>
-    <div class="aclabel">Whole-class breaks</div>${breakRows('ed')}
-    ${e.kind==='date'?`<div class="aclabel">Note (optional)</div><div class="note" style="margin-top:0"><input aria-label="Note" value="${esc(d.note)}" placeholder="e.g. Parent meetings - early dismissal" oninput="edit.draft.note=this.value"></div>`:''}`;
-  sheetHTML(esc(title),sub,`<div class="body sched">
-    ${e.kind==='date'?`<div class="aclabel" style="margin-top:0">Date</div><input type="date" class="dpick" aria-label="Date" value="${e.key}" onchange="editPickDate(this.value)">`:''}
-    ${e.kind==='day'?`<div class="seg acseg"><button class="${e.same?'on':''}" onclick="edit.same=true;paintDayEditor()">Same as the usual day</button><button class="${e.same?'':'on'}" onclick="edit.same=false;paintDayEditor()">Different on ${wd}s</button></div>`:''}
-    ${e.kind==='day'&&e.same?`<p class="rnote" style="margin-top:10px">${wd}s use the usual day: ${dayLine(scheduleOf(state.settings).usual)}.</p>`:times}
-    <p class="err" id="edErr">${e.err||''}</p></div>
-    <div class="actions">${e.kind==='date'&&e.own?`<button class="btn ghost" onclick="removeDate()">Remove this date</button>`:''}<button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="saveDayEditor()">Save</button></div>`);
-}
-function saveSchedule(mutate){
-  const S=JSON.parse(JSON.stringify(state.settings)), sc=scheduleOf(S);
-  S.schedule={usual:sc.usual,days:Object.assign({},sc.days),dates:Object.assign({},sc.dates)};
-  mutate(S.schedule);
-  const before=JSON.stringify(scheduleFor(new Date()));
-  state.settings=S; writeSettings(true);
-  const s=st();
-  if((s==='live'||s==='lunch')&&JSON.stringify(scheduleFor(new Date()))!==before) writeDay({schedule:state.daySchedule=daySchedulePlain()});
-  closeSheet(); fitHeader.key=null; render(); drawSettings();
-}
-function saveDayEditor(){
-  const e=edit;
-  if(e.kind==='date'&&!e.key){ e.err='Pick a date.'; return paintDayEditor(); }
-  if(e.kind==='day'&&e.same){ saveSchedule(sc=>{ delete sc.days[e.key]; }); return toast(`${WEEKDAYS[e.key-1]}s use the usual day`); }
-  const d={start:e.draft.start,end:e.draft.end,breaks:e.draft.breaks.map(b=>({name:cleanName(b.name),start:b.start,end:b.end})).sort(byStart)};
-  const err=validateDay(d); if(err){ e.err=err; return paintDayEditor(); }
-  if(e.kind==='date'&&cleanName(e.draft.note)) d.note=cleanName(e.draft.note);
-  saveSchedule(sc=>{ if(e.kind==='usual') sc.usual=d; else if(e.kind==='day') sc.days[e.key]=d; else sc.dates[e.key]=d; });
-  toast('Schedule saved');
-}
-function removeDate(){ const id=edit.key; saveSchedule(sc=>{ delete sc.dates[id]; }); toast(`${shortDate(id)} uses its usual times again`); }
 
 /* ===== tabs along the bottom (3.8) =====
    Log is today's class and is where the app always opens. Reports, Roster and
@@ -2974,31 +2316,15 @@ function showTab(t){
   if(t==='reports') drawReports();
   if(t==='roster') drawRoster();
   if(t==='settings') drawSettings();
-  if(t==='profile') drawProfile();
   updateLogBadge();
 }
-/* Coming back, the bar grows from nothing to its full height, and the grid
-   shrinks with it. The tiles were sized for the bigger grid, so for the length
-   of the slide the bottom row sat under the bar (the refit used to wait a
-   fixed 260ms). Now they are sized for the space they will have once the bar
-   is up, in the same frame the slide starts. Going away, the grid only grows,
-   so nothing can be covered; the corner handle appears once the bar has gone,
-   and the tiles grow into the space then. Either way the final fit runs when
-   the slide really ends (transitionend), with a timer only as a fallback. */
 function setTabsHidden(hide){
-  const app=document.querySelector('.app'), bar=$('tabbar');
+  document.querySelector('.app').classList.toggle('tabs-hidden',hide);
   Store.set(TABS_HIDDEN_KEY,hide?'1':'0');
-  app.classList.remove('handle-on');
-  app.classList.toggle('tabs-hidden',hide);
-  if(!hide&&TAB==='log') fitGrid($('barProbe').offsetHeight);
-  const finish=()=>{
-    if(finish.done) return; finish.done=true; bar.removeEventListener('transitionend',onEnd); clearTimeout(t);
-    if(hide) app.classList.add('handle-on');
-    fitHeader.key=null; fitHeader(); fitGrid(); if(TAB==='reports') paintReports();
-  };
-  const onEnd=e=>{ if(e.target===bar&&e.propertyName==='height') finish(); };
-  bar.addEventListener('transitionend',onEnd);
-  const t=setTimeout(finish,matchMedia('(prefers-reduced-motion:reduce)').matches?0:700);
+  // the tiles grow into the freed space, or shrink back - now, and again once
+  // the bar has finished sliding (fitGrid measures the grid as it is)
+  const refit=()=>{ fitHeader.key=null; fitHeader(); fitGrid(); if(TAB==='reports') paintReports(); };
+  refit(); setTimeout(refit,260);
 }
 /* Who is out, on the Log tab's icon, while the teacher is looking at another
    tab. Gold; red once anyone is past their limit. Runs every second from
@@ -3020,7 +2346,7 @@ function keepClearOfHandle(){
   for(const [id,pad] of [['grid',10],['outList',12]]){
     const el=$(id); if(!el) continue;
     el.style.paddingBottom='';
-    if(!document.querySelector('.app').classList.contains('handle-on')) continue;
+    if(!document.querySelector('.app').classList.contains('tabs-hidden')) continue;
     const r=el.getBoundingClientRect(), hr=h.getBoundingClientRect();
     if(!r.width||!hr.width) continue;
     const overlapX=hr.left<r.right&&hr.right>r.left;
@@ -3034,16 +2360,27 @@ function editingIn(id){ const a=document.activeElement; return !!(a&&$(id)&&$(id
 function drawSettings(){
   const v=$('viewSettings'); if(!v) return;
   const set=state.settings, re='writeSettings();render();drawSettings()';
+  const pair=(label,note,a,b)=>`<div class="field"><div>${label}<small>${note}</small></div><span class="two"><input type="time" aria-label="${label} from" value="${a[1]}" onchange="${a[0]}=this.value;${re}"><input type="time" aria-label="${label} to" value="${b[1]}" onchange="${b[0]}=this.value;${re}"></span></div>`;
   v.innerHTML=`<div class="vsec">
-   <div class="vhead"><h2>Settings</h2>${classPill()}</div>
-   ${scheduleSection()}
+   <div class="vhead"><h2>Settings</h2></div>
+   ${isGoogleUser()?'':`<button class="dbtn gold" onclick="signInToKeepClass()">Sign in with Google<small>Keeps this class on your Google account, safe and on every device you use</small></button>`}
+   <h4>School day</h4>
+   ${pair('Class hours','Monday to Friday',['state.settings.startTime',set.startTime],['state.settings.endTime',set.endTime])}
+   ${pair('Snack break','School-wide',['state.settings.snack.start',set.snack.start],['state.settings.snack.end',set.snack.end])}
+   ${pair('Lunch and recess','School-wide',['state.settings.lunch.start',set.lunch.start],['state.settings.lunch.end',set.lunch.end])}
    <h4>Break limits</h4>
    ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
      <select aria-label="${RSN(k).label} minutes" onchange="state.settings.limits.${k}.min=+this.value;${re}">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
      <select aria-label="${RSN(k).label} trips" onchange="state.settings.limits.${k}.trips=+this.value;${re}">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
+   <h4>Sign-in and sync</h4>
+   <button class="dbtn" onclick="openSyncInfo()">${isGoogleUser()?`Signed in as ${myEmail()}<small>${syncStatusLabel()}</small>`:ORG_ID?`Not signed in with Google<small>${syncStatusLabel()}</small>`:`Not synced yet<small>${syncStatusLabel()}</small>`}</button>
+   <h4>Backup</h4>
+   ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
+     :`<button class="dbtn" onclick="backupAll()">Download a backup<small>Every day this class has recorded, saved as a file</small></button>`}
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
+   <small class="ver">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>
   </div>`;
 }
 
@@ -3077,7 +2414,7 @@ function paintRoster(){
   };
   const gone=state.students.filter(x=>!x.active);
   v.innerHTML=`<div class="vsec">
-   <div class="vhead"><h2>Roster</h2>${classPill()}</div>
+   <div class="vhead"><h2>Roster</h2></div>
    <p class="rnote">Numbers are for this week, ${rangeText(r.start,r.end)}${R?` · ${plural(R.classDays,'class day')}`:''}. Tap a student for their report.</p>
    <div class="rlist">${roster().map((x,i)=>`<div class="rs" role="button" tabindex="0" onclick="openStudentReport('${x.id}')"><span class="rn">${i+1}</span><b class="nm">${x.name}</b><span class="wk">${week(x.id)}</span><button class="rm" onclick="event.stopPropagation();archiveStudent('${x.id}')">Remove</button></div>`).join('')
      ||'<div class="empty"><b>No students yet</b>Add your first student below.</div>'}</div>
@@ -3100,11 +2437,10 @@ function render(){
   $('clock').textContent=clockStr(now); $('date').textContent=dateStr(now);
   const outs=Object.keys(state.active).length, abs=list.filter(x=>['absent','left'].includes(att(x.id).status)).length;   // "Not here" is a live count of who is not in the room, whichever way they got there
   $('cIn').textContent=list.length-outs-abs; $('cOut').textContent=outs; $('cAbs').textContent=abs;
-  $('title').textContent = classTitle();
+  $('title').textContent = state.teacher ? `${state.teacher}'s Hifz Class` : 'Hifz Class';
   const nx=nextUp();
-  const today=scheduleFor(now);
-  $('sub').textContent= s==='preclass'?`Before class · ${hm(today.start)}-${hm(today.end)}`
-    : s==='live'?`Since ${clockStr(state.session.startedAt)}${nx?` · ${nx}`:''}`
+  $('sub').textContent= s==='preclass'?`Before class · ${hm(state.settings.startTime)}-${hm(state.settings.endTime)}`
+    : s==='live'?`Since ${clockStr(state.session.startedAt)}${nx?` · next ${nx}`:''}`
     : s==='lunch'?`${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}`
     : `Ended ${clockStr(state.session.endedAt)}`;
 
@@ -3113,11 +2449,10 @@ function render(){
 
   const due=s==='live'?dueBreak():null; render.nudge=due?due.kind:'';
   const late=state.session.resumeAt&&nowMin()>=toMin(state.session.resumeAt);
-  const diff=dayDifference();
-  $('banner').innerHTML= (diff?`<div class="banner leaf" id="dayDiff">${diff}</div>`:'')+(s==='preclass'?`<div class="banner paper">Everyone is assumed present. Click a student who is not here to mark them absent. Once class starts, clicking a marked student records them tardy with the time.</div>`
-    : due?`<div class="banner">${esc(due.kind)} is scheduled now, ${hm(due.start)} to ${hm(due.end)}. Individual break logging pauses while it runs.<button class="act" onclick="startDueBreak()">Start ${esc(breakWord(due.kind))}</button></div>`
-    : s==='lunch'?`<div class="banner${late?'':''}">${esc(state.session.pauseLabel||'Break')} since ${clockStr(state.session.lunchAt)}.${state.session.resumeAt?` ${late?'Class was due back at':'Class resumes at'} ${hm(state.session.resumeAt)}.`:''} Individual break logging is paused.<button class="act" onclick="endPause()">End ${esc(breakWord(state.session.pauseLabel||'break'))}</button></div>`
-    : s==='ended'?`<div class="banner leaf">Class ended at ${clockStr(state.session.endedAt)}.<button class="act" onclick="openDaySummary()">View day summary</button><button class="act" style="margin-left:8px;background:var(--paper);color:var(--ink);border:1px solid var(--line)" onclick="resetDay()">Reset day</button></div>`:'');
+  $('banner').innerHTML= s==='preclass'?`<div class="banner paper">Everyone is assumed present. Click a student who is not here to mark them absent. Once class starts, clicking a marked student records them tardy with the time.</div>`
+    : due?`<div class="banner">${due.kind} is scheduled now, ${hm(due.start)} to ${hm(due.end)}. Individual break logging pauses while it runs.<button class="act" onclick="startPause('${due.kind}','${due.end}')">Start ${due.kind.toLowerCase()}</button></div>`
+    : s==='lunch'?`<div class="banner${late?'':''}">${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}.${state.session.resumeAt?` ${late?'Class was due back at':'Class resumes at'} ${hm(state.session.resumeAt)}.`:''} Individual break logging is paused.<button class="act" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button></div>`
+    : s==='ended'?`<div class="banner leaf">Class ended at ${clockStr(state.session.endedAt)}.<button class="act" onclick="openDaySummary()">View day summary</button><button class="act" style="margin-left:8px;background:var(--paper);color:var(--ink);border:1px solid var(--line)" onclick="resetDay()">Reset day</button></div>`:'';
 
   $('gridTitle').textContent= s==='preclass'?'Mark anyone who is absent':'Class';
   $('gridHint').textContent= s==='preclass'?'Tap a name to mark them not here':'Tap a student to log a break · tap again when they are back';
@@ -3150,8 +2485,7 @@ function render(){
   if($('drawer').classList.contains('show')) drawDrawer();
   if(TAB==='roster') paintRoster();
   if(TAB==='settings'&&!editingIn('viewSettings')) drawSettings();
-  if(TAB==='profile'&&!editingIn('viewProfile')) paintProfile();
-  updateLogBadge(); paintInitials();
+  updateLogBadge();
   tick(); cacheLastClass();
 }
 /* Local-only instant-paint cache (plan 2.9) - never a source of truth, just
@@ -3165,8 +2499,8 @@ function cacheLastClass(){
   // empty class with no sign-in screen.
   if(!state.setup) return;
   try{
-    Store.set(cacheKey(CLASS_ID),JSON.stringify({
-      day:dayId(new Date()), className:state.className||'',
+    Store.set(CACHE_KEY,JSON.stringify({
+      day:dayId(new Date()),
       teacher:state.teacher, students:state.students, settings:state.settings,
       session:sessionToPlain(state.session), attendance:fullAttendancePlain(),
       active:Object.fromEntries(Object.entries(state.active).map(([sid,a])=>[sid,Object.assign({},a,{startAt:+a.startAt})])),
@@ -3176,9 +2510,8 @@ function cacheLastClass(){
 }
 function loadFromCache(){
   try{
-    const raw=Store.get(cacheKey(CLASS_ID)); if(!raw) return false;
+    const raw=Store.get(CACHE_KEY); if(!raw) return false;
     const c=JSON.parse(raw);
-    if(c.className) state.className=c.className;
     // an empty board cached by the sign-in screen (before the fix above) is not a class
     if(!(Array.isArray(c.students)&&c.students.length)&&!Store.get(SESSION_ORG_KEY)) return false;
     if(c.teacher) state.teacher=c.teacher;
@@ -3219,22 +2552,20 @@ function resetLocalDayState(){
   held=[];                                                  // unsent changes were for the day that just ended
   state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
   state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''});
-  state.active={}; state.breaks=[]; state.log=[]; state.daySchedule=null;
+  state.active={}; state.breaks=[]; state.log=[];
 }
 /* Picks the grid shape that makes the whole roster fit the space this device
    actually has. Depends on both the box and the class size, so it cannot be
    expressed in CSS alone - 11 students and 25 students want different tiles on
    the same screen. Falls back to the densest legible layout (and scrolling)
    only when a roster genuinely cannot fit. */
-/* reserve: height the grid is about to lose (the tab bar coming back), so the
-   tiles are fitted to where the grid will end up rather than where it is. */
-function fitGrid(reserve){
+function fitGrid(){
   const g=$('grid'); if(!g||TAB!=='log') return;
   keepClearOfHandle();
   const n=roster().length; if(!n) return;
   const cs=getComputedStyle(g), GAP=8, MINW=96, MINH=56;
   const W=g.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
-  const H=g.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-(reserve||0);
+  const H=g.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
   if(W<=0||H<=0) return;                                    // not laid out yet
   let best=null;
   for(let cols=1;cols<=n;cols++){
@@ -3281,9 +2612,10 @@ function fitGrid(reserve){
    mid-lesson and the whole roster would jump. */
 function fitHeader(){
   const top=document.querySelector('.top'), h1=$('title'), sub=$('sub'); if(!top||!h1||!sub||TAB!=='log') return;
-  const sc=scheduleFor(new Date()), late='12:59 PM';        // the widest time a clock can show
-  const longest=[`Before class · ${hm(sc.start)}-${hm(sc.end)}`, `Since ${late} · ends ${hm(sc.end)}`,
-    ...sc.breaks.map(b=>`Since ${late} · next ${shortBreak(b.name)} ${hm(b.start)}`), ...sc.breaks.map(b=>`${b.name} since ${late}`)];
+  const S=state.settings, late='12:59 PM';                  // the widest time a clock can show
+  const longest=[`Before class · ${hm(S.startTime)}-${hm(S.endTime)}`, `Since ${late} · next snack ${hm(S.snack.start)}`,
+    `Since ${late} · next lunch ${hm(S.lunch.start)}`, `Since ${late} · next ends ${hm(S.endTime)}`,
+    `Lunch and recess since ${late}`, `Snack break since ${late}`];
   const key=`${h1.textContent}|${innerWidth}x${innerHeight}|${longest.join('|')}`;
   if(fitHeader.key===key) return; fitHeader.key=key;
   const upright=innerHeight>innerWidth && innerWidth<=860;
@@ -3336,9 +2668,7 @@ function tick(){
   const failsafe=setTimeout(reveal,3000);
   try{
     await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY]);
-    if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');
-    CLASS_ID=Store.get(SESSION_CLASS_KEY)||'default';
-    if(CLASS_ID!=='default') await Store.hydrate([cacheKey(CLASS_ID)]);
+    document.querySelector('.app').classList.toggle('tabs-hidden',Store.get(TABS_HIDDEN_KEY)==='1');
     if(!loadFromCache()){ loadProfile(); load(); DAY_STATE_ID=dayId(new Date()); }
     render();
   } finally { clearTimeout(failsafe); reveal(); }

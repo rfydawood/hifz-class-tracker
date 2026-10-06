@@ -117,7 +117,6 @@ test('Roster: add, remove and put back a student, with each saved to the class',
   await expect.poll(() => readAs(page, `orgs/${code}/classes/default/students/${zayd}`).then(d => d && d.active), { timeout: 10000 }).toBe(true);
 
   await rows.filter({ hasText: 'Bilal' }).getByRole('button', { name: 'Remove' }).click();
-  await page.locator('.sheet').getByRole('button', { name: 'Remove', exact: true }).click();   // 4.0: Remove asks first
   await expect(rows).toHaveCount(3);
   await expect(page.locator('#viewRoster .rs.gone', { hasText: 'Bilal' })).toBeVisible();
   const bilal = await page.evaluate(() => state.students.find(s => s.name === 'Bilal').id);
@@ -144,12 +143,8 @@ test('Settings: a change is saved to the class and is still there after a reload
   const code = await newClass(page);
   await openTab(page, 'settings');
   await page.getByLabel('Washroom minutes').selectOption('3');
-  // 4.0: the snack time is edited in Settings -> Schedule -> Usual day
-  await page.locator('.srow.usual').getByRole('button', { name: 'Edit' }).click();
-  const snack = page.locator('.sheet .brow2', { has: page.locator('input.bname[value="Snack"]') }).locator('input[type=time]');
-  await snack.nth(0).fill('10:30');
-  await snack.nth(1).fill('10:40');
-  await page.locator('.sheet').getByRole('button', { name: 'Save' }).click();
+  await page.getByLabel('Snack break from').fill('10:30');
+  await page.getByLabel('Snack break from').dispatchEvent('change');
   await expect.poll(() => readAs(page, `orgs/${code}`).then(d => d.defaults.limits.washroom.min), { timeout: 10000 }).toBe(3);
   await expect.poll(() => readAs(page, `orgs/${code}`).then(d => d.defaults.snack.start), { timeout: 10000 }).toBe('10:30');
 
@@ -157,5 +152,5 @@ test('Settings: a change is saved to the class and is still there after a reload
   await expect(tileFor(page, 'Amina')).toBeVisible({ timeout: 15000 });
   await openTab(page, 'settings');
   await expect(page.getByLabel('Washroom minutes')).toHaveValue('3');
-  await expect(page.locator('.srow.usual')).toContainText('Snack 10:30 AM');
+  await expect(page.getByLabel('Snack break from')).toHaveValue('10:30');
 });

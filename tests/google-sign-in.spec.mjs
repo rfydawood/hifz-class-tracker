@@ -25,8 +25,8 @@ const breaksOf = (page, code, day) => page.evaluate(async ([code, day]) => {
 }, [code, day]);
 
 async function linkFromMenu(page) {
-  await openTab(page, 'profile');
-  await page.locator('#viewProfile .dbtn.gold', { hasText: 'Sign in with Google' }).click();
+  await openTab(page, 'settings');
+  await page.locator('#viewSettings .dbtn.gold', { hasText: 'Sign in with Google' }).click();
   await openTab(page, 'log');
 }
 
@@ -56,8 +56,8 @@ test('linking the anonymous tablet to Google keeps the uid, membership, teacher,
   // still runs the class
   await returnFromBreak(page, 'Bilal');
   await expect(tileFor(page, 'Bilal')).not.toHaveClass(/out/);
-  await openTab(page, 'profile');
-  await expect(page.locator('#viewProfile')).toContainText(`Signed in as ${email}`);
+  await openTab(page, 'settings');
+  await expect(page.locator('#viewSettings')).toContainText(`Signed in as ${email}`);
 
   // a second device signing in with that account lands in the same class
   const ctxB = await browser.newContext(); const b = await ctxB.newPage();
@@ -146,11 +146,11 @@ test('a new user signs in, gets a personal class, and finds it again after signi
   expect(await readAs(page, `orgs/${code}/members/${uid}`)).toMatchObject({ email, roles: ['admin', 'teacher'] });
   expect((await readAs(page, `users/${uid}`)).orgIds).toEqual([code]);
 
-  await openTab(page, 'profile');
+  await openTab(page, 'settings');
   await page.locator('.dbtn', { hasText: `Signed in as ${email}` }).click();
-  await page.locator('.sheet').getByRole('button', { name: 'Sign out' }).click();    // 4.0: Profile has its own Sign out too
+  await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.locator('.sheet h3')).toHaveText('Sign out on this device?');
-  await page.locator('.sheet').getByRole('button', { name: 'Sign out' }).click();
+  await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.locator('#signin.show')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('.tile')).toHaveCount(0);
 
