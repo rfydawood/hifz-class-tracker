@@ -8,8 +8,9 @@ reconcile: the decisions below replace Part B's "each teacher creates their
 own class" model.
 
 Mockups (private to the owner): https://claude.ai/artifact/Rc89p5V3xdzemGpqjLCwbN
-They show the earlier version of this flow; update them to match these notes
-before building.
+Redrawn on 2026-10-08 to match these notes (17 screens: sign-in with email
+link, programs, admin-made classes with the per-class switch, Share invite,
+"Can see" in People, My classes grouped by organization).
 
 ## Words
 
