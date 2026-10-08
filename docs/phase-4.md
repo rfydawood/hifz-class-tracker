@@ -255,6 +255,10 @@ Notes for the Part B session:
 
 ### Part B status - built, then parked (2026-10-03)
 
+**Newer decisions (2026-10-08) are in `docs/organizations.md`** - organizations
+(not "school"), admin-created classes, programs, one person in several
+organizations. Read that first; it replaces parts of the plan below.
+
 Built and tested in full (`npm run test:rules` 42/42, `npm run test:e2e`
 64/64, and the non-school tests also green on the Part A rules), then parked
 the same day: the owner is holding off on admin mode and keeps building on
