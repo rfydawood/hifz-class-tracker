@@ -493,3 +493,46 @@ test('in a shared (non-personal) org only the class\'s own teacher runs the clas
   const settings = testEnv.authenticatedContext('uidT').firestore().collection('orgs').doc(ORG_ID);
   await assertFails(settings.set({ defaults: { startTime: '07:00' } }, { merge: true }));   // teacher can't write org defaults
 });
+
+// ---- 4.0: more than one class in a personal org ("My classes") ----
+
+test('4.0: the owner of a personal org adds a second class and runs it - students, days with their schedule, breaks', async () => {
+  await seedOrgWithMember('uidA');
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const cls = db.collection('orgs').doc(ORG_ID).collection('classes').doc('c2');
+  const schedule = { start: '08:00', end: '13:30', breaks: [{ name: "Jumu'ah", start: '12:30', end: '13:00' }] };
+  const batch = db.batch();
+  batch.set(cls, classDoc({ name: 'Period 5', teacherUid: 'uidA', settingsOverride: { schedule: { usual: schedule, days: {}, dates: {} }, classDays: [1, 2, 3, 4, 5] } }));
+  batch.set(cls.collection('students').doc('s0'), { name: 'Student A', active: true, order: 0, enrolledFrom: '2026-10-05', enrolledUntil: null });
+  await assertSucceeds(batch.commit());
+  await assertSucceeds(cls.collection('days').doc('2026-10-05').set({
+    date: '2026-10-05', yearId: '2026-2027', schedule,
+    session: { status: 'live', startedAt: 1, endedAt: null, lunchAt: null, pauseLabel: null, resumeAt: null },
+    attendance: {}, roster: { s0: 'Student A' }, updatedAt: null,
+  }));
+  await assertSucceeds(cls.collection('days').doc('2026-10-05').collection('breaks').doc('b1').set({
+    sid: 's0', reason: 'water', startAt: 1, endAt: 2, dur: 1, over: 0, flag: false, overTrip: false, assignedMin: 2,
+  }));
+  await assertSucceeds(cls.update({ name: 'Period 6' }));                      // rename
+  await assertSucceeds(cls.update({ status: 'archived' }));                   // archive - never a delete
+  await assertFails(cls.delete());
+  // the first class's day accepts a schedule too
+  await assertSucceeds(db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('days').doc('2026-10-05')
+    .set({ date: '2026-10-05', yearId: '2026-2027', schedule, attendance: {}, roster: {} }));
+});
+
+test('4.0: a non-member can neither add a class nor write its students, days (with schedule) or breaks', async () => {
+  await seedOrgWithMember('uidA');
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).collection('classes').doc('c2').set(classDoc({ name: 'Period 5', teacherUid: 'uidA' }));
+  });
+  const db = testEnv.authenticatedContext('uidX', { email: 'x@example.com', email_verified: true }).firestore();
+  const org = db.collection('orgs').doc(ORG_ID);
+  await assertFails(org.collection('classes').doc('c3').set(classDoc({ name: 'Mine now', teacherUid: 'uidX' })));
+  await assertFails(org.collection('classes').doc('c2').update({ name: 'Renamed' }));
+  await assertFails(org.collection('classes').doc('c2').collection('students').doc('s0').set({ name: 'X', active: true, order: 0, enrolledFrom: '2026-10-05', enrolledUntil: null }));
+  await assertFails(org.collection('classes').doc('c2').collection('days').doc('2026-10-05').set({ date: '2026-10-05', schedule: { start: '08:00', end: '09:00', breaks: [] } }));
+  await assertFails(org.collection('classes').doc('c2').collection('days').doc('2026-10-05').collection('breaks').doc('b1').set({ sid: 's0', reason: 'water', startAt: 1, endAt: 2, dur: 1, over: 0, flag: false, overTrip: false, assignedMin: null }));
+  await assertFails(org.collection('classes').doc('c2').get());
+  await assertFails(org.collection('classes').get());
+});
