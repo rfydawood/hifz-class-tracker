@@ -72,6 +72,11 @@ back, revert 3a9a65c on a new branch and follow "Part B status" in
 
 ## Working conventions established so far
 
+- **Fresh backup before risky updates only.** Before starting an update, require a backup - a `hifz-backup-*.json` saved in the last 24 hours in `C:\Users\Rafaye\Downloads` - only if the update:
+  - changes `firestore.rules`,
+  - changes how data is stored or read (Firestore paths or fields, the writer functions, listeners, settings merging, caches/Store keys, migration, backup/restore), or
+  - can delete data.
+  If one is required and none is there, stop before changing anything and ask the owner to download one from the website (Profile → Backup → Download a backup). Never commit that file or any name from it. For an update that only changes screens, wording or layout, skip the check, and say in the final summary that no backup was needed (and why).
 - **Always push to GitHub yourself after any change, without being asked.** The user is non-technical and explicitly said they'll forget to ask and will assume local edits are already live. Every change = commit + push + trigger a Pages rebuild + confirm it's actually live (see the `gh api ... pages/builds` step above) — never leave a change sitting local-only, and never wait for the user to say "push it."
 - Git commits end with `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>` — match existing `git log` style.
 - **As of Phase 2, Firestore is the source of truth, not localStorage.** A device's class lives in the cloud from the moment it's set up (see the Firebase project note above); localStorage/Preferences only hold a durable session pointer and an instant-paint cache. Don't reintroduce a local mirror that competes with Firestore, and don't add a Firestore write inside `render()` or `tick()` — every write goes through a named writer function, on a real user action.
