@@ -60,6 +60,17 @@ service cloud.firestore {
             || getAfter(orgPath(orgId)).data.kind == 'personal');
     }
 
+    // 4.0.1 "Delete forever": the one real delete. Only the org's admin, and
+    // only a class that is archived - read from the class doc as it stands,
+    // which is why the app deletes everything under it first and the class
+    // doc last. (That the first class is never deleted while it is the only
+    // class is checked in the app: rules can't count a collection. In the app
+    // it also can't happen - archiving needs another class open.)
+    function deletesArchivedClass(orgId, classId) {
+      return isAdmin(orgId) && exists(classPath(orgId, classId))
+        && get(classPath(orgId, classId)).data.status == 'archived';
+    }
+
     // ---- users/{uid}: where a signed-in account finds its classes ----
     // Only a pointer - listing an org here grants nothing; the org's own
     // rules decide access.
@@ -180,7 +191,7 @@ service cloud.firestore {
           && request.resource.data.teacherUid is string
           && request.resource.data.status in ['active','archived'];
 
-        allow delete: if false;
+        allow delete: if deletesArchivedClass(orgId, classId);
 
         // ---- .../students/{studentId} - the roster ----
         match /students/{studentId} {
@@ -189,7 +200,7 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['name','active','order','enrolledFrom','enrolledUntil'])
             && request.resource.data.name is string && request.resource.data.name.size() < 200
             && request.resource.data.active is bool;
-          allow delete: if false;
+          allow delete: if deletesArchivedClass(orgId, classId);
         }
 
         // ---- .../days/{date} - session and attendance ----
@@ -199,7 +210,7 @@ service cloud.firestore {
           allow create, update: if runsClassAfter(orgId, classId)
             && request.resource.data.keys().hasOnly(['date','yearId','session','attendance','roster','summary','schedule','updatedAt'])
             && request.resource.data.date is string;
-          allow delete: if false;
+          allow delete: if deletesArchivedClass(orgId, classId);
 
           // ---- .../days/{date}/breaks/{breakId} ----
           match /breaks/{breakId} {
@@ -212,7 +223,7 @@ service cloud.firestore {
             // mistake (deleteLoggedBreak(), or Reset day - both behind a
             // confirmation). These are the exception to "nothing is ever
             // deleted" (plan 9), which is about records, not typos.
-            allow delete: if runsClassAfter(orgId, classId);
+            allow delete: if runsClassAfter(orgId, classId) || deletesArchivedClass(orgId, classId);
           }
         }
       }

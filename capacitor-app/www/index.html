@@ -536,6 +536,35 @@ input,select{font:inherit;color:inherit}
 .sched .dpick{width:180px}
 .sched .acseg{margin-top:4px}
 .sched .err{min-height:0}
+
+/* ===== 4.0.1: a short screen (the keyboard up, sideways) =====
+   With the keyboard showing, a sideways tablet has ~230px. The sheet used to
+   keep its title and Cancel/Save fixed and squeeze the body to nothing. Now
+   the whole sheet scrolls as one, so the box being typed in can be scrolled
+   into view (keepVisible), and Cancel/Save stay pinned at the bottom. */
+@media (max-height:420px){
+  .scrim{padding:6px 10px;align-items:flex-start}
+  .sheet{overflow-y:auto;padding:10px 16px 0;border-radius:14px}
+  .sheet .body{flex:none;overflow:visible;min-height:auto;margin-top:8px}
+  .sheet-head{align-items:center}
+  .sheet h3{font-size:17px}
+  .sheet p{font-size:13px;margin-top:2px}
+  .sheet .x{width:34px;height:34px}
+  .sheet .actions{position:sticky;bottom:0;z-index:2;background:var(--card);margin-top:8px;padding:8px 0 10px}
+  .sheet .actions .btn{padding:10px 12px;font-size:15px}
+}
+/* Break limits: the same − / + stepper as starting a break, a size smaller */
+.lsteps{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.lstep{display:inline-flex;align-items:center;gap:6px}
+.lstep .step-btn{width:40px;height:40px;border-radius:12px;font-size:24px}
+.lstep b{min-width:76px;text-align:center;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.field.lim{flex-wrap:wrap;row-gap:8px}
+/* Delete forever */
+.dcheck{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid #E4B4A6;background:var(--ember-soft);border-radius:12px;font-weight:700;font-size:15px;cursor:pointer}
+.dcheck input{width:20px;height:20px;margin-top:1px;accent-color:var(--ember);flex:none}
+.btn.warn:disabled{opacity:.45;cursor:not-allowed}
+.ccard .cbtns{display:flex;gap:6px;flex:none}
+.ccard .cdel{color:var(--ember);border-color:#E4B4A6}
 </style>
 </head>
 <body>
@@ -620,7 +649,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.0",APP_BUILD="d51af77547",APP_BUILD_TIME="2026-10-06T04:18:14.782Z";
+/*BUILD_STAMP*/const APP_VERSION="4.0.1",APP_BUILD="128d0f9eb4",APP_BUILD_TIME="2026-10-08T03:44:55.509Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -667,6 +696,12 @@ const nameOf=sid=>(state.students.find(s=>s.id===sid)||{}).name||'';
 const roster=()=>state.students.filter(s=>s.active);            // kept in the teacher's roll order
 const RSN=k=>REASONS.find(r=>r.key===k)||{key:k,label:k};
 const LIMIT=k=>state.settings.limits[k]||null;
+/* Trips per day: 1-10, or "No limit". No limit is stored as 99 trips rather
+   than 0 or null, so an older version of the app on another device - which
+   compares trips used against the number - never flags a trip for it. */
+const NO_TRIP_LIMIT=99;
+const tripCap=lim=>lim&&lim.trips>0&&lim.trips<NO_TRIP_LIMIT?lim.trips:0;     // 0 = no cap
+const tripsText=lim=>tripCap(lim)?`${lim.trips}/day`:'No limit';
 /* How long one trip is allowed. Every trip now carries its own minutes
    (assignedMin - the stepper's number, for every break type), and that field
    is saved with the break. allowMs itself is NOT saved - the rules only allow
@@ -1271,9 +1306,9 @@ async function attachListeners(){
   },()=>{ syncStatus='error'; render(); });
   unsubClass=cls.onSnapshot(snap=>{
     if(snap.metadata.hasPendingWrites) return;
-    if(!snap.exists){ if(!snap.metadata.fromCache&&CLASS_ID!=='default') switchClass('default',{quiet:true}); return; }
+    if(!snap.exists){ if(!snap.metadata.fromCache) openFallbackClass(); return; }
     const d=snap.data();
-    if(d.status==='archived'&&CLASS_ID!=='default') return switchClass('default',{quiet:true});
+    if(d.status==='archived') return openFallbackClass();
     state.className=d.name||''; classOverride=d.settingsOverride||null; classSeen=true;
     state.settings=computeSettings();
     render();
@@ -1777,11 +1812,11 @@ function recountTrips(sid,reason){
   const lim=LIMIT(reason);
   const list=state.breaks.filter(b=>b.sid===sid&&b.reason===reason).sort((x,y)=>x.startAt-y.startAt);
   list.forEach((b,i)=>{
-    const ot=!!(lim&&i>=lim.trips), fl=(b.over||0)>0||ot;
+    const ot=!!(tripCap(lim)&&i>=tripCap(lim)), fl=(b.over||0)>0||ot;
     if(ot!==!!b.overTrip||fl!==!!b.flag){ b.overTrip=ot; b.flag=fl; writeBreakEnd(b); }
   });
   const o=state.active[sid];
-  if(o&&o.reason===reason){ const ot=!!(lim&&list.length>=lim.trips); if(ot!==!!o.overTrip){ o.overTrip=ot; writeBreakStart(sid); } }
+  if(o&&o.reason===reason){ const ot=!!(tripCap(lim)&&list.length>=tripCap(lim)); if(ot!==!!o.overTrip){ o.overTrip=ot; writeBreakStart(sid); } }
 }
 function cancelBreak(sid){
   confirmSheet(`Cancel ${nameOf(sid)}'s break for ${state.active[sid].label}?`,'The break will be removed and not recorded.','Delete break',()=>{
@@ -1828,7 +1863,7 @@ function markLeft(sid){
   state.lastAction={type:'att',sid,prev}; writeAttendance(sid); closeSheet(); toast(`${nameOf(sid)} left for the day`,true); render();
 }
 function checkout(sid,key,note,assignedMin){
-  const r=RSN(key), lim=LIMIT(key), overTrip=!!(lim&&tripsUsed(sid,key)>=lim.trips);
+  const r=RSN(key), lim=LIMIT(key), overTrip=!!(tripCap(lim)&&tripsUsed(sid,key)>=tripCap(lim));
   state.active[sid]={reason:key,label:r.label,startAt:new Date(),note:note||'',allowMs:capMs(key,assignedMin),assignedMin:assignedMin||null,overTrip};
   const durNote=!assignedMin?'':key==='assigned'?` (${assignedMin} min assigned)`:key==='other'?` (~${assignedMin} min expected)`:` (${assignedMin} min allowed)`;
   logIt(`<b>${nameOf(sid)}</b> out · ${r.label}${durNote}${overTrip?' · past the daily limit':''}`);
@@ -1940,10 +1975,10 @@ function openReason(sid){
   const dots = bs.length ? `<div class="bdots" title="Breaks so far today"><div class="d">${bs.map(b=>`<i class="${b.reason}${b.flag?' flagged':''}" title="${b.label} · ${fmtDur(b.dur)}"></i>`).join('')}</div><span>${bs.length} today · ${mins} min${fl?` · ${fl} flagged`:''}</span></div>` : '';
   sheetHTML(`Where is ${nameOf(sid)} going?`,'The timer starts as soon as you pick a reason.',
     `<div class="body"><div class="reasons">${REASONS.map(r=>{
-       const lim=LIMIT(r.key), used=tripsUsed(sid,r.key), capped=!!(lim&&used>=lim.trips);
+       const lim=LIMIT(r.key), used=tripsUsed(sid,r.key), capped=!!(tripCap(lim)&&used>=tripCap(lim));
        const cap = r.key==='assigned' ? 'you set the minutes'
                  : r.key==='other' ? 'you set the expected time'
-                 : lim ? (capped?`${used} of ${lim.trips} used`:`${used} of ${lim.trips} · ${lim.min} min each`)
+                 : lim ? (!tripCap(lim)?`${lim.min} min each · no trip limit`:capped?`${used} of ${lim.trips} used`:`${used} of ${lim.trips} · ${lim.min} min each`)
                  : `alert after ${state.settings.longMin} min`;
        const act = `openMinutesSheet('${sid}','${r.key}')`;       // every break type: set the minutes for this trip, then start
        return `<button class="reason ${capped?'capped':''}" onclick="${act}"><i class="rdot ${r.key}"></i>${r.icon}${r.label}<span class="cap">${capped?'over daily limit':cap}</span></button>`;
@@ -1984,7 +2019,7 @@ function openMinutesSheet(sid,key){
              :`How long for ${nameOf(sid)}'s ${label} break?`;
   const sub=assigned?'That time is excused. Anything past it is flagged and counted against the student.'
            :other?'This sets an expected time - it does not excuse the time. Like any other break, it still counts toward time out of class, and running over it is flagged.'
-           :`Starts at the usual ${currentMinutes} min. Change it for this trip only - running over it is flagged.${lim&&tripsUsed(sid,key)>=lim.trips?` This trip is past the daily limit of ${lim.trips}, so it will be flagged either way.`:''}`;
+           :`Starts at the usual ${currentMinutes} min. Change it for this trip only - running over it is flagged.${tripCap(lim)&&tripsUsed(sid,key)>=tripCap(lim)?` This trip is past the daily limit of ${lim.trips}, so it will be flagged either way.`:''}`;
   sheetHTML(title,sub,
    `<div class="body">
       <div class="stepper">
@@ -2005,6 +2040,13 @@ function openMinutesSheet(sid,key){
 function keepVisible(el){
   setTimeout(()=>{ try{ el.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} },320);
 }
+/* Every text box in a sheet or in Add a class, not just the two notes that
+   had onfocus="keepVisible(this)": sideways, the keyboard leaves the tablet
+   about 230px, and a break name was being typed blind. Again whenever the
+   visible area changes size (the keyboard finishing its slide). */
+const typingBox=el=>!!(el&&el.matches&&el.matches('input:not([type=checkbox]):not([type=radio]),textarea')&&el.closest('.sheet,.setup'));
+document.addEventListener('focusin',e=>{ if(typingBox(e.target)) keepVisible(e.target); });
+(window.visualViewport||window).addEventListener('resize',()=>{ const a=document.activeElement; if(typingBox(a)) keepVisible(a); });
 function clampMin(v){ v=parseInt(v,10); if(!Number.isFinite(v)) v=2; return Math.min(currentMax,Math.max(1,v)); }
 function stepMinutes(delta){
   currentMinutes=clampMin(currentMinutes+delta);
@@ -2674,7 +2716,7 @@ function paintProfile(){
      <div class="clist">${active.map(classCard).join('')}</div>
      <button class="addcls" onclick="openAddClass()">+ Add a class</button>
      ${archived.length?`<button class="showarch" onclick="showArchived=!showArchived;paintProfile()">${showArchived?'Hide':'Show'} archived (${archived.length})</button>
-       ${showArchived?`<div class="clist">${archived.map(c=>`<div class="ccard gone" data-class="${c.id}"><div class="ctop"><b>${esc(c.name||'Class')}</b><button class="btn ghost copen" onclick="restoreClass('${c.id}')">Restore</button></div><small>Archived - its days and students are kept</small></div>`).join('')}</div>`:''}`:''}
+       ${showArchived?`<div class="clist">${archived.map(c=>`<div class="ccard gone" data-class="${c.id}"><div class="ctop"><b>${esc(c.name||'Class')}</b><span class="cbtns"><button class="btn ghost copen" onclick="restoreClass('${c.id}')">Restore</button><button class="btn ghost copen cdel" onclick="askDeleteClass('${c.id}')">Delete forever</button></span></div><small>Archived - its days and students are kept</small></div>`).join('')}</div>`:''}`:''}
    </section></div></div>`;
 }
 
@@ -2707,6 +2749,55 @@ function archiveClass(cid){
     writeClassMeta(cid,{status:'archived'}); closeSheet(); paintProfile(); toast(`${name} archived`);
   },'warn','Keep it');
 }
+/* ----- Delete forever: archived classes only -----
+   The one place anything is ever deleted for good. Only an archived class
+   (the rules check that too, and that you're the org's admin), never while
+   it's open, and never the first class if it is the only one. Everything
+   under it goes first - breaks, days, students - and the class doc last,
+   because the rules read the class's status to allow the rest. */
+async function askDeleteClass(cid){
+  const c=classById(cid); if(!c) return;
+  const name=c.name||'This class';
+  if(c.status!=='archived') return toast('Only an archived class can be deleted.');
+  if(cid===CLASS_ID) return toast("The open class can't be deleted.");
+  if(cid==='default'&&!(state.classes||[]).some(x=>x.id!=='default')) return toast("Your only class can't be deleted.");
+  if(!navigator.onLine||!ORG_ID) return toast('Deleting a class needs an internet connection.');
+  sheetHTML(`Delete ${esc(name)} forever?`,'Checking what it holds…','');
+  let students=0, days=0;
+  try{
+    const cls=classRefFor(cid);
+    students=(await cls.collection('students').get({source:'server'})).size;
+    days=(await cls.collection('days').get({source:'server'})).size;
+  }catch(e){ closeSheet(); return toast('Could not reach your class. Check the internet and try again.'); }
+  askDeleteClass.cid=cid;
+  if(!days) return sheetHTML(`Delete ${esc(name)} forever?`,'It has no recorded days.',
+    `<div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn warn" onclick="deleteClassForever(askDeleteClass.cid)">Delete forever</button></div>`);
+  sheetHTML(`Delete ${esc(name)} forever?`,`${plural(students,'student')} and ${plural(days,'recorded day')} will be deleted. This can't be undone.`,
+    `<div class="body"><p class="rnote" style="margin:0">If you might want these records later, download a backup first: on the website, Profile → Backup → Download a backup.</p>
+      <label class="dcheck"><input type="checkbox" id="delOk" onchange="$('delGo').disabled=!this.checked">I understand this can't be undone</label></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn warn" id="delGo" disabled onclick="deleteClassForever(askDeleteClass.cid)">Delete forever</button></div>`);
+}
+async function deleteClassForever(cid){
+  const c=classById(cid), name=(c&&c.name)||'The class';
+  if(!c||c.status!=='archived'||cid===CLASS_ID) return closeSheet();
+  sheetHTML(`Deleting ${esc(name)}…`,'Keep the app open until it finishes.','');
+  try{
+    await writeDeleteClass(cid);
+    state.classes=(state.classes||[]).filter(x=>x.id!==cid); delete classInfo[cid];
+    Store.remove(cacheKey(cid));
+    closeSheet(); paintProfile(); toast(`${name} deleted`);
+  }catch(e){ closeSheet(); paintProfile(); toast('Not everything could be deleted. Check the internet and try again.'); }
+}
+/* The writer: read everything under the class from the server, then delete
+   it in batches, the class doc last. */
+async function writeDeleteClass(cid){
+  const cls=classRefFor(cid), refs=[];
+  const days=await cls.collection('days').get({source:'server'});
+  for(const d of days.docs){ (await d.ref.collection('breaks').get({source:'server'})).docs.forEach(b=>refs.push(b.ref)); refs.push(d.ref); }
+  (await cls.collection('students').get({source:'server'})).docs.forEach(x=>refs.push(x.ref));
+  for(let i=0;i<refs.length;i+=400){ const b=fbDb.batch(); refs.slice(i,i+400).forEach(r=>b.delete(r)); await fsWrite(b.commit()); }
+  await fsWrite(cls.delete());
+}
 function restoreClass(cid){ writeClassMeta(cid,{status:'active'}); paintProfile(); toast(`${classNameOf(cid)} restored`); }
 
 /* ----- switching: one class open at a time ----- */
@@ -2725,6 +2816,14 @@ function endAndSwitch(cid){
   state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended');
   writeSessionAndAttendance();                    // saved to this class - the writers fix the class at the tap
   switchClass(cid);
+}
+/* The open class went missing or was archived (on another device): open the
+   first class, or - if that one was archived or deleted - the first active one. */
+async function openFallbackClass(){
+  let list=state.classes||[];
+  try{ const qs=await orgRef().collection('classes').get(); list=qs.docs.map(d=>Object.assign({id:d.id},d.data())).sort(classOrder); state.classes=list; }catch(e){}
+  const next=list.find(c=>c.status!=='archived');
+  if(next&&next.id!==CLASS_ID) switchClass(next.id,{quiet:true});
 }
 async function switchClass(cid,opts){
   opts=opts||{};
@@ -2802,7 +2901,22 @@ async function acCopyFrom(cid){
   else{ try{ const qs=await classRefFor(cid).collection('students').get(); names=qs.docs.map(d=>d.data()).filter(x=>x.active!==false).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>x.name); }catch(e){} }
   if(ac&&ac.copyFrom===cid){ ac.copied=names; acPaint(); }
 }
-function limitsLine(L){ return ['washroom','water','wudhu'].map(k=>`${RSN(k).label} ${L[k].min} min, ${L[k].trips} a day`).join(' · '); }
+function limitsLine(L){ return ['washroom','water','wudhu'].map(k=>`${RSN(k).label} ${L[k].min} min, ${tripCap(L[k])?`${L[k].trips} a day`:'no trip limit'}`).join(' · '); }
+/* One stepper pair per break type: minutes 1-30 (every number), trips 1-10
+   then "No limit". apply(k,field,value) saves it wherever the pair belongs. */
+function limitSteppers(L,k,fn){
+  const l=L[k], lab=RSN(k).label;
+  return `<span class="lsteps"><span class="lstep"><button class="step-btn" aria-label="Fewer ${lab} minutes" onclick="${fn}('${k}','min',-1)">−</button><b aria-label="${lab} minutes">${l.min} min</b><button class="step-btn" aria-label="More ${lab} minutes" onclick="${fn}('${k}','min',1)">+</button></span>
+    <span class="lstep"><button class="step-btn" aria-label="Fewer ${lab} trips" onclick="${fn}('${k}','trips',-1)">−</button><b aria-label="${lab} trips">${tripsText(l)}</b><button class="step-btn" aria-label="More ${lab} trips" onclick="${fn}('${k}','trips',1)">+</button></span></span>`;
+}
+function stepped(l,field,d){
+  if(field==='min') return Math.min(30,Math.max(1,(+l.min||1)+d));
+  const t=tripCap(l);
+  if(!t) return d<0?10:NO_TRIP_LIMIT;                              // No limit: − goes back to 10
+  return t+d>10?NO_TRIP_LIMIT:Math.max(1,t+d);                     // + past 10 is No limit
+}
+function stepSettingLimit(k,field,d){ const l=state.settings.limits[k]; l[field]=stepped(l,field,d); writeSettings(); render(); drawSettings(); }
+function stepNewClassLimit(k,field,d){ const l=ac.own[k]; l[field]=stepped(l,field,d); acPaint(); }
 function acNext(){
   ac.err='';
   if(ac.step===1){
@@ -2848,9 +2962,7 @@ function acPaint(){
     const L=ac.limits==='same'?fs.limits:ac.own;
     body=`<label class="radio"><input type="radio" name="aclim" ${ac.limits==='same'?'checked':''} onchange="ac.limits='same';acPaint()"><span>Same as ${esc(first)}<small>${limitsLine(fs.limits)}</small></span></label>
       <label class="radio"><input type="radio" name="aclim" ${ac.limits==='own'?'checked':''} onchange="ac.limits='own';acPaint()"><span>Set different limits</span></label>
-      ${ac.limits==='own'?['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
-        <select aria-label="${RSN(k).label} minutes" onchange="ac.own.${k}.min=+this.value;acPaint()">${[1,2,3,5,7,10].map(m=>`<option ${ac.own[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
-        <select aria-label="${RSN(k).label} trips" onchange="ac.own.${k}.trips=+this.value;acPaint()">${[1,2,3,4,5].map(m=>`<option ${ac.own[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join(''):''}
+      ${ac.limits==='own'?['washroom','water','wudhu'].map(k=>`<div class="field lim"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${limitSteppers(ac.own,k,'stepNewClassLimit')}</div>`).join(''):''}
       <p class="acsum">${esc(ac.name)} · ${daysText(ac.days)} · ${hm(ac.start)}–${hm(ac.end)} · ${plural(acStudents().length,'student')} · ${ac.limits==='same'?`limits as ${esc(first)}`:limitsLine(L)}</p>`;
     card.innerHTML=head+body+foot(`<button class="btn dark" onclick="acCreate()">Create ${esc(ac.name)}</button>`);
   }
@@ -3038,9 +3150,7 @@ function drawSettings(){
    <div class="vhead"><h2>Settings</h2>${classPill()}</div>
    ${scheduleSection()}
    <h4>Break limits</h4>
-   ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div><span class="two">
-     <select aria-label="${RSN(k).label} minutes" onchange="state.settings.limits.${k}.min=+this.value;${re}">${[1,2,3,5,7,10].map(m=>`<option ${set.limits[k].min===m?'selected':''} value="${m}">${m} min</option>`).join('')}</select>
-     <select aria-label="${RSN(k).label} trips" onchange="state.settings.limits.${k}.trips=+this.value;${re}">${[1,2,3,4,5].map(m=>`<option ${set.limits[k].trips===m?'selected':''} value="${m}">${m}/day</option>`).join('')}</select></span></div>`).join('')}
+   ${['washroom','water','wudhu'].map(k=>`<div class="field lim"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${limitSteppers(set.limits,k,'stepSettingLimit')}</div>`).join('')}
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
@@ -3237,12 +3347,19 @@ function fitGrid(reserve){
   const H=g.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-(reserve||0);
   if(W<=0||H<=0) return;                                    // not laid out yet
   let best=null;
-  for(let cols=1;cols<=n;cols++){
-    const rows=Math.ceil(n/cols);
-    const tw=(W-GAP*(cols-1))/cols, th=(H-GAP*(rows-1))/rows;
-    if(tw<MINW||th<MINH) continue;
-    const score=Math.min(tw/1.7,th);                        // names read horizontally, so favour width a little
-    if(!best||score>best.score) best={cols,th,tw,score};
+  /* Tiles are at least 56px tall - or, only when that just misses, 46px:
+     a long date ("Wednesday, Oct 7, 2026") plus the "Class ended" banner left
+     12 tiles 5px short on the sideways tablet, and the whole roster scrolled
+     for the sake of 5px. Smaller names are fitted to them below. */
+  for(const minH of [MINH,46]){
+    for(let cols=1;cols<=n;cols++){
+      const rows=Math.ceil(n/cols);
+      const tw=(W-GAP*(cols-1))/cols, th=(H-GAP*(rows-1))/rows;
+      if(tw<MINW||th<minH) continue;
+      const score=Math.min(tw/1.7,th);                      // names read horizontally, so favour width a little
+      if(!best||score>best.score) best={cols,th,tw,score};
+    }
+    if(best) break;
   }
   const fits=!!best;
   if(!best){

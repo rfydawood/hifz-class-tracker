@@ -514,8 +514,8 @@ test('4.0: the owner of a personal org adds a second class and runs it - student
     sid: 's0', reason: 'water', startAt: 1, endAt: 2, dur: 1, over: 0, flag: false, overTrip: false, assignedMin: 2,
   }));
   await assertSucceeds(cls.update({ name: 'Period 6' }));                      // rename
-  await assertSucceeds(cls.update({ status: 'archived' }));                   // archive - never a delete
-  await assertFails(cls.delete());
+  await assertFails(cls.delete());                                            // an active class is never deleted
+  await assertSucceeds(cls.update({ status: 'archived' }));                   // archive (deleting it forever: see the 4.0.1 tests)
   // the first class's day accepts a schedule too
   await assertSucceeds(db.collection('orgs').doc(ORG_ID).collection('classes').doc(CLASS_ID).collection('days').doc('2026-10-05')
     .set({ date: '2026-10-05', yearId: '2026-2027', schedule, attendance: {}, roster: {} }));
@@ -535,4 +535,59 @@ test('4.0: a non-member can neither add a class nor write its students, days (wi
   await assertFails(org.collection('classes').doc('c2').collection('days').doc('2026-10-05').collection('breaks').doc('b1').set({ sid: 's0', reason: 'water', startAt: 1, endAt: 2, dur: 1, over: 0, flag: false, overTrip: false, assignedMin: null }));
   await assertFails(org.collection('classes').doc('c2').get());
   await assertFails(org.collection('classes').get());
+});
+
+// ---- 4.0.1: "Delete forever" - an archived class only, by the org's admin ----
+
+async function seedClassWithRecords(classId, status) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const cls = ctx.firestore().collection('orgs').doc(ORG_ID).collection('classes').doc(classId);
+    await cls.set(classDoc({ name: 'Period 5', teacherUid: 'uidA', status }));
+    await cls.collection('students').doc('s0').set({ name: 'Student A', active: true, order: 0, enrolledFrom: '2026-10-05', enrolledUntil: null });
+    await cls.collection('days').doc('2026-10-05').set({ date: '2026-10-05', attendance: {}, roster: {} });
+    await cls.collection('days').doc('2026-10-05').collection('breaks').doc('b1').set({ sid: 's0', reason: 'water', startAt: 1, endAt: 2, dur: 1, over: 0, flag: false, overTrip: false, assignedMin: null });
+  });
+}
+const classAs = (uid, classId) => testEnv.authenticatedContext(uid).firestore().collection('orgs').doc(ORG_ID).collection('classes').doc(classId);
+async function deleteAll(cls) {
+  await cls.collection('days').doc('2026-10-05').collection('breaks').doc('b1').delete();
+  await cls.collection('days').doc('2026-10-05').delete();
+  await cls.collection('students').doc('s0').delete();
+  await cls.delete();
+}
+
+test('4.0.1: the owner deletes an archived class forever - breaks, days, students, then the class', async () => {
+  await seedOrgWithMember('uidA');
+  await seedClassWithRecords('c2', 'archived');
+  const cls = classAs('uidA', 'c2');
+  await assertSucceeds(deleteAll(cls));
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const c = ctx.firestore().collection('orgs').doc(ORG_ID).collection('classes').doc('c2');
+    assert.equal((await c.get()).exists, false);
+    assert.equal((await c.collection('students').get()).size, 0);
+    assert.equal((await c.collection('days').get()).size, 0);
+  });
+});
+
+test('4.0.1: an active class cannot be deleted, not even by its owner, nor anything under it', async () => {
+  await seedOrgWithMember('uidA');
+  await seedClassWithRecords('c2', 'active');
+  const cls = classAs('uidA', 'c2');
+  await assertFails(cls.collection('students').doc('s0').delete());
+  await assertFails(cls.collection('days').doc('2026-10-05').delete());
+  await assertFails(cls.delete());
+  await assertFails(classAs('uidA', CLASS_ID).delete());                         // the first class, active
+});
+
+test('4.0.1: a stranger, or a member who is not the admin, cannot delete an archived class', async () => {
+  await seedOrgWithMember('uidA');
+  await seedClassWithRecords('c2', 'archived');
+  await addMember('uidT', { roles: ['teacher'] });
+  for (const uid of ['uidX', 'uidT']) {
+    const cls = classAs(uid, 'c2');
+    await assertFails(cls.collection('students').doc('s0').delete());
+    await assertFails(cls.collection('days').doc('2026-10-05').delete());
+    await assertFails(cls.delete());
+  }
+  await assertFails(testEnv.unauthenticatedContext().firestore().collection('orgs').doc(ORG_ID).collection('classes').doc('c2').delete());
 });

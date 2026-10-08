@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import {
   setupNewClass, skipTourIfPresent, orgId, openTab, tileFor, startClass, logBreak, readAs,
-  reportsReady, writeCount,
+  reportsReady, writeCount, stepLimitTo,
 } from './helpers.mjs';
 
 async function firstClass(page, names = ['Amina', 'Bilal']) {
@@ -32,7 +32,7 @@ async function addClass(page, name, { names, copyFrom, ownLimits } = {}) {
   await page.getByRole('button', { name: 'Next' }).click();
   if (ownLimits) {
     await page.getByText('Set different limits').click();
-    await page.locator('#acCard').getByLabel('Washroom minutes').selectOption(String(ownLimits));
+    await stepLimitTo(page, '#acCard', 'Washroom', ownLimits);
   }
   await page.getByRole('button', { name: `Create ${name}` }).click();
   await expect(page.locator('#toastMsg')).toHaveText(`${name} is ready. Open it when its class starts.`);
@@ -81,10 +81,10 @@ test('a class can copy its students from another class, as new students of its o
   await openFromProfile(page, 'Period 6');
   await expect(tileFor(page, 'Maryam')).toBeVisible();
   await openTab(page, 'settings');
-  await expect(page.getByLabel('Washroom minutes')).toHaveValue('3');          // its own limits
+  await expect(page.locator('#viewSettings b[aria-label="Washroom minutes"]')).toHaveText('3 min');          // its own limits
   await openFromProfile(page, "Ustadh Classes's Hifz Class");
   await openTab(page, 'settings');
-  await expect(page.getByLabel('Washroom minutes')).toHaveValue('7');          // the first class's, untouched
+  await expect(page.locator('#viewSettings b[aria-label="Washroom minutes"]')).toHaveText('7 min');          // the first class's, untouched
 });
 
 test('isolation: Log, Roster, Reports and the CSV of one class never show the other class', async ({ page }) => {

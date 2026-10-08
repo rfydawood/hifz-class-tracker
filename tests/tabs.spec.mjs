@@ -5,7 +5,7 @@
 // See index.html showTab()/setTabsHidden()/updateLogBadge()/paintRoster()/drawSettings().
 import { test, expect } from '@playwright/test';
 import {
-  setupNewClass, skipTourIfPresent, orgId, openTab, tileFor, startClass, logBreak, readAs,
+  setupNewClass, skipTourIfPresent, orgId, openTab, tileFor, startClass, logBreak, readAs, stepLimitTo,
 } from './helpers.mjs';
 
 async function newClass(page, names = ['Amina', 'Bilal', 'Hamza']) {
@@ -143,7 +143,7 @@ test('Settings: a change is saved to the class and is still there after a reload
   test.setTimeout(60000);
   const code = await newClass(page);
   await openTab(page, 'settings');
-  await page.getByLabel('Washroom minutes').selectOption('3');
+  await stepLimitTo(page, '#viewSettings', 'Washroom', 3);                 // 4.0.1: a stepper, not a dropdown
   // 4.0: the snack time is edited in Settings -> Schedule -> Usual day
   await page.locator('.srow.usual').getByRole('button', { name: 'Edit' }).click();
   const snack = page.locator('.sheet .brow2', { has: page.locator('input.bname[value="Snack"]') }).locator('input[type=time]');
@@ -156,6 +156,6 @@ test('Settings: a change is saved to the class and is still there after a reload
   await page.reload();
   await expect(tileFor(page, 'Amina')).toBeVisible({ timeout: 15000 });
   await openTab(page, 'settings');
-  await expect(page.getByLabel('Washroom minutes')).toHaveValue('3');
+  await expect(page.locator('#viewSettings b[aria-label="Washroom minutes"]')).toHaveText('3 min');
   await expect(page.locator('.srow.usual')).toContainText('Snack 10:30 AM');
 });

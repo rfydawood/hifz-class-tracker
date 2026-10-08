@@ -12,10 +12,10 @@ Classroom attendance and break tracker for hifz teachers. Pure client-side app �
 - **Log** - today's class: the header (its title is the open class's name), the student tiles and "Out right now". The app always opens here. Its ☰ menu has the day's actions only: start each of today's whole-class breaks, end/resume/start class, Change today's times, Attendance today, Day summary, Today's log.
 - **Reports** - charts and numbers, read-only from the cloud: Whole class or One student; Today, Yesterday, This week (Monday to today), Last week, Last month; Total or Daily average. Cards for class time, time out of class (with the change against the previous period), breaks, over the limit and attendance; "Minutes out" stacked bars (with a "vs last week" tick and a Most out sort); "Where the time went" donut; "Worth a look". Export CSV is here. Breaks under 15 seconds are ignored as mis-taps, and Assigned (excused) time is not counted as time out.
 - **Roster** - the class list in roll order with each student's week so far; Add, Remove, Put back. Tap a student for their report.
-- **Settings** - the open class's **Schedule** (usual day, any weekday that differs, one-off dates), break limits, and Reset the day.
+- **Settings** - the open class's **Schedule** (usual day, any weekday that differs, one-off dates), break limits (− / + steppers: 1-30 minutes; 1-10 trips a day, or No limit), and Reset the day.
 - **Profile** (the initials circle) - your name, Google sign-in and sync, Sign out, Download a backup (every class), the version line, and **My classes**.
 
-**One class is open at a time (since 4.0).** Log, Reports, Roster and Settings only ever show the open class. Profile → My classes lists your classes; **Open** switches (if the open class is running, it asks first, marks anyone out back in and ends it - it can be resumed later that day). **+ Add a class** takes three steps (name and times, students - typed or copied from another class, break limits). Classes can be renamed and archived (never deleted) from the "…" menu; archived ones come back with Restore.
+**One class is open at a time (since 4.0).** Log, Reports, Roster and Settings only ever show the open class. Profile → My classes lists your classes; **Open** switches (if the open class is running, it asks first, marks anyone out back in and ends it - it can be resumed later that day). **+ Add a class** takes three steps (name and times, students - typed or copied from another class, break limits). Classes can be renamed and archived from the "…" menu; archived ones come back with Restore. Only an archived class can be deleted, with **Delete forever** under "Show archived" (it asks first, and with records also wants "I understand this can't be undone" ticked).
 
 **Different times on different days (since 4.0).** Each class has a usual day; a weekday can differ (e.g. early dismissal on Fridays) and a single date can differ (with a note). A date beats its weekday, which beats the usual day. Whole-class breaks are named (Snack, Lunch and recess, Jumu'ah...), and each gets its banner and Start/End when it's due. When today isn't the usual day, a banner on Log says how. Each day saves the times it actually had when class starts, so changing the schedule later never changes old reports.
 
@@ -96,7 +96,7 @@ Remember to bump `versionCode`/`versionName` in `capacitor-app/android/app/build
 
 Only if 4.0 has to be taken back. Nothing about it deletes or moves data, so going back is safe: 3.8 only ever opens the first class (`classes/default`) and reads its settings from `org.defaults`, which 4.0 keeps writing for that class. Extra classes, and the `schedule` saved on days, are simply not seen by 3.8. The rules don't need rolling back - 4.0 only *added* `schedule` to what a day may hold.
 
-**Native app.** Android won't install an older versionCode over a newer one, so the way back is the 3.8 code built again as **versionName "3.8.1"** with a versionCode one above 4.0's (4.0 is 20, so **21**). Same signing key as always.
+**Native app.** Android won't install an older versionCode over a newer one, so the way back is the 3.8 code built again as **versionName "3.8.1"** with a versionCode **one above the newest build ever sent out** (the number in `capacitor-app/android/app/build.gradle` on `main` - 4.0.1 is 21, so 22). Same signing key as always.
 
 ```
 cd C:\dev\hifz-class-tracker
@@ -104,7 +104,7 @@ git worktree add ..\hifz-rollback v3.8          # the 3.8 code, beside the repo
 cd ..\hifz-rollback
 git switch -c rollback-3.8.1
 git cherry-pick 504011d                        # 3.8's version-line fix: the app then shows its versionName
-# edit capacitor-app/android/app/build.gradle:  versionCode 21,  versionName "3.8.1"
+# edit capacitor-app/android/app/build.gradle:  versionCode <newest + 1>,  versionName "3.8.1"
 npm ci
 npm run build                                  # stamps v3.8.1 into the app
 cd capacitor-app

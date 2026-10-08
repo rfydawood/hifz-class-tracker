@@ -105,14 +105,26 @@ export async function addStudentViaRoster(page, name) {
   await openTab(page, 'log');
 }
 
+// Break limits are − / + steppers since 4.0.1 (minutes 1-30). Steps one at a
+// time to the wanted number inside `scope` (Settings, or Add a class).
+export async function stepLimitTo(page, scope, label, minutes) {
+  const shown = page.locator(scope).locator(`b[aria-label="${label} minutes"]`);
+  for (let i = 0; i < 40; i++) {
+    const now = parseInt(await shown.textContent(), 10);
+    if (now === minutes) return;
+    await page.locator(scope).getByRole('button', { name: `${now < minutes ? 'More' : 'Fewer'} ${label} minutes` }).click();
+  }
+  throw new Error(`could not step ${label} to ${minutes}`);
+}
+
 export async function setWashroomLimit(page, minutes) {
   await openTab(page, 'settings');
-  await page.locator('#viewSettings .field', { hasText: 'Washroom' }).locator('select').first().selectOption(String(minutes));
+  await stepLimitTo(page, '#viewSettings', 'Washroom', minutes);
 }
 
 export async function getWashroomLimit(page) {
   if (!(await page.locator('.app[data-tab="settings"]').count())) await openTab(page, 'settings');
-  return page.locator('#viewSettings .field', { hasText: 'Washroom' }).locator('select').first().inputValue();
+  return String(parseInt(await page.locator('#viewSettings b[aria-label="Washroom minutes"]').textContent(), 10));
 }
 
 export function writeCount(page) {
