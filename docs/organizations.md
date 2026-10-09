@@ -90,6 +90,75 @@ One organization per institution, with **programs** inside it, e.g.
   **Profile -> Switch account**, one tap, nothing lost. Advise teachers to
   have both organizations invite the same email.
 
+## Practice copy (2026-10-09)
+
+A working, browser-only practice copy of everything above is at
+`prototypes/organizations.html`
+(https://rfydawood.github.io/hifz-class-tracker/prototypes/organizations.html).
+It is separate from the real app: its own storage keys, made-up people
+and students, a "You are:" switcher, "Start over". Built from the owner's
+old guest prototype. Test it there before building any of this into
+index.html.
+
+## Later ideas (2026-10-09, not built, not in the practice copy yet)
+
+### Name: BreakLog
+- The owner wants to rename the app **BreakLog** ("Hifz" is too narrow,
+  "tracker" sounds like monitoring). No app by that name was found on a
+  quick web search; check the Play Store / App Store and a domain
+  (breaklog.app / .com, ~$10-20 a year, optional) before going public.
+- Changes the visible name only (title, header, manifest, Android label).
+  The website address and the Android id `com.hifztracker.app` never change,
+  so installs keep updating. "Hifz" can live on as the madrasa template's name.
+- Do it in the same release as organizations, after the practice copy is tried.
+
+### Setup question: "What will you use this for?"
+- Asked inside "Set up your class" / "Set up an organization" (not at
+  sign-in; invited people never see it). Only sets the starting point;
+  everything can be changed later.
+- **Madrasa / masjid**: today's setup (Washroom, Water, Wudhu, Other,
+  Assigned; class times with snack and lunch).
+- **School**: bell schedule (periods, passing time, attendance per period,
+  a roster per period); breaks Washroom, Water, Nurse, Office, Locker,
+  Counsellor, Other; "Assigned" becomes "Errand". Bigger change than a
+  break list - builds on 4.0's schedules and My classes.
+- **Something else**: Washroom, Water, Other, Assigned, to rename.
+- **Workplace** (shift / staff / late in; Restroom, Rest break, Lunch,
+  Personal, Other) left out for now: employee break tracking runs into
+  labour and privacy law, and payroll requests. Add later if asked for.
+
+### Custom break types
+- Today the five types are built in (washroom, water, wudhu, other,
+  assigned) and only their limits can change.
+- Planned: admins (or a teacher on their own) rename, hide or add types,
+  each with its own colour, minutes and trips per day. Other and Assigned
+  always stay (no trip cap / excused time). Hide, never delete, so old
+  reports still show them. Set per organization or program; a locked class
+  shows them as "Set by your organization".
+
+### Themes
+- Admins pick from a short list of ready-made themes (current colours plus
+  e.g. Lapis and brass, Slate and teal, Sand and sky), add the
+  organization's name and logo, and an optional subtle background behind
+  the tiles. No free colour picker.
+- Fixed in every theme: in class = calm, out = amber, past the limit = red,
+  and the break-type colours.
+- Dark mode ("Night study") is a per-tablet switch (Light / Dark /
+  Automatic) any teacher can use, not an organization setting.
+
+### Landing page
+- Today the website opens straight on "Sign in to your class"; nothing
+  explains the app to someone new.
+- A landing page would say what it is, show the Log, Reports and
+  Organization screens, and send each visitor the right way (teacher ->
+  Sign in, organization -> Set up an organization, invited -> sign in with
+  the invited email), plus a short FAQ (free? where is data kept? offline?
+  devices?).
+- Must not take over the app's address (installs and the Android app use
+  it): show it only to signed-out visitors, or give it its own path.
+- Still to decide: who it is for first (madrasas or schools), and whether
+  to buy a domain.
+
 ## Still to decide (owner / organization)
 
 - Who the admins are (at least two recommended).
