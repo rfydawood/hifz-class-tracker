@@ -910,13 +910,20 @@ function openReports(){
    Who you are is per tab (sessionStorage), so two tabs can be two people.
    ===================================================================== */
 const NS='hifzOrgPractice.v1.';
-const KDB=NS+'db', KCLS=cid=>NS+'class.'+cid, KME=NS+'me', KSKIP=NS+'notNow';
+const KDB=NS+'db', KCLS=cid=>NS+'class.'+cid, KME=NS+'me', KSKIP=NS+'notNow', KMODE=NS+'mode';
+/* 'scratch' = an empty app, to go through everything from the start;
+   'demo' = Uthman Academy as it is today. Chosen the first time the page
+   opens on a device (and again from Start over), and remembered. */
+function practiceMode(){ try{ return localStorage.getItem(KMODE); }catch(e){ return null; } }
+function setPracticeMode(m){ try{ localStorage.setItem(KMODE,m); }catch(e){} }
+const isScratch=()=>practiceMode()==='scratch';
+function emptyWorld(){ lsSet(KDB,{v:1,people:{},orgs:{},programs:{},classes:{},members:[],invites:[],lastClass:{}}); }
 function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function practiceKeys(){ const out=[]; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith(NS)) out.push(k); } }catch(e){} return out; }
 let db=null;
-function saveDb(){ lsSet(KDB,db); }
-function loadDb(){ db=lsGet(KDB); if(!db||db.v!==1){ seedDemo(); db=lsGet(KDB); } }
+function saveDb(){ lsSet(KDB,db); if(typeof fillPicker==='function'&&$('youAre')) fillPicker(); }   // the "You are:" menu always shows who exists now
+function loadDb(){ db=lsGet(KDB); if(!db||db.v!==1){ if(isScratch()) emptyWorld(); else seedDemo(); db=lsGet(KDB); } }
 function meId(){ try{ return sessionStorage.getItem(KME); }catch(e){ return null; } }
 function setMe(id){ try{ id?sessionStorage.setItem(KME,id):sessionStorage.removeItem(KME); }catch(e){} }
 const me=()=>db.people[meId()]||null;
@@ -1648,32 +1655,67 @@ function fillPicker(){
   const label=p=>{ const roles=(db.members||[]).filter(m=>m.personId===p.id).map(m=>{ const org=db.orgs[m.orgId], pa=programAdminOf(m.orgId,p.id);
     return m.roles.includes('admin')?`admin, ${org.name}`:pa.length?`program admin, ${db.programs[pa[0]].name}`:null; }).filter(Boolean);
     return `${p.name}${roles.length?` (${roles.join('; ')})`:''}`; };
-  const idris=(db.invites||[]).find(i=>i.email==='idris@uthmanacademy.org'&&i.status==='pending')&&!Object.values(db.people).some(p=>p.email==='idris@uthmanacademy.org');
+  const idris=!isScratch()&&(db.invites||[]).find(i=>i.email==='idris@uthmanacademy.org'&&i.status==='pending')&&!Object.values(db.people).some(p=>p.email==='idris@uthmanacademy.org');
+  // from scratch: anyone invited who hasn't signed in yet, one entry per email
+  const known=new Set(Object.values(db.people).map(p=>p.email.toLowerCase())), invited=[];
+  if(isScratch()) (db.invites||[]).filter(i=>i.status==='pending'&&!known.has(i.email.toLowerCase())).forEach(i=>{ if(!invited.some(x=>x.email===i.email)) invited.push(i); });
   sel.innerHTML=(id?'':'<option value="" selected>— no one signed in —</option>')
     +people.map(p=>`<option value="${p.id}" ${p.id===id?'selected':''}>${esc(label(p))}</option>`).join('')
     +(idris?'<option value="@idris">Hafiz Idris (invited, not joined yet)</option>':'')
+    +invited.map(i=>`<option value="@inv:${i.id}">${esc(i.name||i.email)} (invited, not signed in yet)</option>`).join('')
     +'<option value="@new">Someone new…</option>';
 }
 function pickPerson(v){
+  if(!practiceMode()){ setPracticeMode('scratch'); emptyWorld(); db=lsGet(KDB); }   // picked before choosing: an empty app
   if(SCREEN==='class'&&!readOnly) save();
   CUR=null; readOnly=false;
   if(v==='@new'){ setMe(null); fillPicker(); return showSignIn('Someone new to the app. Type any name and email to try it.'); }
   if(v==='@idris'){ const id='idris'; db.people[id]={id,name:'Hafiz Idris',email:'idris@uthmanacademy.org',provider:'google'}; saveDb(); setMe(id); return route(); }
+  if(v.startsWith('@inv:')){
+    // what they'd see the first time they sign in with that email: "You're invited"
+    const inv=(db.invites||[]).find(i=>i.id===v.slice(5)); if(!inv) return route();
+    const local=inv.email.split('@')[0].replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    const pid='p'+Date.now().toString(36);
+    db.people[pid]={id:pid,name:inv.name||local,email:inv.email,provider:'google'}; saveDb(); setMe(pid); return route();
+  }
   setMe(v); route();
 }
 function askStartOver(){
-  confirmSheet('Start the practice copy over?','Every practice class, person and invite goes back to the demo. Only this practice page is cleared; your real app is never touched.','Start over',()=>{
-    practiceKeys().forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
-    try{ sessionStorage.removeItem(KSKIP); }catch(e){}
-    closeSheet(); seedDemo(); db=lsGet(KDB);
-    if(!db.people[meId()]) setMe('maryam');
-    CUR=null; readOnly=false; route(); toast('Back to the demo');
-  },'warn','Keep going');
+  sheetHTML('Start the practice copy over?','Every practice class, person and invite is cleared. Only this practice page is cleared; your real app is never touched.',
+    `<div class="body"><div class="rowlist">
+      <button class="dbtn leaf" onclick="startOver('scratch')">Empty, start from scratch<small>No organizations, classes or people. Sign in as someone new and go through it from the beginning.</small></button>
+      <button class="dbtn" onclick="startOver('demo')">Back to the demo<small>Uthman Academy and Masjid Al-Noor, as they are today</small></button>
+    </div></div><div class="actions"><button class="btn ghost" onclick="closeSheet()">Keep going</button></div>`);
+}
+function startOver(mode){
+  practiceKeys().forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  try{ sessionStorage.removeItem(KSKIP); }catch(e){}
+  setPracticeMode(mode); closeSheet();
+  if(mode==='scratch') emptyWorld(); else seedDemo();
+  db=lsGet(KDB); CUR=null; readOnly=false;
+  if(mode==='scratch') setMe(null); else if(!db.people[meId()]) setMe('maryam');
+  route(); toast(mode==='scratch'?'An empty app - sign in to begin':'Back to the demo');
+}
+/* The first time the page opens on a device: which way to start. */
+function showStartChoice(){
+  SCREEN='start'; showView(null);
+  card(`<h2>Practice copy: how do you want to start?</h2>
+    <p class="lede">You can change this any time with Start over in the yellow bar.</p>
+    <div class="signin-opts">
+      <button class="dbtn leaf" onclick="firstChoice('scratch')">Start from scratch<small>An empty app: no organizations, classes or people. Create an account, set up an organization, add programs and classes, invite a teacher, and join as that teacher.</small></button>
+      <button class="dbtn" onclick="firstChoice('demo')">Explore the demo<small>Uthman Academy with its programs, teachers and classes already running, and Masjid Al-Noor.</small></button>
+    </div>`);
+}
+function firstChoice(mode){
+  setPracticeMode(mode); hideCards();
+  if(mode==='scratch'){ if(!lsGet(KDB)||Object.keys(lsGet(KDB).people||{}).length) { practiceKeys().filter(k=>k!==KMODE).forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} }); emptyWorld(); } setMe(null); }
+  loadDb(); if(mode==='demo'&&!meId()) setMe('maryam');
+  fillPicker(); route();
 }
 
 /* ===== two tabs as two people: another tab changed something ===== */
 window.addEventListener('storage',e=>{
-  if(!e.key||!e.key.startsWith(NS)) return;
+  if(!e.key||!e.key.startsWith(NS)||SCREEN==='start') return;
   if(e.key===KDB){ db=lsGet(KDB)||db; fillPicker(); }
   if(SCREEN==='org') return paintOrg();
   if(SCREEN==='class'&&CUR&&(e.key===KCLS(CUR)||e.key===KDB)){
@@ -1767,9 +1809,8 @@ function seedDemo(){
 }
 
 /* ===== start ===== */
-loadDb();
-if(!meId()) setMe('maryam');
-fillPicker(); route();
+if(!practiceMode()){ db={v:1,people:{},orgs:{},programs:{},classes:{},members:[],invites:[],lastClass:{}}; fillPicker(); showStartChoice(); }
+else { loadDb(); if(!meId()&&!isScratch()) setMe('maryam'); fillPicker(); route(); }
 setInterval(()=>{ tick(); if(SCREEN==='org'&&ORG.tab==='classes'&&!$('scrim').classList.contains('show')) paintOrg(); },1000);
 document.addEventListener('click',()=>{ if(render.pending&&!$('scrim').classList.contains('show')){ render.pending=false; render(); } });
 </script>
