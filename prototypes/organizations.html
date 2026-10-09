@@ -1,0 +1,1777 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Organizations: practice copy</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1F2E36; --leaf:#0F7B7B; --leaf-soft:#DCEDED;
+  --gold:#D39A22; --gold-soft:#FBF0D8; --ember:#C0503A; --ember-soft:#F8E5E0;
+  --paper:#F2F5F6; --card:#FFFFFF; --line:#D6DFE2; --mute:#5B6B73;
+  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#E3EAEC;color:var(--ink);-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input,select{font:inherit;color:inherit}
+
+.app{max-width:1600px;width:100%;height:100vh;margin:0 auto;background:var(--paper);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 18px;background:var(--ink);color:#EEF3F4}
+.top h1{font-size:23px;font-weight:800;letter-spacing:-.01em}
+.top .sub{font-size:14px;color:#A6BFC7;margin-top:4px}
+.when{margin-left:auto;text-align:right}
+.top .clock{font-size:34px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.top .date{font-size:16px;font-weight:700;white-space:nowrap;color:#A6BFC7;margin-bottom:6px;line-height:1}
+.pill{padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.12)}
+.pill b{font-size:15px}
+.pill.out{background:var(--gold);color:var(--ink)}
+.pill.absent{background:rgba(255,255,255,.08);color:#BDCED4}
+.start-btn{background:var(--leaf);color:#fff;padding:12px 18px;border-radius:12px;font-weight:800;font-size:15px;white-space:nowrap}
+.start-btn.end{background:var(--ember)}
+.start-btn.lunch{background:var(--gold);color:var(--ink)}
+.menu-btn{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.12);display:grid;place-items:center;flex:none}
+.menu-btn svg{width:22px;height:22px;stroke:#EEF3F4;stroke-width:2.2;fill:none;stroke-linecap:round}
+
+.banner{display:flex;align-items:center;gap:14px;padding:12px 22px;background:var(--gold-soft);border-bottom:1px solid #E5C57E;font-weight:700;font-size:15px}
+.banner.leaf{background:var(--leaf-soft);border-color:#BBD9D9}
+.banner.paper{background:#fff;border-color:var(--line);color:var(--mute);font-weight:600}
+.banner .act{margin-left:auto;background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px}
+
+.stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr clamp(230px,27%,380px);gap:14px;padding:14px 16px 16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.panel-head h2{font-size:16px;font-weight:700}
+.panel-head .hint{color:var(--mute);font-size:13px;margin-left:auto}
+
+.grid{flex:1;padding:14px;display:grid;gap:10px;overflow:auto;align-content:start}
+.tile{position:relative;border-radius:14px;padding:14px 14px 12px;min-height:112px;display:flex;flex-direction:column;justify-content:space-between;border:2px solid transparent;transition:transform .1s}
+.tile:active{transform:scale(.97)}
+@media (hover:hover){.tile:hover{border-color:var(--leaf)}.dbtn:hover,.reason:hover{border-color:var(--leaf)}}
+@media (max-width:560px){.stage{grid-template-columns:1fr}}
+.tile .name{font-size:18px;font-weight:800;line-height:1.15;letter-spacing:-.01em;overflow-wrap:anywhere}
+.tile .state{font-size:13px;font-weight:600;margin-top:8px;color:var(--mute);font-variant-numeric:tabular-nums}
+.tile.present{background:#E7F1F1;border-color:#CFE2E2}
+.tile.present .state{color:#0C5C5C}
+.tile.deact{background:#EDF1F2;color:#7D8D95;border-style:dashed;border-color:#C6D2D6}
+.tile.deact .name{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#B6C4C9}
+.tile.deact .state{color:#7D8D95}
+.tile.out{background:var(--gold-soft);border-color:var(--gold)}
+.tile.out .state{color:#6B4B0C;font-weight:800;font-size:15px}
+.tile.out.long{background:var(--ember-soft);border-color:var(--ember)}
+.tile.out.long .state{color:var(--ember)}
+.tile .tag{position:absolute;top:9px;right:9px;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;background:var(--gold-soft);color:#6B4B0C}
+.tile .tag.flag{background:var(--ember-soft);color:var(--ember)}
+.tile.deact .tag{background:#E2E8EA;color:#6B7A81}
+.tile:disabled{opacity:.6;cursor:default}
+@media (prefers-reduced-motion:reduce){.tile,.sheet{transition:none;animation:none}}
+
+.out-list{flex:1;overflow:auto;padding:12px}
+.out-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--gold-soft);border:1px solid #E5C57E;margin-bottom:10px}
+.out-item.long{background:var(--ember-soft);border-color:#E4B4A6}
+.out-item .who{flex:1;min-width:0}
+.out-item .who b{display:block;font-size:17px;font-weight:800}
+.out-item .who span{font-size:13px;color:var(--mute)}
+.out-item .t{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.out-item.long .t{color:var(--ember)}
+.out-item .back{background:var(--ink);color:#fff;border-radius:10px;padding:11px 14px;font-weight:700;font-size:14px;white-space:nowrap}
+.empty{padding:26px 18px;text-align:center;color:var(--mute);font-size:14px;line-height:1.5}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+
+.reasons{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.reason{border:2px solid var(--line);border-radius:18px;padding:20px 12px;font-size:19px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:9px;background:var(--card)}
+.reason .cap{font-size:12px;font-weight:700;color:var(--mute)}
+.reason.capped{border-color:var(--ember);background:var(--ember-soft)}
+.reason.capped .cap{color:var(--ember)}
+.mins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mins button{border:2px solid var(--line);border-radius:16px;padding:22px 10px;font-size:20px;font-weight:800;background:var(--card)}
+.mins button:active{border-color:var(--gold);background:var(--gold-soft)}
+.reason:active{border-color:var(--gold);background:var(--gold-soft)}
+.reason svg{width:40px;height:40px;stroke:var(--ink);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.reason{position:relative}
+.rdot{position:absolute;top:12px;left:12px;width:10px;height:10px;border-radius:50%}
+.washroom{background:#2F8F6B}
+.water{background:#2E7FB5}
+.wudhu{background:#6B5CA5}
+.assigned{background:#C0803A}
+.other{background:#93A3A9}
+.bdots{margin-left:auto;margin-right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:6px}
+.bdots .d{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:150px}
+.bdots .d i{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
+.bdots .d i.flagged{box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),0 0 0 2px var(--ember)}
+.bdots span{font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap}
+.bdots + .x{margin-left:0}
+
+.scrim{position:absolute;inset:0;background:rgba(31,46,54,.5);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+.scrim.show{display:flex}
+.sheet{width:100%;max-width:720px;max-height:100%;background:var(--card);border-radius:22px;padding:22px 24px 24px;display:flex;flex-direction:column;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:flex-start;gap:14px}
+.sheet h3{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.sheet p{color:var(--mute);margin-top:4px;font-size:15px;line-height:1.4}
+.sheet .x{margin-left:auto;width:44px;height:44px;border-radius:12px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+.sheet .x svg{width:20px;height:20px;stroke:var(--ink);stroke-width:2.2;fill:none;stroke-linecap:round}
+.sheet .body{flex:1;overflow:auto;margin-top:16px;min-height:0}
+.actions{display:flex;gap:12px;margin-top:18px}
+.btn{flex:1;border-radius:14px;padding:16px;font-size:17px;font-weight:800;text-align:center}
+.btn.primary{background:var(--leaf);color:#fff}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.ghost{background:var(--paper);border:1px solid var(--line)}
+.btn.warn{background:var(--ember);color:#fff}
+.note{margin-top:14px}
+.note input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--paper)}
+.rowlist{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.row b{flex:1;font-size:16px}
+.row .time{color:var(--mute);font-size:13px;min-width:130px;text-align:right}
+.seg{display:inline-flex;background:var(--card);border:1px solid #C6D2D6;border-radius:10px;overflow:hidden}
+.seg button{padding:7px 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid #E4EBED}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:#fff}
+.seg button.on.absent{background:var(--ember)}
+.seg button.on.tardy{background:var(--gold);color:var(--ink)}
+.summary{display:flex;gap:10px;margin-top:14px}
+.summary div{flex:1;border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;display:flex;justify-content:space-between}
+.summary div b{font-size:18px}
+.summary .p{background:var(--leaf-soft);color:#0C5C5C}
+.summary .t{background:var(--gold-soft);color:#6B4B0C}
+.summary .a{background:var(--ember-soft);color:var(--ember)}
+
+.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap}
+.toast.show{display:flex}
+.toast button{color:var(--gold);font-weight:800;padding:4px 6px}
+
+.drawer{position:absolute;top:0;right:0;bottom:0;width:380px;background:var(--card);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .2s ease;z-index:25;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(31,46,54,.15)}
+.drawer.show{transform:none}
+.drawer .dhead{display:flex;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.drawer .dhead h3{font-size:18px;font-weight:800}
+.drawer .dbody{flex:1;overflow:auto;padding:16px 20px}
+.drawer h4{font-size:13px;font-weight:700;color:var(--mute);margin:14px 0 8px}
+.drawer h4:first-child{margin-top:0}
+.dbtn{display:block;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);font-weight:700;font-size:15px;margin-bottom:8px;background:var(--card)}
+.dbtn small{display:block;font-weight:500;color:var(--mute);font-size:13px;margin-top:2px}
+.dbtn.gold{background:var(--gold-soft);border-color:#E5C57E}
+.dbtn.ember{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
+.dbtn.leaf{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.dbtn.leaf small{color:#CFE3F0}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:700}
+.field small{display:block;font-weight:500;color:var(--mute);font-size:12px;margin-top:2px}
+.field select,.field input{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--paper);font-size:14px;width:96px}
+.leftday{display:block;width:100%;margin-top:14px;text-align:center;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font-weight:700;font-size:15px;color:var(--mute)}
+.rrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
+.rrow b{flex:1}
+.rrow small{font-weight:500;color:var(--mute);font-size:12px}
+.rrow button{font-size:13px;font-weight:700;color:var(--ember);padding:4px 6px}
+.rrow button.back{color:var(--leaf)}
+.rctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 22px 14px}
+.rctl select{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card);font-size:14px;font-weight:700;color:var(--ink)}
+.rnav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.rnav button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:17px;font-weight:800;color:var(--ink)}
+.rnav b{font-size:14px;min-width:150px;text-align:center}
+.chips{display:flex;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
+.chip{flex:1;min-width:104px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;color:var(--mute)}
+.chip b{display:block;font-size:22px;color:var(--ink);letter-spacing:-.02em;margin-top:2px}
+.chip.warn{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
+.chip.warn b{color:var(--ember)}
+.stat{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stat>b{width:94px;font-weight:800}
+.bar{flex:1;height:10px;border-radius:6px;background:var(--paper);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px}
+.stat .v{width:172px;text-align:right;font-size:13px;font-weight:700;color:var(--mute)}
+.stat .v em{font-style:normal;color:var(--ember)}
+.two{display:flex;gap:6px}
+.two select,.two input{max-width:104px}
+.row .time.flag{color:var(--ember);font-weight:800}
+.radd{display:flex;gap:8px;margin-top:12px}
+.radd input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper);font-size:14px}
+.radd button{background:var(--ink);color:#fff;border-radius:10px;padding:10px 15px;font-weight:700;font-size:14px}
+.setup{position:fixed;inset:0;background:var(--paper);display:none;place-items:center;z-index:80;padding:24px;overflow:auto}
+.setup.show{display:grid}
+.setup-card{background:var(--card);border:1px solid var(--line);border-radius:20px;max-width:580px;width:100%;padding:30px}
+.setup-card h2{font-size:27px;letter-spacing:-.02em}
+.setup-card .lede{color:var(--mute);font-size:15px;line-height:1.55;margin:9px 0 22px}
+.setup-card label{display:block;font-weight:800;font-size:14px;margin-bottom:18px}
+.setup-card input,.setup-card textarea{display:block;width:100%;margin-top:7px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-size:15px;font-weight:600;background:var(--paper);resize:vertical;font-family:inherit}
+.setup-card .hint{font-weight:600;color:var(--mute);font-size:13px;margin-top:7px}
+.roster-list{margin:12px 0;border:1px solid var(--line);border-radius:12px;max-height:280px;overflow-y:auto;background:var(--paper)}
+.roster-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px}
+.roster-item:last-child{border-bottom:none}
+.roster-item button{color:var(--ember);font-weight:700;font-size:13px;padding:4px 8px}
+.roster-add{display:flex;gap:8px}
+.roster-add input{flex:1;min-width:0}
+.setup-actions{display:flex;align-items:center;gap:12px}
+.setup-actions span{color:var(--mute);font-size:14px;font-weight:700}
+.setup-actions .btn{margin-left:auto}
+.err{color:var(--ember);font-weight:700;font-size:14px;margin-top:12px;min-height:18px}
+.tour{position:fixed;inset:0;background:rgba(31,46,54,.55);display:none;place-items:center;z-index:70;padding:24px}
+.tour.show{display:grid}
+.tour-card{background:var(--card);border-radius:20px;max-width:540px;width:100%;padding:28px}
+.tour-card h3{font-size:22px;letter-spacing:-.01em}
+.tour-card p{font-size:15px;line-height:1.6;color:var(--mute);margin-top:10px}
+.tour-steps{display:flex;gap:6px;margin:20px 0 22px}
+.tour-steps i{flex:1;height:4px;border-radius:3px;background:var(--line)}
+.tour-steps i.on{background:var(--leaf)}
+.tour-actions{display:flex;gap:10px;align-items:center}
+.tour-actions .skip{color:var(--mute);font-weight:700;font-size:14px;margin-right:auto}
+.rh{font-size:13px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px}
+.log{font-size:13px;color:var(--mute);line-height:1.5}
+.log div{padding:6px 0;border-bottom:1px solid var(--line)}
+.log b{color:var(--ink)}
+
+/* ===== Practice copy: organizations (admin mode) ===== */
+html,body{height:100%}
+body{display:flex;flex-direction:column}
+.practice{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 12px;background:#FFE58A;color:#3B2F00;border-bottom:2px solid #E5C14B;font-size:13px;font-weight:700;z-index:90;position:relative}
+.practice b{font-weight:800}
+.practice .who{display:flex;align-items:center;gap:6px;margin-left:auto}
+.practice select{border:1px solid #C9A63A;border-radius:8px;padding:4px 8px;background:#FFF6CF;font-size:13px;font-weight:800;color:#3B2F00;max-width:46vw}
+.practice button{border:1px solid #C9A63A;border-radius:8px;padding:4px 10px;background:#FFF6CF;font-weight:800;font-size:13px}
+/* clip, not just hidden: the teacher menu waits off the right edge, and with
+   'hidden' the browser could still scroll the whole app sideways to it (the
+   same bug the real app fixed). */
+.app{flex:1;height:auto;min-height:0;overflow:hidden;overflow:clip}
+.drawer:not(.show){visibility:hidden}
+/* full-screen cards sit below the practice bar, not under it */
+.setup,.tour{position:absolute}
+.frow input[type=time]{width:132px}
+.view{display:none;flex-direction:column;flex:1;min-height:0}
+.view.on{display:flex}
+.crumb{font-size:13px;font-weight:700;color:#A6BFC7;letter-spacing:.01em}
+.hbtn{height:40px;padding:0 13px;border-radius:11px;background:rgba(255,255,255,.12);color:#EEF3F4;font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.ini{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#0F7B7B;color:#fff;font-size:12.5px;font-weight:800;flex:none}
+.ini.big{width:72px;height:72px;font-size:26px}
+.ini.mid{width:40px;height:40px;font-size:15px}
+.hbtn.prof{padding:0 6px 0 6px;background:transparent}
+.tile:disabled{opacity:1;cursor:default}
+.ro .tile{cursor:default}
+.ro .tile:active{transform:none}
+.banner.ro{background:var(--leaf-soft);border-color:#BBD9D9;color:var(--ink)}
+.lockchip{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--gold-soft);color:#6B4B0C;font-size:11.5px;font-weight:800;margin-left:6px}
+.lockrow{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:700}
+.lockrow span{color:var(--mute);font-weight:700;text-align:right}
+.asknote{font-size:12.5px;color:var(--mute);line-height:1.5;margin:8px 0 4px}
+.lsteps{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.lstep{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.lstep button{width:36px;height:36px;font-size:20px;font-weight:800;color:var(--leaf);text-align:center}
+.lstep button:disabled{color:#B9C6CB}
+.lstep b{min-width:70px;text-align:center;font-size:14px;font-weight:800;border-left:1px solid var(--line);border-right:1px solid var(--line);line-height:36px}
+/* org view */
+.ohead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;background:var(--ink);color:#EEF3F4}
+.ohead h1{font-size:24px;font-weight:800;letter-spacing:-.01em}
+.ohead .chips2{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.ohead .right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ohead select{border-radius:10px;padding:6px 8px;font-weight:800;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.ohead select option{color:var(--ink)}
+.pill.red{background:var(--ember);color:#fff}
+.pill.ro{background:transparent;color:#A6BFC7;padding-left:2px}
+.otabs{display:flex;gap:4px;padding:8px 14px 0;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto}
+.otab{padding:9px 14px;border-radius:10px 10px 0 0;font-weight:800;font-size:14px;color:var(--mute);border:1px solid transparent;border-bottom:0;white-space:nowrap}
+.otab.on{background:var(--card);border-color:var(--line);color:var(--leaf);margin-bottom:-1px}
+.obody{flex:1;min-height:0;overflow:auto;padding:12px 14px 20px}
+.ofilters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.fchip{padding:6px 12px;border-radius:999px;border:1px solid #C6D2D6;background:var(--card);font-weight:800;font-size:13px;color:var(--mute)}
+.fchip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.sm{flex:none;padding:8px 14px;font-size:14px;border-radius:11px}
+.ofilters .btn.sm{margin-left:auto}
+.pgroup{margin-bottom:12px}
+.pgroup h3{font-size:15px;font-weight:800;margin:4px 0 8px}
+.pgroup h3 small{font-weight:700;color:var(--mute);margin-left:6px;font-size:13px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.ocard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0}
+.ocard .ct{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ocard .ct b{font-size:16px;font-weight:800}
+.ocard .tch{font-size:13px;color:var(--mute);font-weight:600}
+.ocard .cnt{font-size:13.5px;font-weight:800}
+.ocard.alert{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft)}
+.st{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:800;background:var(--leaf-soft);color:#0C5C5C}
+.st.snack{background:var(--gold-soft);color:#6B4B0C}
+.st.idle{background:#E7EDEF;color:#4A5B63}
+.redchip{align-self:flex-start;display:inline-block;padding:3px 10px;border-radius:999px;background:var(--ember);color:#fff;font-size:12.5px;font-weight:800;margin-top:2px}
+.prow{display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(130px,.8fr) minmax(140px,1fr) minmax(150px,.9fr) auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--card)}
+.ptable{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.prow:last-child{border-bottom:0}
+.prow .who2{display:flex;align-items:center;gap:10px;min-width:0}
+.prow .who2 div{min-width:0}
+.prow .who2 b{display:block;font-size:15px;font-weight:800}
+.prow .who2 small{display:block;color:var(--mute);font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
+.prow select{border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:var(--paper);font-size:13px;font-weight:700;max-width:100%}
+.badge2{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:800;margin:2px 4px 2px 0}
+.badge2.admin{background:var(--ink);color:#fff}
+.badge2.teacher{background:var(--leaf-soft);color:#0C5C5C}
+.badge2.padmin{background:var(--gold-soft);color:#6B4B0C}
+.badge2.youb{background:var(--ink);color:#fff;border-radius:999px}
+.prow .cls{font-size:13px;color:var(--mute);font-weight:600}
+.lnk{color:var(--ember);font-weight:800;font-size:13px;padding:6px 8px}
+.wait{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:8px}
+.wait .q{width:36px;height:36px;border-radius:50%;background:var(--gold-soft);color:#6B4B0C;display:grid;place-items:center;font-weight:800;flex:none}
+.wait div{flex:1;min-width:180px}
+.wait b{display:block}
+.wait small{color:var(--mute);font-weight:600}
+.note2{color:var(--mute);font-size:13px;font-weight:600;line-height:1.5;margin-top:10px}
+.sect{font-size:13px;font-weight:800;color:var(--mute);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.pcard2{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.pcard2 h3{font-size:16px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.frow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-weight:700;font-size:14px;flex-wrap:wrap}
+.frow:last-child{border-bottom:0}
+.frow small{display:block;color:var(--mute);font-weight:600;font-size:12px}
+.frow input[type=time],.frow input[type=text],.frow select{border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:var(--paper);font-size:14px;font-weight:700}
+.frow input[type=text]{min-width:0;width:220px;max-width:100%}
+.frow .two{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.daysel{display:flex;gap:4px;flex-wrap:wrap}
+.daysel button{min-width:40px;padding:5px 7px;border-radius:999px;border:1px solid #C6D2D6;font-size:12px;font-weight:800;color:var(--mute);text-align:center}
+.daysel button.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.switch{position:relative;width:46px;height:26px;border-radius:13px;background:#C6D2D6;flex:none;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.switch.on{background:var(--leaf)}
+.switch.on::after{left:23px}
+.switch:disabled{opacity:.5}
+.swrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--paper);border:1px solid var(--line)}
+.swrow div{flex:1}
+.swrow b{display:block;font-size:14.5px}
+.swrow small{display:block;color:var(--mute);font-weight:600;font-size:12.5px;line-height:1.4}
+.rcards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0}
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 11px;min-width:0}
+.rcard h5{font-size:12px;font-weight:800;color:var(--mute)}
+.rcard h5.warn{color:#B42828}
+.rcard b{display:block;font-size:20px;font-weight:800;margin:2px 0}
+.rcard small{display:block;font-size:12px;font-weight:600;color:var(--mute)}
+.rtable{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 12px}
+.rrow2{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(80px,1fr) repeat(5,minmax(52px,auto));gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;font-weight:700}
+.rrow2:last-child{border-bottom:0}
+.rrow2.h{font-size:12px;color:var(--mute);font-weight:800}
+.rrow2 .nm b{display:block;font-size:14px}
+.rrow2 .nm small{display:block;color:var(--mute);font-weight:600;font-size:12px}
+.rrow2 .num{text-align:right;font-variant-numeric:tabular-nums}
+.rrow2 .barw{height:9px;border-radius:5px;background:#EEF2F3;overflow:hidden}
+.rrow2 .barw i{display:block;height:100%;background:#eb6834;border-radius:5px}
+.rrow2 .hot{color:#B42828}
+/* profile and full-screen cards */
+.pagewrap{flex:1;min-height:0;overflow:auto;padding:16px}
+.pgrid2{display:grid;grid-template-columns:minmax(230px,320px) minmax(0,1fr);gap:14px;align-items:start;max-width:1100px;margin:0 auto}
+.pcard3{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.pcard3 .who3{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;margin-bottom:6px}
+.pcard3 .who3 b{font-size:18px;font-weight:800}
+.pcard3 .who3 small{color:var(--mute);font-weight:600;overflow-wrap:anywhere}
+.pcard3 .who3 .via{background:var(--paper);border-radius:999px;padding:3px 10px;font-weight:700;font-size:12.5px;color:var(--mute)}
+.mcls h2{font-size:20px;font-weight:800;margin-bottom:4px}
+.mgroup{font-size:12.5px;font-weight:800;color:var(--mute);letter-spacing:.05em;text-transform:uppercase;margin:12px 0 6px}
+.mcard{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.mcard.open{border:2px solid var(--leaf)}
+.mcard div{flex:1;min-width:0}
+.mcard b{display:block;font-size:15.5px;font-weight:800}
+.mcard small{display:block;color:var(--mute);font-weight:600;font-size:12.5px}
+.mcard .btn{flex:none;padding:7px 16px;font-size:14px;border-radius:999px}
+.opennow{flex:none;padding:5px 12px;border-radius:999px;background:var(--leaf-soft);color:var(--leaf);font-weight:800;font-size:13px}
+.qlinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.qlinks .btn{flex:none}
+.quiet{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.quiet button{color:var(--leaf);font-weight:800;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.setup .setup-card{max-height:100%;overflow:auto}
+.setup.ontop{place-items:start center}
+.setup-card .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.setup-card select{display:block;width:100%;margin-top:7px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-size:15px;font-weight:700;background:var(--card)}
+.tchips{border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;background:var(--card);margin-top:7px}
+.tchip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px 5px 11px;border-radius:999px;background:var(--leaf-soft);font-weight:800;font-size:13.5px}
+.tchip small{font-weight:600;color:var(--mute);font-size:12px}
+.tchip.new{background:var(--gold-soft)}
+.tchip button{color:var(--leaf);font-weight:800;padding:0 4px}
+.tchips input{flex:1;min-width:160px;border:0 !important;background:transparent !important;margin:0 !important;padding:6px !important}
+.segw{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}
+.segw button{padding:11px;border-radius:12px;border:1px solid var(--line);font-weight:800;text-align:center;color:var(--mute);background:var(--card)}
+.segw button.on{border-color:var(--leaf);background:var(--leaf-soft);color:var(--leaf)}
+.setup-card textarea{min-height:110px}
+.flabel{font-weight:800;font-size:14px;margin:4px 0 0}
+.setup-card .tchips{margin-bottom:12px}
+.setup-card #cfList{display:block;width:100%;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font:inherit;font-size:15px;background:var(--paper)}
+.stepdots{display:flex;gap:6px;margin:4px 0 14px}
+.stepdots i{flex:1;height:4px;border-radius:3px;background:var(--line)}
+.stepdots i.on{background:var(--leaf)}
+.plist{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.plist div{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--line);border-radius:12px;font-weight:800;background:var(--paper)}
+.plist button{color:var(--ember);font-weight:800;font-size:13px}
+.invcard{background:var(--leaf-soft);border-radius:14px;padding:12px 14px;margin:10px 0}
+.invcard b{font-size:15px}
+.invcard ul{margin:6px 0 0 18px;font-weight:700}
+.msgbox{width:100%;min-height:170px;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:14px;line-height:1.5;background:var(--paper);resize:vertical}
+.err{min-height:0}
+.okmsg{color:var(--leaf);font-weight:800;font-size:14px;margin-top:8px}
+.signin-opts{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.signin-opts .btn{width:100%}
+.orline{display:flex;align-items:center;gap:10px;color:var(--mute);font-weight:700;font-size:13px}
+.orline::before,.orline::after{content:"";flex:1;height:1px;background:var(--line)}
+@media (max-width:700px){
+  .prow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"who rm" "role role" "cls cls" "see see"}
+  .prow .who2{grid-area:who} .prow .rcol{grid-area:role} .prow .cls{grid-area:cls} .prow .scol{grid-area:see} .prow .rmcol{grid-area:rm}
+  .rcards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rrow2{grid-template-columns:minmax(0,1fr) repeat(3,auto);row-gap:4px}
+  .rrow2 .barw,.rrow2 .hide-n{display:none}
+  .pgrid2{grid-template-columns:minmax(0,1fr)}
+  .setup-card .row2{grid-template-columns:1fr}
+  .ohead h1{font-size:20px}
+  .practice{font-size:12px}
+}
+@media (max-height:560px){
+  .top{padding:10px 14px}
+  .setup{padding:10px}
+  .setup-card{padding:18px 20px}
+}
+
+/* the class header: name and counts on the left, time and buttons on the right */
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:12px 16px}
+.top .hl{min-width:0}
+.top .hl h1{font-size:22px;line-height:1.15}
+.hpills{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
+.hpills .sub{margin-top:0;font-size:13px}
+.top .hr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.top .when{margin-left:0;margin-right:4px}
+.top .clock{font-size:28px}
+.top .date{font-size:13px;margin-bottom:3px}
+.start-btn{padding:10px 15px;font-size:14px}
+.menu-btn{width:42px;height:42px}
+.tile{min-height:88px;padding:10px 12px;justify-content:flex-start}
+.tile .tag{position:static;align-self:flex-start;margin-bottom:4px}
+.tile .name{font-size:16px}
+.tile .state{margin-top:auto;padding-top:6px}
+.out-item{flex-wrap:wrap;row-gap:6px}
+.out-item .who{flex:1 1 100%}
+.out-item .t{margin-right:auto}
+.practice{flex-wrap:nowrap}
+.practice>span:first-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.practice .who{flex:none}
+.practice select{max-width:300px}
+.prow{grid-template-columns:minmax(200px,1.5fr) minmax(150px,.9fr) minmax(120px,1fr) minmax(160px,.9fr) auto}
+.prow .who2 b.ini{display:inline-grid}
+.badge2{white-space:nowrap}
+@media (max-width:700px){
+  .top{grid-template-columns:minmax(0,1fr)}
+  .top .hr{justify-content:flex-start}
+  .practice{flex-wrap:wrap}
+  .practice>span:first-child{white-space:normal}
+  .practice select{max-width:62vw}
+  .stage{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .stage>.panel:last-child{max-height:34vh}
+}
+</style>
+</head>
+<body>
+
+<div class="practice" role="region" aria-label="Practice copy">
+  <span>⚠ <b>Practice copy</b>, nothing here touches your real app</span>
+  <span class="who"><label for="youAre">You are:</label><select id="youAre" onchange="pickPerson(this.value)"></select>
+  <button onclick="askStartOver()">Start over</button></span>
+</div>
+
+<div class="app">
+  <!-- one class: the Log screen (also used, read only, to look in) -->
+  <div class="view" id="classView">
+    <header class="top">
+      <div class="hl"><div class="crumb" id="crumb"></div><h1 id="title">Hifz Class</h1>
+        <div class="hpills"><span class="pill">In class <b id="cIn">0</b></span><span class="pill out">Out <b id="cOut">0</b></span><span class="pill absent">Not here <b id="cAbs">0</b></span><span class="sub" id="sub"></span></div></div>
+      <div class="hr">
+      <div class="when"><div class="date" id="date"></div><div class="clock" id="clock"></div></div>
+      <button class="start-btn" id="mainBtn" onclick="mainAction()"></button>
+      <button class="hbtn" id="backBtn" onclick="leaveLookIn()">‹ All classes</button>
+      <button class="hbtn" id="orgBtn" onclick="openOrgFromClass()">Organization</button>
+      <button class="hbtn prof" id="profBtn" aria-label="Profile" onclick="showProfile()"><b class="ini" id="profIni">?</b></button>
+      <button class="menu-btn" id="menuBtn" aria-label="Teacher menu" onclick="openDrawer()"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      </div>
+    </header>
+    <div id="banner"></div>
+    <main class="stage" id="stage">
+      <section class="panel">
+        <div class="panel-head"><h2 id="gridTitle">Tap your name</h2><span class="hint" id="gridHint"></span></div>
+        <div class="grid" id="grid"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Out right now</h2><span class="hint" id="outHint"></span></div>
+        <div class="out-list" id="outList"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- the organization: Classes, People, Programs, Reports -->
+  <div class="view" id="orgView">
+    <div class="ohead">
+      <div><h1 id="orgName"></h1><div class="chips2" id="orgChips"></div></div>
+      <div class="right" id="orgRight"></div>
+    </div>
+    <div class="otabs" id="orgTabs" role="tablist"></div>
+    <div class="obody" id="orgBody"></div>
+  </div>
+
+  <!-- Profile -->
+  <div class="view" id="profileView"><div class="pagewrap" id="profileBody"></div></div>
+
+  <!-- full-screen cards: sign in, invited, set up, add a class, organization setup, invite code -->
+  <div class="setup ontop" id="screen"><div class="setup-card" id="screenCard"></div></div>
+
+  <div class="setup" id="setup"><div class="setup-card">
+    <h2>Set up your class</h2>
+    <p class="lede">Two things and you are ready.</p>
+    <label>Your name
+      <input id="tName" placeholder="e.g. Ustadh Bilal" oninput="setupCount()">
+      <span class="hint">Shown in the corner as &ldquo;[your name]'s Hifz Class&rdquo;.</span>
+    </label>
+    <label>Your students
+      <div class="roster-list" id="rosterList"></div>
+      <div class="roster-add">
+        <input id="tStudent" placeholder="Type a name and press Enter" onkeydown="if(event.key==='Enter')addSetupStudent()">
+        <button class="btn ghost" onclick="addSetupStudent()">Add</button>
+      </div>
+      <span class="hint">Add them one by one. You can add or remove students anytime later.</span>
+    </label>
+    <div class="setup-actions"><span id="setupCount">0 students</span><button class="btn ghost" id="setupCancel" onclick="cancelSetup()">Cancel</button><button class="btn dark" onclick="finishSetup()">Create my class</button></div>
+    <p class="err" id="setupErr"></p>
+    <div class="quiet" id="setupQuiet"><button onclick="openOrgSetup()">Setting up an organization instead?</button><button onclick="openCode()">Have an invite code?</button></div>
+  </div></div>
+  <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
+  <div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+  <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" onclick="undo()">Undo</button></div>
+  <div class="scrim" id="drawerScrim" style="background:rgba(31,46,54,.25)" onclick="closeDrawer()"></div>
+  <aside class="drawer" id="drawer">
+    <div class="dhead"><h3>Teacher menu</h3><button class="menu-btn" style="margin-left:auto;background:var(--paper)" onclick="closeDrawer()"><svg viewBox="0 0 24 24" style="stroke:var(--ink)"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="dbody" id="dbody"></div>
+  </aside>
+</div>
+<script>
+/* =====================================================================
+   PRACTICE COPY - organizations (admin mode).
+   A copy of the early browser-only prototype, built on to try out
+   docs/organizations.md. Nothing here talks to Firebase or the real app:
+   everything is kept in this browser under its own keys (NS below), never
+   the real app's keys, and only those keys are ever cleared.
+   All people other than the owner, and every student, are made up.
+   ===================================================================== */
+const REASONS=[
+  {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
+  {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
+  {key:'wudhu',label:'Wudhu',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s3.5 4.4 3.5 6.6a3.5 3.5 0 0 1-7 0C8.5 7.4 12 3 12 3z"/><path d="M3.5 15c2.2 3.3 5.3 5 8.5 5s6.3-1.7 8.5-5"/></svg>'},
+  {key:'other',label:'Other',icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg>'},
+  {key:'assigned',label:'Assigned',icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 13V9M9.5 2.5h5M19.5 5.5 21 7"/></svg>'}
+];
+const DEFAULT_SETTINGS={
+  startTime:'08:00', endTime:'15:30', days:[1,2,3,4,5],
+  snack:{start:'10:10',end:'10:20'}, lunch:{start:'12:05',end:'14:05'},
+  longMin:10, limits:{washroom:{min:7,trips:2}, water:{min:2,trips:2}, wudhu:{min:2,trips:2}}
+};
+const state={
+  teacher:'', students:[], settings:JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+  session:{status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null},
+  attendance:{}, active:{}, breaks:[], log:[], lastAction:null, history:{}
+};
+let CUR=null;            // the class on screen
+let readOnly=false;      // true while looking in
+
+const $=id=>document.getElementById(id);
+const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const clockStr=d=>d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const dateStr=d=>d.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+const pad=n=>String(n).padStart(2,'0');
+const dayId=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const isoDay=d=>((d.getDay()+6)%7)+1;
+const fmtDur=ms=>{const s=Math.max(0,Math.floor(ms/1000));return `${Math.floor(s/60)}:${pad(s%60)}`};
+const nameOf=sid=>(state.students.find(s=>s.id===sid)||{}).name||'';
+const roster=()=>state.students.filter(s=>s.active);
+const RSN=k=>REASONS.find(r=>r.key===k)||{key:k,label:k};
+const LIMIT=k=>state.settings.limits[k]||null;
+const NO_TRIP_LIMIT=99;
+const tripCap=lim=>lim&&lim.trips>0&&lim.trips<NO_TRIP_LIMIT?lim.trips:0;
+const capMs=(k,assignedMin)=>k==='assigned'?Math.max(1,assignedMin||0)*60000:(LIMIT(k)?LIMIT(k).min*60000:state.settings.longMin*60000);
+const tripsUsed=(sid,k)=>state.breaks.filter(b=>b.sid===sid&&b.reason===k).length+(((state.active[sid]||{}).reason===k)?1:0);
+const flagsOf=sid=>state.breaks.filter(b=>b.sid===sid&&b.flag).length;
+const isLong=a=>!!a.allowMs&&Date.now()-a.startAt>a.allowMs;
+const toMin=t=>{const[h,m]=String(t).split(':').map(Number);return h*60+m};
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+const hm=t=>{const[h,m]=String(t).split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return clockStr(d)};
+const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function daysText(days){ const d=(days||[]).slice().sort((a,b)=>a-b); if(!d.length) return 'No days'; const run=d.length>=3&&d.every((x,i)=>!i||x===d[i-1]+1); return run?`${DAYN[d[0]-1]}–${DAYN[d[d.length-1]-1]}`:d.length===1&&d[0]===7?'Sundays':d.map(x=>DAYN[x-1]).join(', '); }
+function dueBreak(){
+  const S=state.settings,n=nowMin();
+  if(S.snack&&n>=toMin(S.snack.start)&&n<toMin(S.snack.end)) return {kind:'Snack break',start:S.snack.start,end:S.snack.end};
+  if(S.lunch&&n>=toMin(S.lunch.start)&&n<toMin(S.lunch.end)) return {kind:'Lunch and recess',start:S.lunch.start,end:S.lunch.end};
+  return null;
+}
+function nextUp(){
+  const S=state.settings,n=nowMin();
+  const items=[S.snack&&[toMin(S.snack.start),'snack '+hm(S.snack.start)],S.lunch&&[toMin(S.lunch.start),'lunch '+hm(S.lunch.start)],[toMin(S.endTime),'ends '+hm(S.endTime)]].filter(Boolean);
+  const nx=items.find(i=>i[0]>n); return nx?(nx[1].startsWith('ends')?nx[1]:'next '+nx[1]):'';
+}
+const att=sid=>state.attendance[sid];
+const st=()=>state.session.status;
+function logIt(msg){ state.log.unshift({t:new Date(),msg}); }
+function mergeSettings(x){
+  const def=DEFAULT_SETTINGS, o=x||{}, out=Object.assign({},JSON.parse(JSON.stringify(def)),JSON.parse(JSON.stringify(o)));
+  out.limits=Object.assign({},JSON.parse(JSON.stringify(def.limits)),JSON.parse(JSON.stringify(o.limits||{})));
+  if(!('snack' in o)) out.snack=Object.assign({},def.snack);
+  if(!('lunch' in o)) out.lunch=Object.assign({},def.lunch);
+  return out;
+}
+function ensureAttendance(){ state.students.forEach(x=>{ if(!state.attendance[x.id]) state.attendance[x.id]={status:'present',at:null,note:''}; }); }
+
+function toast(msg,undoable){
+  $('toastMsg').textContent=msg; $('toastUndo').style.display=undoable?'inline':'none';
+  $('toast').classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>$('toast').classList.remove('show'),undoable?4500:2600);
+}
+function undo(){
+  const a=state.lastAction; if(!a||readOnly) return;
+  if(a.type==='checkout') delete state.active[a.sid];
+  if(a.type==='return'){ state.breaks=state.breaks.filter(b=>b!==a.rec); state.active[a.sid]=a.prev; }
+  if(a.type==='att') state.attendance[a.sid]=a.prev;
+  state.log.shift(); state.lastAction=null; $('toast').classList.remove('show'); render();
+}
+/* Looking in is read only: nothing on the Log screen does anything. */
+function guardRO(){ if(readOnly){ toast("Read only - only this class's teachers log breaks."); return true; } return false; }
+
+/* ===== the tile tap: one gesture, context decides =====
+   Fixed: tapping a student who is out used to call openSheet(), which never
+   existed, so it threw. It now opens a proper sheet: times, Return, Cancel break. */
+const hhmm=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function editBreak(sid){
+  const o=state.active[sid]; if(!o) return;
+  const now=Date.now(), elapsed=now-o.startAt;
+  sheetHTML(`${esc(nameOf(sid))} is out for ${esc(o.label)}`,o.allowMs?`${fmtDur(o.allowMs)} allowed${o.overTrip?' · past the daily limit':''}`:'No time limit',
+   `<div class="body">
+    <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <label style="flex:1;min-width:140px;font-size:12px;font-weight:700;color:var(--mute)">Left at<input id="startTime" type="time" value="${hhmm(new Date(o.startAt))}" style="display:block;width:100%;margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px"></label>
+      <label style="flex:1;min-width:140px;font-size:12px;font-weight:700;color:var(--mute)">Back at<input id="endTime" type="time" value="${hhmm(new Date(now))}" style="display:block;width:100%;margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px"></label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--paper);border-radius:10px">
+      <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--mute)">Out for</div><div style="font-size:20px;font-weight:800;color:${isLong(o)?'var(--ember)':'var(--leaf)'}" data-t="${+o.startAt}">${fmtDur(elapsed)}</div></div>
+    </div></div>
+    <div class="actions"><button class="btn ghost" onclick="cancelBreak('${sid}')">Cancel break</button><button class="btn dark" onclick="saveBreakEdits('${sid}')">Return ${esc(nameOf(sid))}</button></div>`);
+}
+function saveBreakEdits(sid){
+  const o=state.active[sid]; if(!o) return closeSheet();
+  const a=$('startTime').value, b=$('endTime').value;
+  if(!a||!b) return toast('Please set both times.');
+  const now=new Date(), mk=v=>{ const [h,m]=v.split(':'); return new Date(now.getFullYear(),now.getMonth(),now.getDate(),+h,+m); };
+  const s0=a===hhmm(new Date(o.startAt))?new Date(o.startAt):mk(a), e0=b===hhmm(now)?now:mk(b);
+  if(s0>e0) return toast('Back at cannot be before Left at.');
+  o.startAt=s0; ret(sid,false,e0);
+}
+function cancelBreak(sid){
+  confirmSheet(`Cancel ${esc(nameOf(sid))}'s break for ${esc(state.active[sid].label)}?`,'The break will be removed and not recorded.','Cancel break',()=>{
+    logIt(`<b>${esc(nameOf(sid))}</b>'s break cancelled`);
+    delete state.active[sid]; closeSheet(); toast(`${nameOf(sid)}'s break cancelled`); render();
+  },'warn','Keep the break');
+}
+function tap(sid){
+  if(guardRO()) return;
+  const a=att(sid), o=state.active[sid], s=st();
+  if(o) return editBreak(sid);
+  if(s==='preclass'){
+    const prev={...a};
+    if(a.status==='absent'){ a.status='present'; a.at=null; a.note=''; logIt(`<b>${esc(nameOf(sid))}</b> re-activated before class`); toast(`${nameOf(sid)} marked present`,true); }
+    else { a.status='absent'; a.at=null; a.note='Deactivated before class'; logIt(`<b>${esc(nameOf(sid))}</b> deactivated (not here)`); toast(`${nameOf(sid)} marked not here`,true); }
+    state.lastAction={type:'att',sid,prev}; return render();
+  }
+  if(s==='ended') return toast('Class has ended for today.');
+  if(s==='lunch') return toast(`${state.session.pauseLabel||'Break'}: individual breaks are paused.`);
+  if(a.status==='absent'){
+    const prev={...a}, now=new Date();
+    a.status='tardy'; a.at=now; a.note=`Arrived ${clockStr(now)}`;
+    logIt(`<b>${esc(nameOf(sid))}</b> marked tardy at ${clockStr(now)}`);
+    state.lastAction={type:'att',sid,prev}; toast(`${nameOf(sid)} is here · tardy, ${clockStr(now)}`,true); return render();
+  }
+  openReason(sid);
+}
+function markLeft(sid){
+  if(guardRO()) return;
+  const a=att(sid), prev={...a}, now=new Date();
+  if(state.active[sid]) ret(sid,true);
+  a.status='absent'; a.at=now; a.note=`Left at ${clockStr(now)}`;
+  logIt(`<b>${esc(nameOf(sid))}</b> left for the day at ${clockStr(now)}`);
+  state.lastAction={type:'att',sid,prev}; closeSheet(); toast(`${nameOf(sid)} left for the day`,true); render();
+}
+function checkout(sid,key,note,assignedMin){
+  if(guardRO()) return;
+  const r=RSN(key), lim=LIMIT(key), overTrip=!!(tripCap(lim)&&tripsUsed(sid,key)>=tripCap(lim));
+  state.active[sid]={reason:key,label:r.label,startAt:new Date(),note:note||'',allowMs:capMs(key,assignedMin),assignedMin:assignedMin||null,overTrip};
+  logIt(`<b>${esc(nameOf(sid))}</b> out · ${r.label}${assignedMin?` (${assignedMin} min assigned)`:''}${overTrip?' · past the daily limit':''}`);
+  state.lastAction={type:'checkout',sid}; closeSheet();
+  toast(overTrip?`${nameOf(sid)} out for ${r.label.toLowerCase()} · past the daily limit`:`${nameOf(sid)} out for ${r.label.toLowerCase()}`,true);
+  render();
+}
+function ret(sid,silent,endAt){
+  const a=state.active[sid]; if(!a) return;
+  const end=endAt||new Date(), dur=Math.max(0,end-a.startAt), over=a.allowMs?Math.max(0,dur-a.allowMs):0;
+  const rec={sid,reason:a.reason,label:a.label,startAt:a.startAt,endAt:end,dur,allowMs:a.allowMs,assignedMin:a.assignedMin||null,over,overTrip:!!a.overTrip,note:a.note||''};
+  rec.flag=over>0||rec.overTrip;
+  state.breaks.push(rec); delete state.active[sid];
+  logIt(`<b>${esc(nameOf(sid))}</b> back after ${fmtDur(dur)}${over?` · ${fmtDur(over)} over`:''}${rec.overTrip?' · past the daily limit':''}`);
+  state.lastAction={type:'return',sid,rec,prev:a}; closeSheet();
+  if(!silent) toast(rec.flag?`${nameOf(sid)} back after ${fmtDur(dur)} · flagged`:`${nameOf(sid)} back after ${fmtDur(dur)}`,true);
+  render();
+}
+
+/* ===== class-wide ===== */
+function mainAction(){ if(guardRO()) return; const s=st(); if(s==='preclass'||s==='ended') doStart(); else if(s==='lunch') endPause(); else endClass(); }
+function doStart(){
+  const now=new Date(); state.session={status:'live',startedAt:now,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
+  state.students.forEach(s=>{ const a=att(s.id); if(a&&a.status==='present') a.at=now; });
+  const abs=roster().filter(s=>att(s.id).status==='absent').length;
+  logIt(`Class started · ${roster().length-abs} present, ${abs} not here`);
+  closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
+}
+function endClass(){
+  confirmSheet('End class for today?','Open breaks will be closed. Students still deactivated stay marked absent.','End class',()=>{
+    Object.keys(state.active).forEach(sid=>ret(sid,true));
+    state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended'); closeSheet(); closeDrawer(); toast('Class ended'); render();
+  },'warn');
+}
+function startPause(kind,resumeAt){
+  confirmSheet(`Start ${kind.toLowerCase()} for the whole class?`,'Open breaks are closed and individual timers stop. This time is not counted against anyone.',`Start ${kind.toLowerCase()}`,()=>{
+    Object.keys(state.active).forEach(sid=>ret(sid,true));
+    state.session.status='lunch'; state.session.lunchAt=new Date(); state.session.pauseLabel=kind; state.session.resumeAt=resumeAt||null;
+    logIt(`${kind} started`); closeSheet(); closeDrawer(); toast(`${kind} started`); render();
+  });
+}
+function endPause(){
+  const k=state.session.pauseLabel||'Break';
+  state.session.status='live'; state.session.lunchAt=null; state.session.pauseLabel=null; state.session.resumeAt=null;
+  logIt(`${k} ended`); closeDrawer(); toast('Back in class'); render();
+}
+function resetDay(){
+  confirmSheet('Start today over?',"This clears today's attendance and breaks for this class.",'Start the day over',()=>{
+    state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
+    state.students.forEach(s=>state.attendance[s.id]={status:'present',at:null,note:''}); state.active={}; state.breaks=[]; state.log=[];
+    delete state.history[dayId(new Date())];
+    closeSheet(); closeDrawer(); render(); toast('Today has been started over');
+  },'warn','Keep today');
+}
+
+/* ===== sheets ===== */
+function sheetHTML(title,sub,body,extra){
+  $('sheet').innerHTML=`<div class="sheet-head"><div><h3>${title}</h3>${sub?`<p>${sub}</p>`:''}</div>${extra||''}<button class="x" aria-label="Close" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}`;
+  $('scrim').classList.add('show');
+}
+function closeSheet(){ $('scrim').classList.remove('show'); }
+function openReason(sid){
+  const bs=state.breaks.filter(b=>b.sid===sid), mins=Math.round(bs.reduce((a,b)=>a+b.dur,0)/60000), fl=bs.filter(b=>b.flag).length;
+  const dots = bs.length ? `<div class="bdots" title="Breaks so far today"><div class="d">${bs.map(b=>`<i class="${b.reason}${b.flag?' flagged':''}" title="${b.label} · ${fmtDur(b.dur)}"></i>`).join('')}</div><span>${bs.length} today · ${mins} min${fl?` · ${fl} flagged`:''}</span></div>` : '';
+  sheetHTML(`Where is ${esc(nameOf(sid))} going?`,'The timer starts as soon as you pick a reason.',
+    `<div class="body"><div class="reasons">${REASONS.map(r=>{
+       const lim=LIMIT(r.key), used=tripsUsed(sid,r.key), capped=!!(tripCap(lim)&&used>=tripCap(lim));
+       const cap = r.key==='assigned' ? 'you set the minutes'
+                 : lim ? (!tripCap(lim)?`${lim.min} min each · no trip limit`:capped?`${used} of ${lim.trips} used`:`${used} of ${lim.trips} · ${lim.min} min each`)
+                 : `alert after ${state.settings.longMin} min`;
+       const act = r.key==='assigned' ? `openAssign('${sid}')` : `checkout('${sid}','${r.key}',($('rnote')||{}).value)`;
+       return `<button class="reason ${capped?'capped':''}" onclick="${act}"><i class="rdot ${r.key}"></i>${r.icon}${r.label}<span class="cap">${capped?'over daily limit':cap}</span></button>`;
+     }).join('')}</div>
+     <div class="note"><input id="rnote" placeholder="Optional short note"></div>
+     <button class="leftday" onclick="markLeft('${sid}')">${esc(nameOf(sid))} left for the day</button></div>`, dots);
+}
+function openAssign(sid){
+  sheetHTML(`How long is ${esc(nameOf(sid))} assigned for?`,'That time is excused. Anything past it is flagged.',
+   `<div class="body"><div class="mins">${[2,5,10,15,20,30].map(m=>`<button onclick="checkout('${sid}','assigned',($('anote')||{}).value,${m})">${m} min</button>`).join('')}</div>
+    <div class="note"><input id="anote" placeholder="What is the task? (optional)"></div>
+    <div class="actions"><button class="btn ghost" onclick="openReason('${sid}')">Back</button></div></div>`);
+}
+function confirmSheet(title,sub,label,fn,kind,dismiss){
+  confirmSheet.fn=fn;
+  sheetHTML(title,sub,`<div class="actions"><button class="btn ghost" onclick="closeSheet()">${dismiss||'Cancel'}</button><button class="btn ${kind==='warn'?'warn':'dark'}" onclick="confirmSheet.fn()">${label}</button></div>`);
+}
+function openAttendanceReview(){
+  closeDrawer();
+  const list=roster(), c={present:0,tardy:0,absent:0}; list.forEach(s=>c[att(s.id).status]++);
+  sheetHTML("Today's attendance",'Change anything that needs correcting.',
+   `<div class="summary"><div class="p">Present <b>${c.present}</b></div><div class="t">Tardy <b>${c.tardy}</b></div><div class="a">Absent <b>${c.absent}</b></div></div>
+    <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row"><b>${esc(s.name)}</b><span class="time">${esc(a.note||(a.at?clockStr(a.at):''))}</span><div class="seg">${['present','tardy','absent'].map(k=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${k}</button>`).join('')}</div></div>`}).join('')}</div></div>
+    <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+function setStatus(sid,k){ if(guardRO()) return; const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${esc(nameOf(sid))}</b> attendance changed to ${k}`); } render(); openAttendanceReview(); }
+function openDaySummary(){
+  closeDrawer();
+  const list=state.students.filter(s=>s.active||state.breaks.some(b=>b.sid===s.id));
+  const c={present:0,tardy:0,absent:0}; list.forEach(s=>c[(att(s.id)||{status:'present'}).status]++);
+  const flagged=list.filter(s=>flagsOf(s.id)).length;
+  const when=state.session.startedAt?`${clockStr(state.session.startedAt)}${state.session.endedAt?' to '+clockStr(state.session.endedAt):', still running'}`:'Class has not started yet';
+  sheetHTML('Day summary',`${dateStr(new Date())} · ${when}`,
+   `<div class="summary"><div class="p">Present <b>${c.present}</b></div><div class="t">Tardy <b>${c.tardy}</b></div><div class="a">Not here <b>${c.absent}</b></div><div class="a">Flagged <b>${flagged}</b></div></div>
+    <div class="body"><div class="rowlist">${list.map(s=>{
+      const a=att(s.id)||{status:'present'}, bs=state.breaks.filter(b=>b.sid===s.id), mins=Math.round(bs.reduce((x,b)=>x+b.dur,0)/60000), fl=bs.filter(b=>b.flag).length;
+      const status=a.status==='present'?'Present':a.status==='tardy'?`Tardy, in at ${clockStr(a.at)}`:(a.note||'Not here');
+      return `<div class="row"><b>${esc(s.name)}</b><span class="time">${esc(status)}</span><span class="time">${bs.length?`${bs.length} break${bs.length>1?'s':''} · ${mins} min out`:'No breaks'}</span><span class="time flag">${fl?`⚑ ${fl} flagged`:''}</span></div>`;
+    }).join('')}</div></div>
+    <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+
+/* ===== first run: set up your own class ===== */
+let setupStudents=[];
+function setupCount(){ $('setupCount').textContent=`${setupStudents.length} student${setupStudents.length===1?'':'s'}`; }
+function addSetupStudent(){
+  const inp=$('tStudent'), name=(inp.value||'').replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'`]/g,'').trim();
+  if(!name) return;
+  if(setupStudents.includes(name)) return inp.value='';
+  setupStudents.push(name); inp.value=''; drawRosterList(); setupCount();
+}
+function removeSetupStudent(i){ setupStudents.splice(i,1); drawRosterList(); setupCount(); }
+/* Fixed: each Remove button used to show the student's name instead of "Remove". */
+function drawRosterList(){
+  $('rosterList').innerHTML=setupStudents.length?setupStudents.map((n,i)=>`<div class="roster-item"><span>${esc(n)}</span><button onclick="removeSetupStudent(${i})" aria-label="Remove ${esc(n)}">Remove</button></div>`).join(''):
+    `<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">No students yet</div>`;
+}
+
+/* ===== the short tour, after setting up a class =====
+   Fixed: each step dot was written <i class="..."</i> (a broken tag). */
+const TOUR=[
+ {h:'Everyone starts present',p:'Before you begin, every student is assumed to be here. Tap anyone who is absent, then press Start class. If they walk in later, tapping them again records them as tardy.'},
+ {h:'Logging a break',p:'Tap a student and pick a reason. The timer starts at once and the student appears in Out right now. Tap them again when they are back.'},
+ {h:'Limits and flags',p:'Each reason has its own allowance and a daily trip cap. The timer turns red once a break runs past its limit.'},
+ {h:'Your Profile',p:'The round button with your initials opens Profile: your classes, adding another, and setting up an organization.'}
+];
+let tourI=0;
+function startTour(){ tourI=0; drawTour(); $('tour').classList.add('show'); }
+function endTour(){ $('tour').classList.remove('show'); }
+function tourStep(d){ tourI+=d; if(tourI<0) tourI=0; if(tourI>=TOUR.length) return endTour(); drawTour(); }
+function drawTour(){
+  const t=TOUR[tourI], last=tourI===TOUR.length-1;
+  $('tourCard').innerHTML=`<h3>${t.h}</h3><p>${t.p}</p>
+    <div class="tour-steps">${TOUR.map((x,i)=>`<i class="${i<=tourI?'on':''}"></i>`).join('')}</div>
+    <div class="tour-actions"><button class="skip" onclick="endTour()">Skip</button>
+      ${tourI?`<button class="btn ghost" onclick="tourStep(-1)">Back</button>`:''}
+      <button class="btn dark" onclick="tourStep(1)">${last?'Start using it':'Next'}</button></div>`;
+}
+
+/* ===== the day record: every class day is kept so reports can look back ===== */
+function hasActivity(){ return state.breaks.length>0 || st()!=='preclass'; }
+function snapshot(){
+  return {
+    date:dayId(new Date()),
+    startedAt:state.session.startedAt?+state.session.startedAt:null,
+    endedAt:state.session.endedAt?+state.session.endedAt:null,
+    names:Object.fromEntries(state.students.map(x=>[x.id,x.name])),
+    att:Object.fromEntries(roster().map(x=>[x.id,{status:att(x.id).status}])),
+    breaks:state.breaks.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over||0,flag:!!b.flag,overTrip:!!b.overTrip,assignedMin:b.assignedMin||null}))
+  };
+}
+
+/* ===== reports for the open class (the prototype's sheet), plus the
+   organization summary for "Own + summaries" ===== */
+const rpt={scope:'class',sid:null,kind:'week',offset:0};
+function periodDays(kind,offset){
+  const now=new Date(); let start,end,label;
+  if(kind==='day'){ start=new Date(now); start.setDate(start.getDate()+offset); end=new Date(start); label=start.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'}); }
+  else if(kind==='week'){ start=new Date(now); start.setDate(start.getDate()-((start.getDay()+6)%7)+offset*7); end=new Date(start); end.setDate(start.getDate()+6); label=`Week of ${start.toLocaleDateString([],{month:'short',day:'numeric'})}`; }
+  else { start=new Date(now.getFullYear(),now.getMonth()+offset,1); end=new Date(start.getFullYear(),start.getMonth()+1,0); label=start.toLocaleDateString([],{month:'long',year:'numeric'}); }
+  const ids=[]; const c=new Date(start); c.setHours(0,0,0,0); end.setHours(0,0,0,0);
+  while(c<=end){ ids.push(dayId(c)); c.setDate(c.getDate()+1); }
+  return {ids,label};
+}
+function reportDays(){
+  const {ids,label}=periodDays(rpt.kind,rpt.offset), tid=dayId(new Date());
+  return {days:ids.map(id=>(id===tid&&hasActivity())?snapshot():state.history[id]).filter(Boolean),label,ids};
+}
+function agg(days,sid){
+  const per={}, out={trips:0,mins:0,flags:0,over:0,att:{present:0,tardy:0,absent:0}};
+  REASONS.forEach(r=>per[r.key]={trips:0,mins:0,flags:0,over:0});
+  days.forEach(d=>{
+    Object.entries(d.att||{}).forEach(([id,a])=>{ if(sid&&id!==sid) return; if(out.att[a.status]!==undefined) out.att[a.status]++; });
+    (d.breaks||[]).forEach(b=>{ if(sid&&b.sid!==sid) return;
+      const q=per[b.reason]||(per[b.reason]={trips:0,mins:0,flags:0,over:0}), m=b.dur/60000, ov=(b.over||0)/60000;
+      q.trips++; q.mins+=m; q.flags+=b.flag?1:0; q.over+=ov; out.trips++; out.mins+=m; out.flags+=b.flag?1:0; out.over+=ov;
+    });
+  });
+  return {per,out};
+}
+function setReport(k,v){ if(k==='kind'){ rpt.kind=v; rpt.offset=0; } else if(k==='scope'){ rpt.scope=v; } else if(k==='sid'){ rpt.sid=v; } else if(k==='offset'){ rpt.offset+=v; } openReports(); }
+function openReports(){
+  closeDrawer();
+  const {days,label,ids}=reportDays();
+  const sid = rpt.scope==='student' ? (rpt.sid||(roster()[0]||{}).id) : null;
+  if(sid) rpt.sid=sid;
+  const {per,out}=agg(days,sid), r1=Math.round;
+  const maxMins=Math.max(1,...REASONS.map(r=>per[r.key].mins));
+  const bars=REASONS.map(r=>{ const q=per[r.key];
+    return `<div class="stat"><b>${r.label}</b><div class="bar"><i class="${r.key}" style="width:${Math.round(q.mins/maxMins*100)}%"></i></div><span class="v">${q.trips} trip${q.trips===1?'':'s'} · ${r1(q.mins)} min${q.flags?` · <em>⚑ ${q.flags}</em>`:''}</span></div>`; }).join('');
+  const seg=(k,opts)=>`<div class="seg">${opts.map(o=>`<button class="${rpt[k]===o[0]?'on present':''}" onclick="setReport('${k}','${o[0]}')">${o[1]}</button>`).join('')}</div>`;
+  const summary=orgSummaryHTML(ids);
+  sheetHTML('Reports', `${sid?esc(nameOf(sid)):'Whole class'} · ${label}`,
+   `<div class="rctl">${seg('kind',[['day','Daily'],['week','Weekly'],['month','Monthly']])}${seg('scope',[['class','Class'],['student','Student']])}
+      ${rpt.scope==='student'?`<select onchange="setReport('sid',this.value)">${roster().map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}
+      <div class="rnav"><button onclick="setReport('offset',-1)" aria-label="Earlier">‹</button><b>${label}</b><button onclick="setReport('offset',1)" aria-label="Later">›</button></div></div>
+    <div class="chips">
+      <div class="chip">Days recorded<b>${days.length}</b></div><div class="chip">Breaks<b>${out.trips}</b></div>
+      <div class="chip">Time out<b>${r1(out.mins)} min</b></div><div class="chip ${out.flags?'warn':''}">Flagged<b>${out.flags}</b></div>
+      <div class="chip">Tardy<b>${out.att.tardy}</b></div><div class="chip">Absent<b>${out.att.absent}</b></div>
+    </div>
+    <div class="body">${days.length?bars:`<div class="empty"><b>Nothing recorded in this period</b></div>`}${summary}</div>
+    <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
+}
+
+/* =====================================================================
+   Storage: this page's own keys only. The real app (same website) still
+   reads its old keys hifz.guest.* and hifz.tracker.history once, to upload
+   history from before syncing - so this page never uses them. Each class's
+   data is kept under its own key; the people/organizations under another.
+   Who you are is per tab (sessionStorage), so two tabs can be two people.
+   ===================================================================== */
+const NS='hifzOrgPractice.v1.';
+const KDB=NS+'db', KCLS=cid=>NS+'class.'+cid, KME=NS+'me', KSKIP=NS+'notNow';
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function practiceKeys(){ const out=[]; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith(NS)) out.push(k); } }catch(e){} return out; }
+let db=null;
+function saveDb(){ lsSet(KDB,db); }
+function loadDb(){ db=lsGet(KDB); if(!db||db.v!==1){ seedDemo(); db=lsGet(KDB); } }
+function meId(){ try{ return sessionStorage.getItem(KME); }catch(e){ return null; } }
+function setMe(id){ try{ id?sessionStorage.setItem(KME,id):sessionStorage.removeItem(KME); }catch(e){} }
+const me=()=>db.people[meId()]||null;
+function notNow(){ try{ return JSON.parse(sessionStorage.getItem(KSKIP)||'[]'); }catch(e){ return []; } }
+function addNotNow(id){ try{ sessionStorage.setItem(KSKIP,JSON.stringify([...notNow(),id])); }catch(e){} }
+
+/* ----- who belongs where ----- */
+const orgOf=c=>c&&c.orgId?db.orgs[c.orgId]:null;
+const membership=(orgId,pid)=>(db.members||[]).find(m=>m.orgId===orgId&&m.personId===pid)||null;
+const isAdmin=(orgId,pid)=>{ const m=membership(orgId,pid); return !!(m&&m.roles.includes('admin')); };
+const programsOf=orgId=>(db.orgs[orgId].programs||[]).map(p=>db.programs[p]).filter(Boolean);
+const programAdminOf=(orgId,pid)=>programsOf(orgId).filter(p=>p.adminId===pid).map(p=>p.id);
+const canSeeOf=(orgId,pid)=>{ const m=membership(orgId,pid); return !m?null:m.roles.includes('admin')?'everything':m.canSee||'own'; };
+/* Who gets the Organization view, and what they may do there. */
+function orgAccess(orgId,pid){
+  const m=membership(orgId,pid); if(!m) return null;
+  if(m.roles.includes('admin')) return {programs:programsOf(orgId).map(p=>p.id),manage:true,admin:true};
+  const pa=programAdminOf(orgId,pid);
+  if(pa.length) return {programs:pa,manage:true,admin:false,programAdmin:true};
+  if(m.canSee==='everything') return {programs:programsOf(orgId).map(p=>p.id),manage:false,admin:false,readOnly:true};
+  return null;
+}
+const orgsWithView=pid=>Object.keys(db.orgs).filter(o=>orgAccess(o,pid));
+const classesOfOrg=orgId=>Object.values(db.classes).filter(c=>c.orgId===orgId);
+const teaches=(c,pid)=>c.orgId?(c.teacherIds||[]).includes(pid):c.ownerId===pid;
+const myClasses=pid=>Object.values(db.classes).filter(c=>c.status!=='archived'&&teaches(c,pid));
+const personName=pid=>(db.people[pid]||{}).name||'Someone';
+const programName=c=>c.programId?(db.programs[c.programId]||{}).name:'';
+const classLabel=c=>c.orgId?`${programName(c)} · ${c.name}`:c.name;
+const initials=n=>{ const w=String(n||'?').split(/[\s@._-]+/).filter(Boolean); return ((w[0]||'?')[0]+(w.length>1?w[w.length-1][0]:'')).toUpperCase(); };
+function settingsFor(c){
+  if(!c) return mergeSettings({});
+  if(!c.orgId) return mergeSettings(c.settings);
+  const p=db.programs[c.programId]||{};
+  const base={startTime:p.start,endTime:p.end,days:p.days,snack:p.snack||null,lunch:p.lunch||null,longMin:10,limits:p.limits};
+  return mergeSettings(c.canEdit&&c.override?Object.assign({},base,c.override):base);
+}
+const invitesPending=orgId=>(db.invites||[]).filter(i=>i.orgId===orgId&&i.status==='pending');
+const invitedNames=c=>(db.invites||[]).filter(i=>i.status==='pending'&&i.classIds.includes(c.id)).map(i=>i.name||i.email);
+
+/* ----- a class's own record: students, today, and every day before ----- */
+const reviveDate=v=>v?new Date(v):null;
+function classStore(cid){ return lsGet(KCLS(cid))||{students:[],history:{},day:null,today:null}; }
+function dayPlain(){
+  const n=d=>d?+d:null;
+  return {session:Object.assign({},state.session,{startedAt:n(state.session.startedAt),endedAt:n(state.session.endedAt),lunchAt:n(state.session.lunchAt)}),
+    attendance:Object.fromEntries(Object.entries(state.attendance).map(([k,a])=>[k,Object.assign({},a,{at:n(a.at)})])),
+    active:Object.fromEntries(Object.entries(state.active).map(([k,a])=>[k,Object.assign({},a,{startAt:n(a.startAt)})])),
+    breaks:state.breaks.map(b=>Object.assign({},b,{startAt:n(b.startAt),endAt:n(b.endAt)})),
+    log:state.log.map(l=>({t:n(l.t),msg:l.msg}))};
+}
+function loadClass(cid,ro){
+  const c=db.classes[cid], s=classStore(cid), today=dayId(new Date());
+  CUR=cid; readOnly=!!ro;
+  state.students=s.students||[]; state.settings=settingsFor(c); state.history=s.history||{};
+  state.teacher=c.orgId?'':personName(c.ownerId);
+  state.lastAction=null;
+  if(s.day===today&&s.today){
+    const t=s.today;
+    state.session=Object.assign({},t.session,{startedAt:reviveDate(t.session.startedAt),endedAt:reviveDate(t.session.endedAt),lunchAt:reviveDate(t.session.lunchAt)});
+    state.attendance=Object.fromEntries(Object.entries(t.attendance||{}).map(([k,a])=>[k,Object.assign({},a,{at:reviveDate(a.at)})]));
+    state.active=Object.fromEntries(Object.entries(t.active||{}).map(([k,a])=>[k,Object.assign({},a,{startAt:reviveDate(a.startAt)})]));
+    state.breaks=(t.breaks||[]).map(b=>Object.assign({},b,{startAt:reviveDate(b.startAt),endAt:reviveDate(b.endAt)}));
+    state.log=(t.log||[]).map(l=>({t:reviveDate(l.t),msg:l.msg}));
+  } else {
+    state.session={status:'preclass',startedAt:null,endedAt:null,lunchAt:null,pauseLabel:null,resumeAt:null};
+    state.attendance={}; state.active={}; state.breaks=[]; state.log=[];
+  }
+  ensureAttendance();
+  save.last=JSON.stringify(s);
+}
+/* Saved only when something really changed, so a tab answering another
+   tab's change never writes back and starts a ping-pong. */
+function save(){
+  if(readOnly||!CUR||!db.classes[CUR]) return;
+  const s=classStore(CUR), today=dayId(new Date());
+  s.students=state.students; s.day=today; s.today=dayPlain();
+  s.history=state.history||{};
+  if(hasActivity()) s.history[today]=snapshot(); else delete s.history[today];
+  const str=JSON.stringify(s); if(str===save.last) return;
+  save.last=str; try{ localStorage.setItem(KCLS(CUR),str); }catch(e){}
+}
+
+/* ===== roster (the teacher's, from the ☰ menu) ===== */
+function addStudent(){
+  if(guardRO()) return;
+  const el=$('newName'), n=(el.value||'').replace(/[<>"'`]/g,'').trim(); if(!n) return;
+  const id='s'+Date.now(), started=st()!=='preclass';
+  state.students.push({id,name:n,active:true});
+  state.attendance[id]={status:started?'absent':'present',at:null,note:started?'Added after class started':''};
+  el.value=''; logIt(`<b>${esc(n)}</b> added to the class list`); render(); drawDrawer();
+}
+function archiveStudent(sid){
+  if(guardRO()) return;
+  const s=state.students.find(x=>x.id===sid); if(!s) return;
+  if(state.active[sid]) ret(sid,true);
+  s.active=false; logIt(`<b>${esc(s.name)}</b> removed from the class list`); render(); drawDrawer(); toast(`${s.name} removed from the list`);
+}
+function restoreStudent(sid){
+  const s=state.students.find(x=>x.id===sid); if(!s) return;
+  s.active=true; render(); drawDrawer();
+}
+
+/* ===== the ☰ menu. Times and limits: editable in your own class, or in an
+   organization class whose switch "Teacher can change times and limits" is
+   on; otherwise shown locked, "Set by your organization", with who to ask. ===== */
+function openDrawer(){ if(readOnly) return; $('drawer').classList.add('show'); $('drawerScrim').classList.add('show'); drawDrawer(); }
+function closeDrawer(){ $('drawer').classList.remove('show'); $('drawerScrim').classList.remove('show'); }
+function whoToAsk(c){
+  const p=db.programs[c.programId], names=[];
+  if(p&&p.adminId) names.push(`${personName(p.adminId)} (program admin)`);
+  const admins=(db.members||[]).filter(m=>m.orgId===c.orgId&&m.roles.includes('admin')).map(m=>personName(m.personId));
+  if(admins.length) names.push(`${admins.join(' or ')} (admin${admins.length>1?'s':''})`);
+  return names.join(', or ');
+}
+const fmtLimit=l=>`${l.min} min · ${tripCap(l)?`${l.trips} a day`:'no trip limit'}`;
+function stepTxt(l,field){ return field==='min'?`${l.min} min`:tripCap(l)?`${l.trips} a day`:'No limit'; }
+function stepVal(l,field,d){
+  if(field==='min') return Math.min(30,Math.max(1,(+l.min||1)+d));
+  const t=tripCap(l); if(!t) return d<0?10:NO_TRIP_LIMIT; return t+d>10?NO_TRIP_LIMIT:Math.max(1,t+d);
+}
+function stepperPair(l,k,fn,disabled){
+  const lab=RSN(k).label, dis=disabled?'disabled':'';
+  return `<span class="lsteps"><span class="lstep"><button ${dis} aria-label="Fewer ${lab} minutes" onclick="${fn}('${k}','min',-1)">−</button><b aria-label="${lab} minutes">${stepTxt(l,'min')}</b><button ${dis} aria-label="More ${lab} minutes" onclick="${fn}('${k}','min',1)">+</button></span>
+    <span class="lstep"><button ${dis} aria-label="Fewer ${lab} trips" onclick="${fn}('${k}','trips',-1)">−</button><b aria-label="${lab} trips">${stepTxt(l,'trips')}</b><button ${dis} aria-label="More ${lab} trips" onclick="${fn}('${k}','trips',1)">+</button></span></span>`;
+}
+/* where this class keeps its own times: its settings (own class) or its override */
+function editableSettings(){ const c=db.classes[CUR]; if(!c) return null; if(!c.orgId) return c.settings||(c.settings=mergeSettings({})); if(!c.canEdit) return null; return c.override||(c.override=JSON.parse(JSON.stringify(settingsFor(c)))); }
+function setClassTime(path,v){ const S=editableSettings(); if(!S||!v) return; const [a,b]=path.split('.'); if(b){ S[a]=S[a]||{start:'',end:''}; S[a][b]=v; } else S[a]=v; saveDb(); state.settings=settingsFor(db.classes[CUR]); render(); drawDrawer(); }
+function stepClassLimit(k,field,d){ const S=editableSettings(); if(!S) return; S.limits[k][field]=stepVal(S.limits[k],field,d); saveDb(); state.settings=settingsFor(db.classes[CUR]); render(); drawDrawer(); }
+function drawDrawer(){
+  const s=st(), set=state.settings, c=db.classes[CUR], locked=!!(c&&c.orgId&&!c.canEdit);
+  const tpair=(label,path,v)=>`<div class="field"><div>${label}</div><span class="two"><input type="time" aria-label="${label} from" value="${v?v.start:''}" onchange="setClassTime('${path}.start',this.value)"><input type="time" aria-label="${label} to" value="${v?v.end:''}" onchange="setClassTime('${path}.end',this.value)"></span></div>`;
+  $('dbody').innerHTML=`
+   <h4>Class-wide</h4>
+   ${s==='live'&&set.snack?`<button class="dbtn gold" onclick="startPause('Snack break','${set.snack.end}')">Start snack break<small>Scheduled ${hm(set.snack.start)} to ${hm(set.snack.end)}</small></button>`:''}
+   ${s==='live'&&set.lunch?`<button class="dbtn gold" onclick="startPause('Lunch and recess','${set.lunch.end}')">Start lunch and recess<small>Scheduled ${hm(set.lunch.start)} to ${hm(set.lunch.end)}</small></button>`:''}
+   ${s==='lunch'?`<button class="dbtn leaf" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button>`:''}
+   ${s==='live'||s==='lunch'?`<button class="dbtn ember" onclick="endClass()">End class<small>Closes open breaks</small></button>`:''}
+   ${s==='preclass'||s==='ended'?`<button class="dbtn leaf" onclick="doStart()">Start class<small>Anyone not deactivated is marked present</small></button>`:''}
+   <h4>Review</h4>
+   <button class="dbtn" onclick="openAttendanceReview()">Attendance today<small>Correct present, tardy, absent</small></button>
+   <button class="dbtn" onclick="openDaySummary()">Day summary<small>Attendance and break totals per student</small></button>
+   <button class="dbtn" onclick="openReports()">Reports<small>Daily, weekly, monthly · class or one student</small></button>
+   <h4>Class list</h4>
+   ${state.students.filter(x=>x.active).map((x,i)=>`<div class="rrow"><b>${i+1}. ${esc(x.name)}</b><button onclick="archiveStudent('${x.id}')">Remove</button></div>`).join('')}
+   ${state.students.filter(x=>!x.active).map(x=>`<div class="rrow"><b>${esc(x.name)}</b><small>removed</small><button class="back" onclick="restoreStudent('${x.id}')">Put back</button></div>`).join('')}
+   <div class="radd"><input id="newName" placeholder="New student's name" onkeydown="if(event.key==='Enter')addStudent()"><button onclick="addStudent()">Add</button></div>
+   ${locked?`<h4 id="timesHead">Times and limits <span class="lockchip">🔒 Set by your organization</span></h4>
+     <div class="lockrow">Class days<span>${daysText(set.days)}</span></div>
+     <div class="lockrow">Class hours<span>${hm(set.startTime)} – ${hm(set.endTime)}</span></div>
+     <div class="lockrow">Snack break<span>${set.snack?`${hm(set.snack.start)} – ${hm(set.snack.end)}`:'None'}</span></div>
+     <div class="lockrow">Lunch and recess<span>${set.lunch?`${hm(set.lunch.start)} – ${hm(set.lunch.end)}`:'None'}</span></div>
+     ${['washroom','water','wudhu'].map(k=>`<div class="lockrow">${RSN(k).label}<span>${fmtLimit(set.limits[k])}</span></div>`).join('')}
+     <p class="asknote">${esc(orgOf(c).name)} sets these for ${esc(programName(c))}. To change them, ask ${esc(whoToAsk(c))}.</p>`
+   :`<h4 id="timesHead">Times and limits${c&&c.orgId?' <span class="lockchip" style="background:var(--leaf-soft);color:#0C5C5C">You can change these</span>':''}</h4>
+     <div class="field"><div>Class hours</div><span class="two"><input type="time" aria-label="Class hours from" value="${set.startTime}" onchange="setClassTime('startTime',this.value)"><input type="time" aria-label="Class hours to" value="${set.endTime}" onchange="setClassTime('endTime',this.value)"></span></div>
+     ${tpair('Snack break','snack',set.snack)}${tpair('Lunch and recess','lunch',set.lunch)}
+     ${['washroom','water','wudhu'].map(k=>`<div class="field"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${stepperPair(set.limits[k],k,'stepClassLimit')}</div>`).join('')}`}
+   <h4>Today's log</h4>
+   <div class="log">${state.log.length?state.log.map(l=>`<div>${clockStr(l.t)} · ${l.msg}</div>`).join(''):'<div>Nothing yet.</div>'}</div>
+   <h4>Start over</h4>
+   <button class="dbtn" onclick="resetDay()">Reset the day<small>Clears today's attendance and breaks - asks first</small></button>`;
+}
+
+/* ===== render: the Log screen ===== */
+function render(){
+  if(!CUR||!db.classes[CUR]) return;
+  const now=new Date(), s=st(), list=roster(), c=db.classes[CUR], org=orgOf(c), p=me();
+  $('clock').textContent=clockStr(now); $('date').textContent=dateStr(now);
+  const outs=Object.keys(state.active).length, abs=list.filter(x=>att(x.id).status==='absent').length;
+  $('cIn').textContent=list.length-outs-abs; $('cOut').textContent=outs; $('cAbs').textContent=abs;
+  $('crumb').textContent=org?`${org.name} · ${programName(c)}`:'Your own class';
+  $('title').textContent=c.name;
+  const nx=nextUp();
+  $('sub').textContent= s==='preclass'?`Before class · ${hm(state.settings.startTime)}-${hm(state.settings.endTime)}`
+    : s==='live'?`Since ${clockStr(state.session.startedAt)}${nx?` · ${nx}`:''}`
+    : s==='lunch'?`${state.session.pauseLabel||'Break'} since ${clockStr(state.session.lunchAt)}`
+    : `Ended ${clockStr(state.session.endedAt)}`;
+  const mb=$('mainBtn'); mb.className='start-btn'+(s==='live'?' end':s==='lunch'?' lunch':'');
+  mb.textContent= s==='preclass'?'Start class':s==='live'?'End class':s==='lunch'?'End break':'Start again';
+  mb.style.display=readOnly?'none':''; $('menuBtn').style.display=readOnly?'none':''; $('backBtn').style.display=readOnly?'':'none';
+  $('orgBtn').style.display=!readOnly&&p&&orgsWithView(p.id).length?'':'none';
+  $('profBtn').style.display=readOnly?'none':''; $('profIni').textContent=p?initials(p.name):'?';
+  const teachersTxt=c.orgId?(c.teacherIds||[]).map(personName).join(' and ')||'its teacher':personName(c.ownerId);
+  const due=s==='live'?dueBreak():null; render.nudge=due?due.kind:'';
+  $('banner').innerHTML= readOnly?`<div class="banner ro">You're looking in, read only. Only the class's teacher${c.orgId&&(c.teacherIds||[]).length>1?'s':''}, ${esc(teachersTxt)}, log${c.orgId&&(c.teacherIds||[]).length>1?'':'s'} breaks.</div>`
+    : s==='preclass'?`<div class="banner paper">Everyone is assumed present. Tap a student who is not here to mark them absent. Once class starts, tapping a marked student records them tardy.</div>`
+    : due?`<div class="banner">${due.kind} is scheduled now, ${hm(due.start)} to ${hm(due.end)}. Individual break logging pauses while it runs.<button class="act" onclick="startPause('${due.kind}','${due.end}')">Start ${due.kind.toLowerCase()}</button></div>`
+    : s==='lunch'?`<div class="banner">${esc(state.session.pauseLabel||'Break')} since ${clockStr(state.session.lunchAt)}. Individual break logging is paused.<button class="act" onclick="endPause()">End ${(state.session.pauseLabel||'break').toLowerCase()}</button></div>`
+    : s==='ended'?`<div class="banner leaf">Class ended at ${clockStr(state.session.endedAt)}.<button class="act" onclick="openDaySummary()">View day summary</button></div>`:'';
+  $('gridTitle').textContent= s==='preclass'?'Mark anyone who is absent':'Class';
+  $('gridHint').textContent= readOnly?'Read only':s==='preclass'?'Tap a name to mark them not here':'Tap a student to log a break · tap again when they are back';
+  $('stage').classList.toggle('ro',readOnly);
+  const g=$('grid'), dis=readOnly?' disabled':'';
+  g.style.gridTemplateColumns='repeat(auto-fill,minmax(150px,1fr))';
+  g.innerHTML=list.map(x=>{
+    const a=att(x.id), o=state.active[x.id], fl=flagsOf(x.id);
+    if(o) return `<button class="tile out ${isLong(o)?'long':''}"${dis} data-long="${+o.startAt}" data-lim="${o.allowMs||0}" onclick="tap('${x.id}')"><span class="tag">${isLong(o)?'Past limit':'Out'}</span><span class="name">${esc(x.name)}</span><span class="state">${o.label}${o.allowMs?` ${Math.round(o.allowMs/60000)} min`:''} · <span data-t="${+o.startAt}">${fmtDur(now-o.startAt)}</span></span></button>`;
+    if(a.status==='absent') return `<button class="tile deact"${dis} onclick="tap('${x.id}')">${s==='preclass'||readOnly?'':'<span class="tag">Mark in</span>'}<span class="name">${esc(x.name)}</span><span class="state">${s==='preclass'?'Not here today':'Not here'}</span></button>`;
+    const tag=fl?`<span class="tag flag">⚑ ${fl}</span>`:a.status==='tardy'?`<span class="tag">Tardy ${clockStr(a.at)}</span>`:'';
+    return `<button class="tile present"${dis} onclick="tap('${x.id}')">${tag}<span class="name">${esc(x.name)}</span><span class="state">${s==='preclass'?'Present':'In class'}</span></button>`;
+  }).join('')||`<div class="empty"><b>No students yet</b>${readOnly?'':'Add them from the ☰ menu.'}</div>`;
+  const outEntries=Object.entries(state.active).sort((a,b)=>a[1].startAt-b[1].startAt);
+  $('outHint').textContent=outs||'';
+  $('outList').innerHTML=outEntries.length?outEntries.map(([sid,a])=>`<div class="out-item ${isLong(a)?'long':''}" data-long="${+a.startAt}" data-lim="${a.allowMs||0}"><div class="who"><b>${esc(nameOf(sid))}</b><span>${a.label} · left ${clockStr(a.startAt)}${a.allowMs?` · ${Math.round(a.allowMs/60000)} min allowed`:''}${a.overTrip?' · past daily limit':''}</span></div><div class="t" data-t="${+a.startAt}">${fmtDur(now-a.startAt)}</div>${readOnly?'':`<button class="back" onclick="ret('${sid}')">Back in</button>`}</div>`).join('')
+    :`<div class="empty"><b>Everyone is in class</b>${readOnly?'':'Log a break and the timer appears here.'}</div>`;
+  if($('drawer').classList.contains('show')) drawDrawer();
+  tick(); save();
+}
+function tick(){
+  const now=Date.now();
+  document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
+  document.querySelectorAll('[data-long]').forEach(el=>{const lim=+el.dataset.lim||0; el.classList.toggle('long',lim>0&&now-(+el.dataset.long)>lim);});
+  if(SCREEN==='class'&&!readOnly){ const due=st()==='live'&&dueBreak()?dueBreak().kind:''; if(due!==render.nudge) return render(); }
+  const d=new Date(); if($('clock')) $('clock').textContent=clockStr(d); if($('date')) $('date').textContent=dateStr(d);
+}
+
+/* ===== screens ===== */
+let SCREEN='class';
+function showView(id){ ['classView','orgView','profileView'].forEach(v=>$(v).classList.toggle('on',v===id)); }
+function hideCards(){ $('screen').classList.remove('show'); $('setup').classList.remove('show'); closeSheet(); closeDrawer(); endTour(); }
+function card(html){ hideCards(); $('screenCard').innerHTML=html; $('screen').classList.add('show'); $('screen').scrollTop=0; }
+
+/* ----- sign in ----- */
+function showSignIn(note){
+  SCREEN='signin'; showView(null);
+  card(`<h2>Sign in</h2><p class="lede">${note||'Sign in to your classes. In this practice copy, type any name and email.'}</p>
+    <label>Your name<input id="siName" placeholder="e.g. Ustadh Imran" autocomplete="off"></label>
+    <label>Email<input id="siEmail" type="email" placeholder="you@example.com" autocomplete="off"></label>
+    <div class="signin-opts"><button class="btn dark" onclick="signIn('google')">Sign in with Google</button>
+    <div class="orline">or</div>
+    <button class="btn ghost" onclick="signIn('link')">Sign in with an email link</button></div>
+    <p class="err" id="siErr"></p>`);
+}
+const emailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+function signIn(how){
+  const name=($('siName').value||'').replace(/[<>"`]/g,'').trim(), email=($('siEmail').value||'').trim().toLowerCase();
+  if(!emailOk(email)) return $('siErr').textContent='Please type an email address.';
+  if(how==='link'&&!signIn.linkSent){ signIn.linkSent=email;
+    $('siErr').innerHTML=`<span class="okmsg">We sent a sign-in link to ${esc(email)}. (Practice copy: nothing was sent.)</span><br><button class="btn primary" style="margin-top:10px" onclick="signIn('link')">Open the link</button>`; return; }
+  signIn.linkSent=null;
+  let p=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
+  if(!p){ if(!name) return $('siErr').textContent='Please type your name too.';
+    const id='p'+Date.now().toString(36); p=db.people[id]={id,name,email,provider:how}; }
+  else p.provider=how;
+  saveDb(); setMe(p.id); fillPicker(); route();
+}
+
+/* ----- after sign-in: decided by the app, no questions ----- */
+function route(){
+  const p=me(); fillPicker();
+  if(!p) return showSignIn();
+  const inv=(db.invites||[]).find(i=>i.status==='pending'&&i.email.toLowerCase()===p.email.toLowerCase()&&!notNow().includes(i.id));
+  if(inv) return showInvite(inv.id);
+  const mine=myClasses(p.id);
+  if(mine.length){ const last=(db.lastClass||{})[p.id]; return openClass(mine.some(c=>c.id===last)?last:mine[0].id); }
+  const orgs=orgsWithView(p.id); if(orgs.length) return showOrg(orgs[0]);
+  return showSetupClass();
+}
+
+/* ----- "You're invited" ----- */
+function showInvite(invId,viaCode){
+  const inv=db.invites.find(i=>i.id===invId), org=db.orgs[inv.orgId], p=me();
+  SCREEN='invite'; showView(null);
+  const cls=inv.classIds.map(id=>db.classes[id]).filter(Boolean);
+  card(`<h2>You're invited</h2>
+    <p class="lede">${esc(personName(inv.invitedBy))} invited ${esc(viaCode?p.email:inv.email)} to join <b>${esc(org.name)}</b>${inv.role==='admin'?' as an admin':' as a teacher'}.</p>
+    <div class="invcard"><b>${esc(org.name)}</b>${cls.length?`<ul>${cls.map(c=>`<li>${esc(classLabel(c))}</li>`).join('')}</ul>`:'<div class="note2">No classes yet - the admin will add you to one.</div>'}</div>
+    <p class="note2">Your classes are already set up. A class can have more than one teacher, and the records stay with the class.</p>
+    <div class="setup-actions"><button class="btn ghost" onclick="inviteNotNow('${inv.id}')">Not now</button><button class="btn dark" onclick="joinInvite('${inv.id}')">Join ${esc(org.name)}</button></div>`);
+}
+function inviteNotNow(id){ addNotNow(id); route(); }
+function joinInvite(id){
+  const inv=db.invites.find(i=>i.id===id), p=me(), org=db.orgs[inv.orgId];
+  if(!domainOk(org,p.email)) return toast(domainRefusal(org,p.email));
+  let m=membership(inv.orgId,p.id);
+  if(!m){ m={orgId:inv.orgId,personId:p.id,roles:inv.role==='admin'?['admin','teacher']:['teacher'],canSee:inv.role==='admin'?'everything':'own'}; db.members.push(m); }
+  inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&!c.teacherIds.includes(p.id)) c.teacherIds.push(p.id); });
+  inv.status='joined'; inv.joinedBy=p.id; saveDb();
+  toast(`Welcome to ${org.name}`);
+  const first=inv.classIds.find(cid=>db.classes[cid]&&db.classes[cid].status!=='archived');
+  if(first) openClass(first); else route();
+}
+
+/* ----- someone brand new: "Set up your class" ----- */
+function showSetupClass(fromProfile){
+  SCREEN='setup'; hideCards(); showView(fromProfile?'profileView':null);
+  setupStudents=[]; $('tName').value=(me()||{}).name||''; drawRosterList(); setupCount(); $('setupErr').textContent='';
+  $('setupQuiet').style.display=fromProfile?'none':''; $('setupCancel').style.display=fromProfile?'':'none';
+  $('setup').classList.add('show');
+}
+function cancelSetup(){ $('setup').classList.remove('show'); showProfile(); }
+function finishSetup(){
+  const name=($('tName').value||'').replace(/[<>"'`]/g,'').trim(), p=me();
+  if(!name) return $('setupErr').textContent='Please add your name.';
+  if(!setupStudents.length) return $('setupErr').textContent='Please add at least one student.';
+  p.name=name;
+  const id='own'+Date.now().toString(36);
+  const own=Object.values(db.classes).filter(c=>!c.orgId&&c.ownerId===p.id).length;
+  db.classes[id]={id,orgId:null,ownerId:p.id,name:own?`${name}'s class ${own+1}`:`${name}'s Hifz Class`,settings:mergeSettings({}),status:'active'};
+  lsSet(KCLS(id),{students:setupStudents.map((n,i)=>({id:'s'+i,name:n,active:true})),history:{},day:null,today:null});
+  saveDb(); $('setup').classList.remove('show'); openClass(id); startTour();
+}
+
+/* ----- open a class (asks first if students are still out in this one) ----- */
+function openClass(cid,force){
+  const c=db.classes[cid]; if(!c) return route();
+  if(!force&&!readOnly&&CUR&&CUR!==cid&&db.classes[CUR]&&Object.keys(state.active).length){          // from the Log screen or Profile
+    const outs=Object.entries(state.active);
+    return sheetHTML(`Open ${esc(classLabel(c))}?`,`${outs.length} still out in ${esc(db.classes[CUR].name)}.`,
+      `<div class="body"><div class="rowlist">${outs.map(([sid,a])=>`<div class="row"><b>${esc(nameOf(sid))}</b><span class="time">${esc(a.label)} · out ${fmtDur(Date.now()-a.startAt)}</span></div>`).join('')}</div>
+       <p class="note2">They are marked back in first.</p></div>
+       <div class="actions"><button class="btn ghost" onclick="closeSheet()">Stay here</button><button class="btn dark" onclick="bringBackAndOpen('${cid}')">Bring them back and open it</button></div>`);
+  }
+  hideCards(); SCREEN='class'; showView('classView');
+  loadClass(cid,false);
+  db.lastClass=db.lastClass||{}; const p=me(); if(p&&db.lastClass[p.id]!==cid){ db.lastClass[p.id]=cid; saveDb(); }
+  render();
+}
+function bringBackAndOpen(cid){ Object.keys(state.active).forEach(sid=>ret(sid,true)); render(); openClass(cid,true); }
+/* Look in: the same Log screen, read only. */
+let lookFrom=null;
+function lookIn(cid){ lookFrom=ORG.id; hideCards(); SCREEN='class'; showView('classView'); loadClass(cid,true); render(); }
+function leaveLookIn(){ readOnly=false; CUR=null; showOrg(lookFrom); }
+function openOrgFromClass(){ const p=me(), c=db.classes[CUR], orgs=orgsWithView(p.id); showOrg(c&&c.orgId&&orgs.includes(c.orgId)?c.orgId:orgs[0]); }
+
+/* ===== Profile ===== */
+function showProfile(){
+  const p=me(); if(!p) return showSignIn();
+  if(SCREEN==='class'&&!readOnly) save();
+  hideCards(); SCREEN='profile'; showView('profileView');
+  const own=Object.values(db.classes).filter(c=>!c.orgId&&c.ownerId===p.id&&c.status!=='archived');
+  const byOrg={}; myClasses(p.id).filter(c=>c.orgId).forEach(c=>(byOrg[c.orgId]=byOrg[c.orgId]||[]).push(c));
+  const store=c=>classStore(c.id), count=c=>(store(c).students||[]).filter(s=>s.active).length;
+  const cardOf=c=>{ const S=settingsFor(c), open=CUR===c.id&&!readOnly;
+    return `<div class="mcard${open?' open':''}"><div><b>${esc(classLabel(c))}</b><small>${daysText(S.days)} · ${count(c)} students${c.orgId?' · Teacher':''}</small></div>${open?'<span class="opennow">Open now</span>':`<button class="btn primary" onclick="openClass('${c.id}')">Open</button>`}</div>`; };
+  const waiting=(db.invites||[]).filter(i=>i.status==='pending'&&i.email.toLowerCase()===p.email.toLowerCase());
+  const orgViews=orgsWithView(p.id);
+  $('profileBody').innerHTML=`<div class="pgrid2">
+    <section class="pcard3"><div class="who3"><b class="ini big">${esc(initials(p.name))}</b><b>${esc(p.name)}</b><small>${esc(p.email)}</small><span class="via">${p.provider==='link'?'Signed in with an email link':'Signed in with Google'}</span></div>
+      ${CUR&&db.classes[CUR]?`<button class="btn ghost" onclick="openClass('${CUR}')">‹ Back to ${esc(db.classes[CUR].name)}</button>`:''}
+      ${orgViews.map(o=>`<button class="btn ghost" onclick="showOrg('${o}')">${esc(db.orgs[o].name)}: Organization</button>`).join('')}
+      <button class="btn ghost" onclick="switchAccount()">Switch account</button>
+      <button class="btn ghost" style="color:var(--ember)" onclick="switchAccount(true)">Sign out</button></section>
+    <section class="mcls"><h2>My classes</h2>
+      ${waiting.map(i=>`<div class="mcard" style="background:var(--gold-soft)"><div><b>You're invited to ${esc(db.orgs[i.orgId].name)}</b><small>${i.classIds.map(id=>db.classes[id]?classLabel(db.classes[id]):'').filter(Boolean).join(' · ')}</small></div><button class="btn dark" onclick="showInvite('${i.id}')">See invite</button></div>`).join('')}
+      ${own.length?`<div class="mgroup">Your own</div>${own.map(cardOf).join('')}`:''}
+      ${Object.entries(byOrg).map(([o,cs])=>`<div class="mgroup">${esc(db.orgs[o].name)}</div>${cs.map(cardOf).join('')}`).join('')}
+      ${!own.length&&!Object.keys(byOrg).length?'<p class="note2">No classes yet.</p>':''}
+      <div class="qlinks"><button class="btn ghost" onclick="showSetupClass(true)">+ Add a class</button><button class="btn ghost" onclick="openOrgSetup()">Set up an organization</button><button class="btn ghost" onclick="openCode()">Have an invite code?</button></div>
+      <p class="note2">One class is open at a time. Each organization only ever sees its own classes. If an organization invited a different email of yours, use Switch account - nothing is lost; easier still, ask them to invite this email.</p>
+    </section></div>`;
+}
+function switchAccount(out){ if(SCREEN==='class'&&!readOnly) save(); setMe(null); CUR=null; showSignIn(out?'Signed out. Sign in with any account.':'Choose the account to use. Nothing in the other account is lost.'); fillPicker(); }
+
+/* ===== Have an invite code? ===== */
+function openCode(){
+  SCREEN='code'; showView(null);
+  card(`<h2>Have an invite code?</h2><p class="lede">If an organization invited a different email address of yours, type the code from the invite here to join with this account (${esc((me()||{}).email||'')}).</p>
+    <label>Invite code<input id="codeIn" placeholder="e.g. K7P-4QX" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')useCode()"></label>
+    <div class="setup-actions"><button class="btn ghost" onclick="route()">Back</button><button class="btn dark" onclick="useCode()">Continue</button></div><p class="err" id="codeErr"></p>`);
+}
+function useCode(){
+  const code=($('codeIn').value||'').trim().toUpperCase(), inv=(db.invites||[]).find(i=>i.code===code&&i.status==='pending');
+  if(!inv) return $('codeErr').textContent="That code doesn't match a waiting invite. Check it with the person who invited you.";
+  const org=db.orgs[inv.orgId];
+  if(!domainOk(org,me().email)) return $('codeErr').textContent=domainRefusal(org,me().email);
+  showInvite(inv.id,true);
+}
+
+/* ===== Set up an organization: two steps ===== */
+let os=null;
+function openOrgSetup(){
+  const p=me(), dom=(p.email.split('@')[1]||'');
+  os={step:1,name:'',domain:/gmail|yahoo|hotmail|outlook|icloud/.test(dom)?'':dom,only:false,teach:false,programs:['Main program']};
+  paintOrgSetup();
+}
+function paintOrgSetup(){
+  SCREEN='orgsetup'; showView(null);
+  const dots=`<div class="stepdots"><i class="on"></i><i class="${os.step>1?'on':''}"></i></div>`;
+  if(os.step===1) return card(`<h2>Set up an organization</h2>${dots}<p class="lede">Step 1 of 2 · its name and who can join.</p>
+    <label>Organization name<input id="osName" value="${esc(os.name)}" placeholder="e.g. Uthman Academy" oninput="os.name=this.value"></label>
+    <label>Email domain (optional)<input id="osDomain" value="${esc(os.domain)}" placeholder="e.g. uthmanacademy.org" oninput="os.domain=this.value.replace(/^@/,'').trim().toLowerCase();$('osOnlyLbl').textContent='Only @'+(os.domain||'domain')+' addresses can join'"></label>
+    <div class="swrow"><div><b id="osOnlyLbl">Only @${esc(os.domain||'domain')} addresses can join</b><small>Invites to any other address are refused.</small></div><button class="switch ${os.only?'on':''}" role="switch" aria-checked="${os.only}" aria-label="Only domain addresses can join" onclick="os.only=!os.only;this.classList.toggle('on',os.only);this.setAttribute('aria-checked',os.only)"></button></div>
+    <div class="swrow" style="margin-top:8px"><div><b>Do you also teach a class?</b><small>Then you'll make your class right after this.</small></div><button class="switch ${os.teach?'on':''}" role="switch" aria-checked="${os.teach}" aria-label="Do you also teach a class?" onclick="os.teach=!os.teach;this.classList.toggle('on',os.teach);this.setAttribute('aria-checked',os.teach)"></button></div>
+    <div class="setup-actions"><button class="btn ghost" onclick="route()">Cancel</button><button class="btn dark" onclick="orgSetupNext()">Next</button></div><p class="err" id="osErr"></p>`);
+  card(`<h2>${esc(os.name)}: programs</h2>${dots}<p class="lede">Step 2 of 2 · e.g. Boys Full-time Hifz, Evening Maktab. Each program gets its own times and limits; an organization with just one keeps one.</p>
+    <div class="plist">${os.programs.map((n,i)=>`<div>${esc(n)}<button onclick="os.programs.splice(${i},1);paintOrgSetup()">Remove</button></div>`).join('')||'<p class="note2">No programs yet.</p>'}</div>
+    <div class="roster-add"><input id="osProg" placeholder="Program name, then Enter" onkeydown="if(event.key==='Enter')orgAddProgram()"><button class="btn ghost" onclick="orgAddProgram()">Add</button></div>
+    <div class="setup-actions"><button class="btn ghost" onclick="os.step=1;paintOrgSetup()">Back</button><button class="btn dark" onclick="createOrg()">Create ${esc(os.name)}</button></div><p class="err" id="osErr"></p>`);
+}
+function orgSetupNext(){
+  os.name=(os.name||'').replace(/[<>"`]/g,'').trim();
+  if(!os.name) return $('osErr').textContent='Please give the organization a name.';
+  if(os.only&&!os.domain) return $('osErr').textContent='Type the email domain, or turn off "Only … addresses can join".';
+  os.step=2; paintOrgSetup();
+}
+function orgAddProgram(){ const n=($('osProg').value||'').replace(/[<>"`]/g,'').trim(); if(n&&!os.programs.includes(n)) os.programs.push(n); paintOrgSetup(); setTimeout(()=>$('osProg')&&$('osProg').focus(),0); }
+function createOrg(){
+  if(!os.programs.length) return $('osErr').textContent='Add at least one program.';
+  const p=me(), id='o'+Date.now().toString(36);
+  const progIds=os.programs.map((n,i)=>{ const pid=id+'p'+i; db.programs[pid]={id:pid,orgId:id,name:n,days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:{washroom:{min:7,trips:2},water:{min:2,trips:2},wudhu:{min:2,trips:2}},adminId:null}; return pid; });
+  db.orgs[id]={id,name:os.name,domain:os.domain,domainOnly:os.only,programs:progIds};
+  db.members.push({orgId:id,personId:p.id,roles:os.teach?['admin','teacher']:['admin'],canSee:'everything'});
+  saveDb(); toast(`${os.name} is set up`);
+  const teach=os.teach; os=null; showOrg(id,'classes');
+  if(teach) openClassForm(null,{teacherIds:[p.id]});
+}
+
+/* ===== the organization view ===== */
+const ORG={id:null,tab:'classes',prog:'all',rscope:'org',rprog:null,rclass:null,rrange:'thisweek'};
+function showOrg(orgId,tab){
+  const p=me(); if(!p) return showSignIn();
+  if(!orgId||!orgAccess(orgId,p.id)) return route();
+  if(SCREEN==='class'&&!readOnly) save();
+  hideCards(); SCREEN='org'; showView('orgView');
+  if(ORG.id!==orgId||ORG.pid!==p.id){ Object.assign(ORG,{id:orgId,pid:p.id,tab:'classes',prog:'all',rscope:'org',rprog:null,rclass:null}); }   // a new person starts on Classes
+  if(tab) ORG.tab=tab;
+  paintOrg();
+}
+function liveOf(cid){
+  const s=classStore(cid), today=dayId(new Date()), now=Date.now();
+  const studs=(s.students||[]).filter(x=>x.active);
+  if(s.day!==today||!s.today) return {status:'preclass',in:studs.length,out:0,absent:0,past:0,students:studs.length};
+  const t=s.today, active=Object.values(t.active||{}), absent=studs.filter(x=>(t.attendance[x.id]||{}).status==='absent').length;
+  return {status:t.session.status,since:t.session.startedAt,endedAt:t.session.endedAt,pause:t.session.pauseLabel,out:active.length,absent,in:studs.length-active.length-absent,
+    past:active.filter(a=>a.allowMs&&now-a.startAt>a.allowMs).length,students:studs.length};
+}
+function paintOrg(){
+  const p=me(), org=db.orgs[ORG.id], acc=orgAccess(ORG.id,p.id); if(!acc) return route();
+  const cls=classesOfOrg(ORG.id).filter(c=>c.status!=='archived'&&acc.programs.includes(c.programId));
+  const lv=cls.map(c=>liveOf(c.id)), out=lv.reduce((a,x)=>a+x.out,0), past=lv.reduce((a,x)=>a+x.past,0);
+  $('orgName').textContent=org.name+(acc.programAdmin?` · ${acc.programs.map(id=>db.programs[id].name).join(', ')}`:'');
+  $('orgChips').innerHTML=`<span class="pill">${cls.length} class${cls.length===1?'':'es'}</span><span class="pill out">Out <b>${out}</b></span>${past?`<span class="pill red">Past limit ${past}</span>`:''}${acc.readOnly?'<span class="pill ro">Read only</span>':''}`;
+  const others=orgsWithView(p.id);
+  $('orgRight').innerHTML=`${others.length>1?`<select aria-label="Organization" onchange="showOrg(this.value)">${others.map(o=>`<option value="${o}" ${o===ORG.id?'selected':''}>${esc(db.orgs[o].name)}</option>`).join('')}</select>`:''}
+    ${myClasses(p.id).length?`<button class="hbtn" onclick="route()">‹ My class</button>`:''}<button class="hbtn prof" aria-label="Profile" onclick="showProfile()"><b class="ini">${esc(initials(p.name))}</b></button>`;
+  const tabs=[['classes','Classes'],['people','People'],['programs','Programs'],['reports','Reports']];
+  $('orgTabs').innerHTML=tabs.map(([k,l])=>`<button class="otab ${ORG.tab===k?'on':''}" role="tab" aria-selected="${ORG.tab===k}" onclick="ORG.tab='${k}';paintOrg()">${l}</button>`).join('');
+  const body=$('orgBody'), keep=body.scrollTop;
+  body.innerHTML=ORG.tab==='classes'?orgClassesHTML(acc):ORG.tab==='people'?orgPeopleHTML(acc):ORG.tab==='programs'?orgProgramsHTML(acc):orgReportsHTML(acc);
+  body.scrollTop=keep;
+}
+/* ----- Classes ----- */
+function statusChip(l){
+  if(l.status==='live') return `<span class="st">Running since ${clockStr(new Date(l.since))}</span>`;
+  if(l.status==='lunch') return `<span class="st snack">${esc(l.pause||'Break')}</span>`;
+  if(l.status==='ended') return `<span class="st idle">Ended ${clockStr(new Date(l.endedAt))}</span>`;
+  return `<span class="st idle">Not started</span>`;
+}
+function orgClassesHTML(acc){
+  const progs=acc.programs.map(id=>db.programs[id]);
+  const shown=ORG.prog==='all'?progs:progs.filter(p=>p.id===ORG.prog);
+  const archived=classesOfOrg(ORG.id).filter(c=>c.status==='archived'&&acc.programs.includes(c.programId));
+  return `<div class="ofilters">${progs.length>1?`<button class="fchip ${ORG.prog==='all'?'on':''}" onclick="ORG.prog='all';paintOrg()">All programs</button>${progs.map(p=>`<button class="fchip ${ORG.prog===p.id?'on':''}" onclick="ORG.prog='${p.id}';paintOrg()">${esc(p.name)}</button>`).join('')}`:''}
+    ${acc.manage?`<button class="btn primary sm" onclick="openClassForm()">+ Add a class</button>`:''}</div>
+    ${shown.map(p=>{ const cs=classesOfOrg(ORG.id).filter(c=>c.programId===p.id&&c.status!=='archived');
+      return `<div class="pgroup"><h3>${esc(p.name)}<small>${cs.length} class${cs.length===1?'':'es'} · ${daysText(p.days)} ${hm(p.start)}–${hm(p.end)}</small></h3>
+        <div class="cgrid">${cs.map(c=>{ const l=liveOf(c.id), inv=invitedNames(c), tch=[...(c.teacherIds||[]).map(personName),...inv.map(n=>`${n} invited`)].join(' · ')||'No teacher yet';
+          return `<button class="ocard${l.past?' alert':''}" data-class="${c.id}" onclick="classMenu('${c.id}')"><span class="ct"><b>${esc(c.name)}</b>${statusChip(l)}</span><span class="tch">${esc(tch)}</span>
+            <span class="cnt">${l.status==='preclass'?`${l.students} students`:`In class ${l.in} · Out ${l.out} · Not here ${l.absent}`}</span>${l.past?`<span class="redchip">${l.past} past the limit now</span>`:''}</button>`; }).join('')||'<p class="note2">No classes yet.</p>'}</div></div>`; }).join('')}
+    ${archived.length?`<div class="sect">Archived</div>${archived.map(c=>`<div class="wait"><div><b>${esc(classLabel(c))}</b><small>Archived - its records are kept</small></div>${acc.manage?`<button class="btn ghost sm" onclick="restoreClass('${c.id}')">Restore</button>`:''}</div>`).join('')}`:''}`;
+}
+function classMenu(cid){
+  const c=db.classes[cid], acc=orgAccess(ORG.id,me().id);
+  sheetHTML(esc(classLabel(c)),esc([...(c.teacherIds||[]).map(personName)].join(', ')||'No teacher yet'),
+    `<div class="body"><div class="rowlist">
+      <button class="dbtn leaf" onclick="closeSheet();lookIn('${cid}')">Look in<small>See the class as it is now - read only</small></button>
+      ${acc.manage?`<button class="dbtn" onclick="closeSheet();openClassForm('${cid}')">Edit<small>Name, program, teachers, and whether the teacher can change times and limits</small></button>
+      <button class="dbtn ember" onclick="archiveClass('${cid}')">Archive<small>Hidden from Classes; every record is kept</small></button>`:''}
+    </div></div>`);
+}
+function archiveClass(cid){
+  const c=db.classes[cid];
+  confirmSheet(`Archive ${esc(classLabel(c))}?`,'It disappears from Classes and its teachers\' lists. Its students and every recorded day are kept, and it can be restored.','Archive',()=>{ c.status='archived'; saveDb(); closeSheet(); paintOrg(); toast(`${c.name} archived`); },'warn','Keep it');
+}
+function restoreClass(cid){ db.classes[cid].status='active'; saveDb(); paintOrg(); toast(`${db.classes[cid].name} restored`); }
+
+/* ----- Add a class / Edit a class ----- */
+let cf=null;
+function openClassForm(cid,pre){
+  const acc=orgAccess(ORG.id,me().id), c=cid?db.classes[cid]:null;
+  cf={cid,name:c?c.name:'',programId:c?c.programId:(ORG.prog!=='all'&&acc.programs.includes(ORG.prog)?ORG.prog:acc.programs[0]),
+      teachers:c?[...c.teacherIds.map(id=>({personId:id})),...(db.invites||[]).filter(i=>i.status==='pending'&&i.classIds.includes(cid)).map(i=>({email:i.email,name:i.name}))]:((pre&&pre.teacherIds)||[]).map(id=>({personId:id})),
+      canEdit:c?!!c.canEdit:false,how:'teacher',list:'',err:''};
+  paintClassForm();
+}
+function paintClassForm(){
+  const acc=orgAccess(ORG.id,me().id), prog=db.programs[cf.programId];
+  card(`<h2>${cf.cid?`Edit ${esc(db.classes[cf.cid].name)}`:'Add a class'}</h2>
+    <div class="row2"><label>Class name<input id="cfName" value="${esc(cf.name)}" placeholder="e.g. Class A" oninput="cf.name=this.value"></label>
+    <label>Program<select id="cfProg" onchange="cf.programId=this.value;paintClassForm()">${acc.programs.map(id=>`<option value="${id}" ${id===cf.programId?'selected':''}>${esc(db.programs[id].name)}</option>`).join('')}</select></label></div>
+    <div class="flabel">Teachers</div><div class="tchips">${cf.teachers.map((t,i)=>{ const p=t.personId&&db.people[t.personId];
+       return p?`<span class="tchip">${esc(p.name)} <small>${esc(p.email)}</small><button aria-label="Remove ${esc(p.name)}" onclick="cf.teachers.splice(${i},1);paintClassForm()">×</button></span>`
+               :`<span class="tchip new">${esc(t.email)} <small>new, gets an invite</small><button aria-label="Remove ${esc(t.email)}" onclick="cf.teachers.splice(${i},1);paintClassForm()">×</button></span>`; }).join('')}
+      <input id="cfEmail" aria-label="Add a teacher's email" placeholder="Add a teacher's email" onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();cfAddTeacher()}"></div>
+    <div class="swrow"><div><b>Teacher can change times and limits</b><small>${cf.canEdit?'On: the teacher edits the times and limits, as in their own class.':`Off: the class uses ${esc(prog.name)}'s times and limits, shown to the teacher as "Set by your organization".`}</small></div><button class="switch ${cf.canEdit?'on':''}" role="switch" aria-checked="${cf.canEdit}" aria-label="Teacher can change times and limits" onclick="cf.canEdit=!cf.canEdit;paintClassForm()"></button></div>
+    ${cf.cid?`<p class="note2">Students: ${(classStore(cf.cid).students||[]).filter(s=>s.active).length}. Changing teachers never touches this class's records - they stay with the class.</p>`
+     :`<div class="flabel" style="margin-top:12px">Students</div><div class="segw" role="group" aria-label="Students"><button class="${cf.how==='teacher'?'on':''}" onclick="cf.how='teacher';paintClassForm()">The teacher adds them</button><button class="${cf.how==='now'?'on':''}" onclick="cf.how='now';paintClassForm()">Add them now (type or paste a list)</button></div>
+       ${cf.how==='now'?`<textarea id="cfList" aria-label="Students" placeholder="One name per line, or paste a list" oninput="cf.list=this.value">${esc(cf.list)}</textarea>`:''}`}
+    <p class="err" id="cfErr">${esc(cf.err)}</p>
+    <div class="setup-actions"><button class="btn ghost" onclick="showOrg(ORG.id)">Cancel</button><button class="btn dark" onclick="saveClassForm()">${cf.cid?'Save':`Create ${esc(cf.name||'class')}`}</button></div>`);
+}
+function cfAddTeacher(){
+  const el=$('cfEmail'), email=(el.value||'').trim().replace(/,$/,'').toLowerCase(), org=db.orgs[ORG.id];
+  cf.name=$('cfName').value; if($('cfList')) cf.list=$('cfList').value;
+  if(!email) return;
+  if(!emailOk(email)){ cf.err='That doesn\'t look like an email address.'; return paintClassForm(); }
+  const p=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
+  if(p&&membership(ORG.id,p.id)){ if(!cf.teachers.some(t=>t.personId===p.id)) cf.teachers.push({personId:p.id}); cf.err=''; return paintClassForm(); }
+  if(!domainOk(org,email)){ cf.err=domainRefusal(org,email); return paintClassForm(); }
+  if(!cf.teachers.some(t=>t.email===email)) cf.teachers.push({email,name:p?p.name:''});
+  cf.err=''; paintClassForm(); setTimeout(()=>$('cfEmail')&&$('cfEmail').focus(),0);
+}
+function saveClassForm(){
+  if($('cfEmail')&&$('cfEmail').value.trim()) { cfAddTeacher(); if(cf.err) return; }
+  cf.name=($('cfName').value||'').replace(/[<>"`]/g,'').trim();
+  if(!cf.name){ cf.err='Please give the class a name.'; return paintClassForm(); }
+  const p=me(), org=db.orgs[ORG.id];
+  const cid=cf.cid||('c'+Date.now().toString(36));
+  const c=db.classes[cid]||(db.classes[cid]={id:cid,orgId:ORG.id,status:'active',teacherIds:[]});
+  c.name=cf.name; c.programId=cf.programId; c.canEdit=cf.canEdit;
+  c.teacherIds=cf.teachers.filter(t=>t.personId).map(t=>t.personId);       // the records stay with the class
+  const emails=cf.teachers.filter(t=>t.email).map(t=>t.email);
+  (db.invites||[]).filter(i=>i.orgId===ORG.id&&i.status==='pending'&&i.classIds.includes(cid)&&!emails.includes(i.email)).forEach(i=>{ i.classIds=i.classIds.filter(x=>x!==cid); if(!i.classIds.length) i.status='revoked'; });
+  const newInvites=[];
+  emails.forEach(email=>{
+    let inv=(db.invites||[]).find(i=>i.orgId===ORG.id&&i.status==='pending'&&i.email===email);
+    if(!inv){ inv={id:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),orgId:ORG.id,email,name:'',role:'teacher',classIds:[],invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'}; db.invites.push(inv); newInvites.push(inv); }
+    if(!inv.classIds.includes(cid)) inv.classIds.push(cid);
+  });
+  if(!cf.cid){
+    const names=cf.how==='now'?String(cf.list||'').split(/[\n,;]+/).map(n=>n.replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'`]/g,'').trim()).filter(Boolean):[];
+    lsSet(KCLS(cid),{students:names.map((n,i)=>({id:'s'+i,name:n,active:true})),history:{},day:null,today:null});
+  }
+  saveDb(); const was=cf.cid; cf=null; showOrg(ORG.id,'classes');
+  toast(was?`${c.name} saved`:`${c.name} created`);
+  if(newInvites.length) shareInvite(newInvites[0].id);
+}
+
+/* ----- invites ----- */
+function newCode(){ const a='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=a[Math.floor(Math.random()*a.length)]; return s.slice(0,3)+'-'+s.slice(3); }
+const domainOk=(org,email)=>!org.domainOnly||!org.domain||String(email).toLowerCase().endsWith('@'+org.domain.toLowerCase());
+const domainRefusal=(org,email)=>`${org.name} only lets @${org.domain} addresses join, so ${email} can't be invited. Use their @${org.domain} address, or turn off "Only @${org.domain} addresses can join" in Programs.`;
+function inviteMessage(inv){
+  const org=db.orgs[inv.orgId], cls=inv.classIds.map(id=>db.classes[id]).filter(Boolean).map(classLabel);
+  return `Assalamu alaikum! ${personName(inv.invitedBy)} has invited you to ${org.name} on Hifz Class Tracker${cls.length?`, to teach ${cls.join(' and ')}`:''}${inv.role==='admin'?', as an admin':''}.
+
+1. Open https://rfydawood.github.io/hifz-class-tracker/
+2. Sign in with ${inv.email} - it has to be this exact email.
+
+Signing in with a different email? Tap "Have an invite code?" and enter: ${inv.code}`;
+}
+function shareInvite(id){
+  const inv=db.invites.find(i=>i.id===id);
+  sheetHTML('Share the invite','The app can\'t send email, so send this by WhatsApp, text or email yourself. Practice copy: nothing is sent.',
+    `<div class="body"><textarea class="msgbox" id="invMsg" readonly>${esc(inviteMessage(inv))}</textarea><p class="okmsg" id="copied"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Done</button><button class="btn dark" onclick="copyInvite()">Copy</button></div>`);
+}
+function copyInvite(){
+  const t=$('invMsg'), ok=()=>{ $('copied').textContent='Copied - paste it into WhatsApp or an email.'; };
+  try{ navigator.clipboard.writeText(t.value).then(ok,()=>{ t.select(); document.execCommand('copy'); ok(); }); }catch(e){ t.select(); try{ document.execCommand('copy'); }catch(x){} ok(); }
+}
+function revokeInvite(id){
+  const inv=db.invites.find(i=>i.id===id);
+  confirmSheet(`Revoke the invite to ${esc(inv.email)}?`,'The code stops working. You can invite them again later.','Revoke',()=>{ inv.status='revoked'; saveDb(); closeSheet(); paintOrg(); toast('Invite revoked'); },'warn','Keep it');
+}
+let ivf=null;
+function openInvite(){
+  const acc=orgAccess(ORG.id,me().id);
+  ivf={email:'',role:'teacher',classIds:[],err:''}; paintInviteForm(acc);
+}
+function paintInviteForm(acc){
+  acc=acc||orgAccess(ORG.id,me().id);
+  const cls=classesOfOrg(ORG.id).filter(c=>c.status!=='archived'&&acc.programs.includes(c.programId));
+  sheetHTML('Invite someone',`To ${esc(db.orgs[ORG.id].name)}. They join by signing in with this email.`,
+    `<div class="body"><div class="note" style="margin-top:0"><input id="ivEmail" type="email" placeholder="their@email" value="${esc(ivf.email)}" oninput="ivf.email=this.value"></div>
+      ${acc.admin?`<div class="seg" style="margin-top:10px"><button class="${ivf.role==='teacher'?'on present':''}" onclick="ivf.role='teacher';paintInviteForm()">Teacher</button><button class="${ivf.role==='admin'?'on present':''}" onclick="ivf.role='admin';paintInviteForm()">Admin</button></div>`:''}
+      <div class="sect">Classes</div>${cls.map(c=>`<label class="frow" style="justify-content:flex-start;gap:10px"><input type="checkbox" ${ivf.classIds.includes(c.id)?'checked':''} onchange="ivf.classIds=this.checked?[...ivf.classIds,'${c.id}']:ivf.classIds.filter(x=>x!=='${c.id}')">${esc(classLabel(c))}</label>`).join('')}
+      <p class="err" id="ivErr">${esc(ivf.err)}</p></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="sendInvite()">Invite</button></div>`);
+}
+function sendInvite(){
+  const org=db.orgs[ORG.id], email=(ivf.email||'').trim().toLowerCase(), p=me();
+  if(!emailOk(email)){ ivf.err='Please type an email address.'; return paintInviteForm(); }
+  if(!domainOk(org,email)){ ivf.err=domainRefusal(org,email); return paintInviteForm(); }
+  const known=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
+  if(known&&membership(ORG.id,known.id)){ ivf.err=`${known.name} is already in ${org.name}. Add them to a class from Classes → Edit.`; return paintInviteForm(); }
+  const inv={id:'i'+Date.now().toString(36),orgId:ORG.id,email,name:known?known.name:'',role:ivf.role,classIds:ivf.classIds.slice(),invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'};
+  db.invites.push(inv); saveDb(); paintOrg(); shareInvite(inv.id);
+}
+
+/* ----- People ----- */
+function orgPeopleHTML(acc){
+  const org=db.orgs[ORG.id], p=me();
+  let mem=(db.members||[]).filter(m=>m.orgId===ORG.id);
+  if(acc.programAdmin) mem=mem.filter(m=>classesOfOrg(ORG.id).some(c=>acc.programs.includes(c.programId)&&c.teacherIds.includes(m.personId))||m.personId===p.id);
+  const admins=(db.members||[]).filter(m=>m.orgId===ORG.id&&m.roles.includes('admin')).length;
+  const canEditPeople=acc.admin;
+  const rows=mem.map(m=>{
+    const person=db.people[m.personId], cs=classesOfOrg(ORG.id).filter(c=>c.status!=='archived'&&c.teacherIds.includes(m.personId));
+    const pa=programAdminOf(ORG.id,m.personId), isA=m.roles.includes('admin');
+    return `<div class="prow" data-person="${m.personId}"><div class="who2"><b class="ini mid">${esc(initials(person.name))}</b><div><b>${esc(person.name)}${m.personId===p.id?' <span class="badge2 youb">you</span>':''}</b><small>${esc(person.email)}</small></div></div>
+      <div class="rcol">${canEditPeople?`<select aria-label="Role for ${esc(person.name)}" onchange="setRole('${m.personId}',this.value)"><option value="teacher" ${isA?'':'selected'}>Teacher</option><option value="admin" ${isA?'selected':''}>Admin</option></select>`:`${isA?'<span class="badge2 admin">Admin</span>':''}${cs.length?'<span class="badge2 teacher">Teacher</span>':''}`}
+        ${pa.map(id=>`<span class="badge2 padmin">Program admin · ${esc(db.programs[id].name)}</span>`).join('')}</div>
+      <div class="cls">${cs.map(classLabel).map(esc).join(' · ')||'No class'}</div>
+      <div class="scol">${isA?'<span class="badge2 teacher">Can see: everything</span>':`<select aria-label="Can see for ${esc(person.name)}" ${canEditPeople?'':'disabled'} onchange="setCanSee('${m.personId}',this.value)">${[['own','Own classes'],['summaries','Own + summaries'],['everything','Everything']].map(([v,l])=>`<option value="${v}" ${(m.canSee||'own')===v?'selected':''}>Can see: ${l}</option>`).join('')}</select>`}</div>
+      <div class="rmcol">${canEditPeople&&!(isA&&admins<=1)?`<button class="lnk" onclick="removePerson('${m.personId}')">Remove</button>`:''}</div></div>`;
+  }).join('');
+  let inv=invitesPending(ORG.id); if(acc.programAdmin) inv=inv.filter(i=>i.classIds.some(id=>db.classes[id]&&acc.programs.includes(db.classes[id].programId)));
+  return `<div class="ofilters"><b style="font-size:18px">People</b>${acc.manage?`<button class="btn dark sm" onclick="openInvite()">+ Invite</button>`:''}</div>
+    <div class="ptable">${rows}</div>
+    ${inv.length?`<div class="sect">Waiting to join</div>${inv.map(i=>`<div class="wait" data-invite="${i.id}"><span class="q">?</span><div><b>${esc(i.email)}</b><small>Invited ${new Date(i.at).toLocaleDateString([],{month:'short',day:'numeric'})} as ${i.role==='admin'?'Admin':'Teacher'}${i.classIds.length?' · '+i.classIds.map(id=>db.classes[id]?classLabel(db.classes[id]):'').filter(Boolean).join(' · '):''} · code ${esc(i.code)}</small></div>
+      <button class="btn ghost sm" onclick="shareInvite('${i.id}')">Share invite</button>${acc.manage?`<button class="btn ghost sm" style="color:var(--ember)" onclick="revokeInvite('${i.id}')">Revoke</button>`:''}</div>`).join('')}`:''}
+    <p class="note2">"Can see": own classes only (the usual), own classes plus summary reports of the others, or everything (admins). There is always at least one admin.${acc.readOnly?' You can see everything here, read only.':''}</p>`;
+}
+function setRole(pid,v){
+  const m=membership(ORG.id,pid), admins=(db.members||[]).filter(x=>x.orgId===ORG.id&&x.roles.includes('admin')).length;
+  if(v==='teacher'&&m.roles.includes('admin')&&admins<=1){ toast(`${db.orgs[ORG.id].name} needs at least one admin.`); return paintOrg(); }
+  m.roles=v==='admin'?['admin','teacher']:['teacher']; if(v==='admin') m.canSee='everything'; else if(m.canSee==='everything') m.canSee='own';
+  saveDb(); paintOrg(); toast(`${personName(pid)} is now ${v==='admin'?'an admin':'a teacher'}`);
+  if(pid===me().id&&!orgAccess(ORG.id,pid)) route();
+}
+function setCanSee(pid,v){ membership(ORG.id,pid).canSee=v; saveDb(); paintOrg(); }
+function removePerson(pid){
+  const m=membership(ORG.id,pid), admins=(db.members||[]).filter(x=>x.orgId===ORG.id&&x.roles.includes('admin')).length;
+  if(m.roles.includes('admin')&&admins<=1) return toast(`${db.orgs[ORG.id].name} needs at least one admin.`);
+  confirmSheet(`Remove ${esc(personName(pid))} from ${esc(db.orgs[ORG.id].name)}?`,'They lose access to its classes. Every record they made stays with the classes.','Remove',()=>{
+    db.members=db.members.filter(x=>x!==m);
+    classesOfOrg(ORG.id).forEach(c=>{ c.teacherIds=c.teacherIds.filter(x=>x!==pid); });
+    programsOf(ORG.id).forEach(p=>{ if(p.adminId===pid) p.adminId=null; });
+    saveDb(); closeSheet(); toast(`${personName(pid)} removed`);
+    if(pid===me().id) route(); else paintOrg();
+  },'warn','Keep them');
+}
+
+/* ----- Programs: the organization, and each program's times, limits and admin ----- */
+function orgProgramsHTML(acc){
+  const org=db.orgs[ORG.id], dis=acc.admin?'':'disabled';
+  const mem=(db.members||[]).filter(m=>m.orgId===ORG.id);
+  const progCard=p=>{ const can=acc.manage&&acc.programs.includes(p.id), d=can?'':'disabled';
+    const tp=(label,key)=>`<div class="frow">${label}<span class="two">${p[key]?`<input type="time" aria-label="${p.name} ${label} from" ${d} value="${p[key].start}" onchange="setProg('${p.id}','${key}.start',this.value)"><input type="time" aria-label="${p.name} ${label} to" ${d} value="${p[key].end}" onchange="setProg('${p.id}','${key}.end',this.value)">${can?`<button class="lnk" onclick="setProg('${p.id}','${key}',null)">None</button>`:''}`:`<span class="note2" style="margin:0">None</span>${can?`<button class="lnk" style="color:var(--leaf)" onclick="setProg('${p.id}','${key}',{start:'${p.start}',end:'${p.start}'})">Add</button>`:''}`}</span></div>`;
+    return `<div class="pcard2" data-program="${p.id}"><h3>${esc(p.name)}<small class="note2" style="margin:0">Every class in this program starts with these times and limits.</small></h3>
+      <div class="frow">Days<span class="daysel">${DAYN.map((n,i)=>`<button ${d} class="${p.days.includes(i+1)?'on':''}" aria-pressed="${p.days.includes(i+1)}" onclick="toggleProgDay('${p.id}',${i+1})">${n}</button>`).join('')}</span></div>
+      <div class="frow">Class times<span class="two"><input type="time" aria-label="${p.name} class times from" ${d} value="${p.start}" onchange="setProg('${p.id}','start',this.value)"><input type="time" aria-label="${p.name} class times to" ${d} value="${p.end}" onchange="setProg('${p.id}','end',this.value)"></span></div>
+      ${tp('Snack','snack')}${tp('Lunch','lunch')}
+      ${['washroom','water','wudhu'].map(k=>`<div class="frow">${RSN(k).label}${stepperPair(p.limits[k],k,`stepProg_${p.id}`,!can)}</div>`).join('')}
+      <div class="frow"><div>Program admin<small>Optional · manages only ${esc(p.name)}: its classes, teachers and reports</small></div><select aria-label="${p.name} program admin" ${acc.admin?'':'disabled'} onchange="setProg('${p.id}','adminId',this.value||null)"><option value="">None</option>${mem.map(m=>`<option value="${m.personId}" ${p.adminId===m.personId?'selected':''}>${esc(personName(m.personId))}</option>`).join('')}</select></div></div>`; };
+  const progs=acc.programs.map(id=>db.programs[id]);
+  progs.forEach(p=>{ window['stepProg_'+p.id]=(k,f,dlt)=>{ p.limits[k][f]=stepVal(p.limits[k],f,dlt); saveDb(); paintOrg(); }; });
+  return `${acc.programAdmin?'':`<div class="pcard2"><h3>${esc(org.name)}</h3>
+      <div class="frow">Organization name<input type="text" aria-label="Organization name" ${dis} value="${esc(org.name)}" onchange="setOrg('name',this.value)"></div>
+      <div class="frow">Email domain<input type="text" aria-label="Email domain" ${dis} value="${esc(org.domain||'')}" onchange="setOrg('domain',this.value)"></div>
+      <div class="swrow"><div><b>Only @${esc(org.domain||'domain')} addresses can join</b><small>When on, invites to any other address are refused. People already in ${esc(org.name)} stay.</small></div><button class="switch ${org.domainOnly?'on':''}" ${dis} role="switch" aria-checked="${!!org.domainOnly}" aria-label="Only domain addresses can join" onclick="setOrg('domainOnly',${!org.domainOnly})"></button></div></div>`}
+    <div class="sect">Programs</div>${progs.map(progCard).join('')}
+    ${acc.admin?`<div class="roster-add"><input id="newProg" placeholder="New program's name" onkeydown="if(event.key==='Enter')addProgram()"><button class="btn ghost" onclick="addProgram()">+ Add a program</button></div>`:''}`;
+}
+function setOrg(k,v){ const org=db.orgs[ORG.id]; if(k==='name'){ v=String(v).replace(/[<>"`]/g,'').trim(); if(!v) return paintOrg(); } if(k==='domain') v=String(v).replace(/^@/,'').trim().toLowerCase(); org[k]=v; saveDb(); paintOrg(); }
+function setProg(pid,path,v){ const p=db.programs[pid]; const [a,b]=path.split('.'); if(b){ if(!v) return; p[a][b]=v; } else p[a]=v; saveDb(); paintOrg(); }
+function toggleProgDay(pid,d){ const p=db.programs[pid]; p.days=p.days.includes(d)?p.days.filter(x=>x!==d):[...p.days,d].sort((a,b)=>a-b); saveDb(); paintOrg(); }
+function addProgram(){ const n=($('newProg').value||'').replace(/[<>"`]/g,'').trim(); if(!n) return; const id='p'+Date.now().toString(36);
+  db.programs[id]={id,orgId:ORG.id,name:n,days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:{washroom:{min:7,trips:2},water:{min:2,trips:2},wudhu:{min:2,trips:2}},adminId:null};
+  db.orgs[ORG.id].programs.push(id); saveDb(); paintOrg(); toast(`${n} added`); }
+
+/* ----- Reports ----- */
+function rangeIds(key){
+  const t=new Date(); t.setHours(0,0,0,0); const mon=new Date(t); mon.setDate(t.getDate()-((t.getDay()+6)%7));
+  let s,e; if(key==='lastweek'){ s=new Date(mon); s.setDate(mon.getDate()-7); e=new Date(mon); e.setDate(mon.getDate()-1); }
+  else if(key==='thismonth'){ s=new Date(t.getFullYear(),t.getMonth(),1); e=t; } else { s=mon; e=t; }
+  const ids=[]; for(const c=new Date(s);c<=e;c.setDate(c.getDate()+1)) ids.push(dayId(c));
+  return ids;
+}
+function classStats(cid,ids){
+  const s=classStore(cid), h=s.history||{}, days=ids.map(id=>h[id]).filter(Boolean);
+  const r={students:(s.students||[]).filter(x=>x.active).length,days:days.length,breaks:0,flags:0,outMs:0,seat:0,marks:0,here:0,tardy:0,absent:0};
+  days.forEach(d=>{ Object.values(d.att||{}).forEach(a=>{ r.marks++; if(a.status!=='absent'){ r.here++; r.seat++; } if(a.status==='tardy') r.tardy++; if(a.status==='absent') r.absent++; });
+    (d.breaks||[]).forEach(b=>{ if((b.dur||0)<15000) return; r.breaks++; if(b.flag) r.flags++; if(b.reason!=='assigned') r.outMs+=b.dur; }); });
+  return r;
+}
+const perDay=r=>r.seat?r.outMs/60000/r.seat:0;
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
+function sumStats(list){ const t={students:0,days:0,breaks:0,flags:0,outMs:0,seat:0,marks:0,here:0,tardy:0,absent:0}; list.forEach(r=>Object.keys(t).forEach(k=>t[k]+=r[k])); return t; }
+function orgReportsHTML(acc){
+  const progs=acc.programs.map(id=>db.programs[id]);
+  if(acc.programAdmin&&ORG.rscope==='org') ORG.rscope='program';
+  if(ORG.rscope==='program'&&!acc.programs.includes(ORG.rprog)) ORG.rprog=progs[0].id;
+  const all=classesOfOrg(ORG.id).filter(c=>c.status!=='archived'&&acc.programs.includes(c.programId));
+  if(ORG.rscope==='class'&&!all.some(c=>c.id===ORG.rclass)) ORG.rclass=(all[0]||{}).id;
+  const cls=ORG.rscope==='program'?all.filter(c=>c.programId===ORG.rprog):ORG.rscope==='class'?all.filter(c=>c.id===ORG.rclass):all;
+  const ids=rangeIds(ORG.rrange), rows=cls.map(c=>({c,r:classStats(c.id,ids)})), T=sumStats(rows.map(x=>x.r));
+  const max=Math.max(1,...rows.map(x=>perDay(x.r)));
+  const seg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button class="${ORG[k]===v?'on present':''}" onclick="ORG.${k}='${v}';paintOrg()">${l}</button>`).join('')}</div>`;
+  const running=cls.filter(c=>['live','lunch'].includes(liveOf(c.id).status)).length;
+  const what=ORG.rscope==='org'?db.orgs[ORG.id].name:ORG.rscope==='program'?db.programs[ORG.rprog].name:classLabel(db.classes[ORG.rclass]);
+  return `<div class="ofilters" style="gap:8px">${seg('rscope',[...(acc.programAdmin?[]:[['org','Whole organization']]),['program','One program'],['class','One class']])}
+      ${ORG.rscope==='program'?`<select aria-label="Program" onchange="ORG.rprog=this.value;paintOrg()">${progs.map(p=>`<option value="${p.id}" ${p.id===ORG.rprog?'selected':''}>${esc(p.name)}</option>`).join('')}</select>`:''}
+      ${ORG.rscope==='class'?`<select aria-label="Class" onchange="ORG.rclass=this.value;paintOrg()">${all.map(c=>`<option value="${c.id}" ${c.id===ORG.rclass?'selected':''}>${esc(classLabel(c))}</option>`).join('')}</select>`:''}</div>
+    <div class="ofilters">${seg('rrange',[['thisweek','This week'],['lastweek','Last week'],['thismonth','This month']])}</div>
+    <p class="note2" style="margin:0" id="orgRptLine"><b>${esc(what)}</b> · ${ids.length?`${new Date(ids[0]+'T00:00:00').toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})} to ${new Date(ids[ids.length-1]+'T00:00:00').toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}`:''}</p>
+    <div class="rcards">
+      <div class="rcard" data-card="classes"><h5>Classes</h5><b>${cls.length}</b><small>${running} running now · ${T.students} students</small></div>
+      <div class="rcard" data-card="out"><h5>Time out, per student a day</h5><b>${f1(perDay(T))} min</b><small>${Math.round(T.outMs/60000)} min in all</small></div>
+      <div class="rcard" data-card="breaks"><h5>Breaks</h5><b>${T.breaks}</b><small>${T.days} class days</small></div>
+      <div class="rcard" data-card="over"><h5 class="warn">Over the limit</h5><b>${T.flags}</b><small>${pct(T.flags,T.breaks)}% of breaks</small></div>
+      <div class="rcard" data-card="att"><h5>Attendance</h5><b>${pct(T.here,T.marks)}% present</b><small>${T.tardy} tardy · ${T.absent} absent</small></div></div>
+    <div class="rtable"><div class="rrow2 h"><span>Class</span><span class="hide-n">Minutes out a day</span><span class="num">Min</span><span class="num hide-n">Days</span><span class="num hide-n">Breaks</span><span class="num">Flagged</span><span class="num">Present</span></div>
+      ${rows.map(({c,r})=>`<div class="rrow2" data-row="${c.id}"><span class="nm"><b>${esc(ORG.rscope==='org'?classLabel(c):c.name)}</b><small>${esc((c.teacherIds||[]).map(personName).join(', ')||'No teacher yet')} · ${r.students} students</small></span>
+        <span class="barw"><i style="width:${Math.round(perDay(r)/max*100)}%"></i></span><span class="num">${f1(perDay(r))} min</span><span class="num hide-n">${r.days}</span><span class="num hide-n">${r.breaks}</span><span class="num ${pct(r.flags,r.breaks)>=40?'hot':''}">${pct(r.flags,r.breaks)}%</span><span class="num">${pct(r.here,r.marks)}%</span></div>`).join('')||'<p class="note2">No classes.</p>'}</div>
+    <p class="note2">Minutes out are per student, per class day; Assigned (excused) time isn't counted. Flagged = % of breaks over the limit.</p>`;
+}
+/* For a teacher whose "Can see" is "Own + summaries" (or everything): the
+   organization's other classes in their class Reports - totals only, no names. */
+function orgSummaryHTML(ids){
+  const c=db.classes[CUR], p=me(); if(!c||!c.orgId||!p) return '';
+  const see=canSeeOf(c.orgId,p.id); if(see!=='summaries'&&see!=='everything') return '';
+  const others=classesOfOrg(c.orgId).filter(x=>x.id!==c.id&&x.status!=='archived');
+  if(!others.length) return '';
+  return `<h4 class="rh" id="orgSummary">Other classes at ${esc(db.orgs[c.orgId].name)} · totals only</h4><div class="rowlist">${others.map(x=>{ const r=classStats(x.id,ids);
+    return `<div class="row"><b>${esc(classLabel(x))}</b><span class="time">${r.students} students · ${f1(perDay(r))} min out a day</span><span class="time">${pct(r.flags,r.breaks)}% flagged · ${pct(r.here,r.marks)}% present</span></div>`; }).join('')}</div>`;
+}
+
+/* ===== the practice bar ===== */
+function fillPicker(){
+  const sel=$('youAre'), id=meId();
+  const order=['maryam','aisha','yusuf','bilal','rafaye','khadija','hamid','sumayya','tariq'];
+  const people=Object.values(db.people).sort((a,b)=>{ const i=order.indexOf(a.id), j=order.indexOf(b.id); return (i<0?99:i)-(j<0?99:j); });
+  const label=p=>{ const roles=(db.members||[]).filter(m=>m.personId===p.id).map(m=>{ const org=db.orgs[m.orgId], pa=programAdminOf(m.orgId,p.id);
+    return m.roles.includes('admin')?`admin, ${org.name}`:pa.length?`program admin, ${db.programs[pa[0]].name}`:null; }).filter(Boolean);
+    return `${p.name}${roles.length?` (${roles.join('; ')})`:''}`; };
+  const idris=(db.invites||[]).find(i=>i.email==='idris@uthmanacademy.org'&&i.status==='pending')&&!Object.values(db.people).some(p=>p.email==='idris@uthmanacademy.org');
+  sel.innerHTML=(id?'':'<option value="" selected>— no one signed in —</option>')
+    +people.map(p=>`<option value="${p.id}" ${p.id===id?'selected':''}>${esc(label(p))}</option>`).join('')
+    +(idris?'<option value="@idris">Hafiz Idris (invited, not joined yet)</option>':'')
+    +'<option value="@new">Someone new…</option>';
+}
+function pickPerson(v){
+  if(SCREEN==='class'&&!readOnly) save();
+  CUR=null; readOnly=false;
+  if(v==='@new'){ setMe(null); fillPicker(); return showSignIn('Someone new to the app. Type any name and email to try it.'); }
+  if(v==='@idris'){ const id='idris'; db.people[id]={id,name:'Hafiz Idris',email:'idris@uthmanacademy.org',provider:'google'}; saveDb(); setMe(id); return route(); }
+  setMe(v); route();
+}
+function askStartOver(){
+  confirmSheet('Start the practice copy over?','Every practice class, person and invite goes back to the demo. Only this practice page is cleared; your real app is never touched.','Start over',()=>{
+    practiceKeys().forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    try{ sessionStorage.removeItem(KSKIP); }catch(e){}
+    closeSheet(); seedDemo(); db=lsGet(KDB);
+    if(!db.people[meId()]) setMe('maryam');
+    CUR=null; readOnly=false; route(); toast('Back to the demo');
+  },'warn','Keep going');
+}
+
+/* ===== two tabs as two people: another tab changed something ===== */
+window.addEventListener('storage',e=>{
+  if(!e.key||!e.key.startsWith(NS)) return;
+  if(e.key===KDB){ db=lsGet(KDB)||db; fillPicker(); }
+  if(SCREEN==='org') return paintOrg();
+  if(SCREEN==='class'&&CUR&&(e.key===KCLS(CUR)||e.key===KDB)){
+    if(!db.classes[CUR]) return route();
+    const drawerOpen=$('drawer').classList.contains('show'), sheetOpen=$('scrim').classList.contains('show');
+    loadClass(CUR,readOnly); if(!sheetOpen||readOnly) render(); else { render.pending=true; }
+    if(drawerOpen) drawDrawer();
+  }
+  if(SCREEN==='profile') showProfile();
+});
+
+/* =====================================================================
+   The demo: Uthman Academy and Masjid Al-Noor, built from the current time
+   so it looks live. Everyone except the owner, and every student, is made up.
+   ===================================================================== */
+function seedRng(str){ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } let s=h>>>0||1; return ()=>{ s^=s<<13; s>>>=0; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
+function seedDemo(){
+  const now=Date.now(), T=new Date(); T.setHours(0,0,0,0);
+  const P=(id,name,email)=>({id,name,email,provider:'google'});
+  const people={maryam:P('maryam','Ustadha Maryam','maryam@uthmanacademy.org'),aisha:P('aisha','Ustadha Aisha','aisha@uthmanacademy.org'),
+    yusuf:P('yusuf','Hafiz Yusuf','yusuf@uthmanacademy.org'),bilal:P('bilal','Ustadh Bilal','bilal@uthmanacademy.org'),
+    rafaye:P('rafaye','Hafiz Abdur Rafaye','rfy.dawood@gmail.com'),khadija:P('khadija','Ustadha Khadija','khadija@uthmanacademy.org'),
+    hamid:P('hamid','Ustadh Hamid','hamid@uthmanacademy.org'),sumayya:P('sumayya','Ustadha Sumayya','sumayya@uthmanacademy.org'),
+    tariq:P('tariq','Imam Tariq','tariq@masjidalnoor.org')};
+  const L=(w,wt,wa,wat,wu,wut)=>({washroom:{min:w,trips:wt},water:{min:wa,trips:wat},wudhu:{min:wu,trips:wut}});
+  const programs={
+    boys:{id:'boys',orgId:'uthman',name:'Boys Full-time Hifz',days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:L(7,2,2,2,3,2),adminId:null},
+    girls:{id:'girls',orgId:'uthman',name:'Girls Full-time Hifz',days:[1,2,3,4,5],start:'08:00',end:'15:00',snack:{start:'10:00',end:'10:15'},lunch:{start:'12:00',end:'12:45'},limits:L(7,2,2,3,3,2),adminId:null},
+    evening:{id:'evening',orgId:'uthman',name:'Evening Maktab',days:[1,2,3,4],start:'17:00',end:'19:00',snack:{start:'18:00',end:'18:10'},lunch:null,limits:L(5,1,2,2,3,1),adminId:'yusuf'},
+    sunday:{id:'sunday',orgId:'uthman',name:'Sunday School',days:[7],start:'10:00',end:'13:00',snack:{start:'11:30',end:'11:45'},lunch:null,limits:L(5,1,2,2,3,1),adminId:null},
+    nsunday:{id:'nsunday',orgId:'alnoor',name:'Sunday School',days:[7],start:'10:00',end:'13:00',snack:{start:'11:30',end:'11:45'},lunch:null,limits:L(5,1,2,2,3,1),adminId:null}};
+  const orgs={uthman:{id:'uthman',name:'Uthman Academy',domain:'uthmanacademy.org',domainOnly:true,programs:['boys','girls','evening','sunday']},
+    alnoor:{id:'alnoor',name:'Masjid Al-Noor',domain:'masjidalnoor.org',domainOnly:false,programs:['nsunday']}};
+  const C=(id,orgId,programId,name,teacherIds,canEdit)=>({id,orgId,programId,name,teacherIds,canEdit:!!canEdit,status:'active'});
+  const classes={
+    bA:C('bA','uthman','boys','Class A',['bilal'],false), bB:C('bB','uthman','boys','Class B',['rafaye'],true), bC:C('bC','uthman','boys','Class C',['yusuf'],false),
+    gA:C('gA','uthman','girls','Class A',['aisha'],false), gB:C('gB','uthman','girls','Class B',['khadija'],false),
+    e1:C('e1','uthman','evening','Level 1',[],false), e2:C('e2','uthman','evening','Level 2',['hamid'],false),
+    sJ:C('sJ','uthman','sunday','Juniors',['sumayya'],false), nJ:C('nJ','alnoor','nsunday','Juniors',['rafaye'],true),
+    own:{id:'own',orgId:null,ownerId:'rafaye',name:"Hafiz Abdur Rafaye's Hifz Class",settings:mergeSettings({}),status:'active'}};
+  const M=(orgId,personId,roles,canSee)=>({orgId,personId,roles,canSee});
+  const members=[M('uthman','maryam',['admin'],'everything'),M('uthman','aisha',['admin','teacher'],'everything'),M('uthman','yusuf',['teacher'],'own'),
+    M('uthman','bilal',['teacher'],'own'),M('uthman','rafaye',['teacher'],'summaries'),M('uthman','khadija',['teacher'],'own'),M('uthman','hamid',['teacher'],'own'),
+    M('uthman','sumayya',['teacher'],'own'),M('alnoor','tariq',['admin'],'everything'),M('alnoor','rafaye',['teacher'],'own')];
+  const invites=[{id:'invIdris',orgId:'uthman',email:'idris@uthmanacademy.org',name:'Hafiz Idris',role:'teacher',classIds:['bA','e1'],invitedBy:'maryam',at:now-2*86400000,code:'K7P-4QX',status:'pending'}];
+  const d={v:1,people,orgs,programs,classes,members,invites,lastClass:{rafaye:'bB'}};
+  lsSet(KDB,d);
+  // made-up students
+  const BOYS=['Zayd','Hamza','Ilyas','Harun','Yahya','Musa','Isa','Dawud','Sulayman','Talha','Zubair','Anas','Ammar','Hud','Luqman','Imran','Faris','Nuh','Rayyan','Junayd','Idrees','Ayyub','Shuayb','Umar'];
+  const GIRLS=['Fatima','Zainab','Hafsa','Ruqayya','Safiyya','Asma','Layla','Hana','Iman','Noor','Sara','Yasmin','Hiba','Rania','Sana','Huda','Inaya'];
+  const LAST=['Rahman','Siddiqui','Qureshi','Farooqi','Chaudhry','Sheikh','Hussain','Akhtar','Rashid','Karim','Nadeem','Haider','Javed','Latif','Yaqub','Shah','Iqbal','Raza','Darwish','Hakimi','Noori'];
+  const sizes={bA:14,bB:12,bC:12,gA:12,gB:12,e1:9,e2:9,sJ:10,nJ:15,own:8};
+  const settingsOf=c=>{ db=d; return settingsFor(c); };
+  Object.values(classes).forEach(c=>{
+    const r=seedRng(c.id), girls=c.programId==='girls', firsts=girls?GIRLS:BOYS, n=sizes[c.id], used=new Set(), students=[];
+    for(let i=0;i<n;i++){ let nm; do{ nm=`${firsts[Math.floor(r()*firsts.length)]} ${LAST[Math.floor(r()*LAST.length)]}`; }while(used.has(nm)); used.add(nm); students.push({id:'s'+i,name:nm,active:true}); }
+    const S=settingsOf(c), names=Object.fromEntries(students.map(s=>[s.id,s.name])), history={};
+    const genDay=(date,full)=>{ // a finished class day
+      const base=+date, st=base+toMin(S.startTime)*60000+Math.floor(r()*20)*60000, en=base+toMin(S.endTime)*60000;
+      const at={}, breaks=[];
+      students.forEach(s=>{ const x=r(); const status=x<0.05?'absent':x<0.09?'tardy':'present'; at[s.id]={status}; if(status==='absent') return;
+        const k=r(), nb=k<0.35?0:k<0.7?1:k<0.9?2:3, used={};
+        for(let j=0;j<nb;j++){ const q=r(), reason=q<0.45?'washroom':q<0.7?'water':q<0.85?'wudhu':q<0.95?'other':'assigned';
+          const lim=S.limits[reason]; let mins, allow;
+          if(reason==='other'){ mins=2+r()*10; allow=10; } else if(reason==='assigned'){ mins=6+r()*10; allow=10; } else { allow=lim.min; mins=lim.min*(0.4+r()*1.2); }
+          used[reason]=(used[reason]||0)+1; const overTrip=!!(lim&&tripCap(lim)&&used[reason]>tripCap(lim));
+          const dur=Math.round(mins*60000), over=Math.max(0,dur-allow*60000);
+          breaks.push({sid:s.id,reason,dur,over,flag:over>0||overTrip,overTrip,assignedMin:reason==='assigned'?10:null}); } });
+      return {date:dayId(date),startedAt:st,endedAt:full?en:null,names,att:at,breaks};
+    };
+    for(let back=21;back>=1;back--){ const dt=new Date(T); dt.setDate(T.getDate()-back); if(S.days.includes(isoDay(dt))) history[dayId(dt)]=genDay(dt,true); }
+    // today
+    const plan={bA:{live:150,out:[[3,'water',1.4]],absent:[]},bB:{live:135,out:[[1,'washroom',9.2],[4,'water',0.9]],absent:[9]},bC:{live:145,out:[],absent:[2,7]},
+      gA:{live:160,pause:4,absent:[5]},gB:{live:158,out:[],absent:[]}}[c.id];
+    let today=null;
+    if(plan){
+      const startedAt=now-plan.live*60000, attendance={}, active={}, done=[];
+      students.forEach((s,i)=>{ attendance[s.id]={status:(plan.absent||[]).includes(i)?'absent':'present',at:startedAt,note:''}; });
+      students.forEach((s,i)=>{ if((plan.absent||[]).includes(i)||(plan.out||[]).some(o=>o[0]===i)) return; if(r()<0.4){
+        const reason=r()<0.6?'washroom':'water', lim=S.limits[reason], mins=lim.min*(0.5+r()*0.9), sAt=startedAt+Math.floor(r()*(plan.live-20))*60000, dur=Math.round(mins*60000), over=Math.max(0,dur-lim.min*60000);
+        done.push({sid:s.id,reason,label:RSN(reason).label,startAt:sAt,endAt:sAt+dur,dur,allowMs:lim.min*60000,assignedMin:null,over,overTrip:false,flag:over>0,note:''}); } });
+      (plan.out||[]).forEach(([i,reason,ago])=>{ const lim=S.limits[reason]; active['s'+i]={reason,label:RSN(reason).label,startAt:now-Math.round(ago*60000),note:'',allowMs:lim.min*60000,assignedMin:null,overTrip:false}; });
+      const session={status:plan.pause?'lunch':'live',startedAt,endedAt:null,lunchAt:plan.pause?now-plan.pause*60000:null,pauseLabel:plan.pause?'Snack break':null,resumeAt:null};
+      today={session,attendance,active,breaks:done,log:[]};
+      history[dayId(T)]={date:dayId(T),startedAt,endedAt:null,names,att:Object.fromEntries(students.map(s=>[s.id,{status:attendance[s.id].status}])),
+        breaks:done.map(b=>({sid:b.sid,reason:b.reason,dur:b.dur,over:b.over,flag:b.flag,overTrip:false,assignedMin:null}))};
+    }
+    lsSet(KCLS(c.id),{students,history,day:today?dayId(T):null,today});
+  });
+  db=null;
+}
+
+/* ===== start ===== */
+loadDb();
+if(!meId()) setMe('maryam');
+fillPicker(); route();
+setInterval(()=>{ tick(); if(SCREEN==='org'&&ORG.tab==='classes'&&!$('scrim').classList.contains('show')) paintOrg(); },1000);
+document.addEventListener('click',()=>{ if(render.pending&&!$('scrim').classList.contains('show')){ render.pending=false; render(); } });
+</script>
+</body>
+</html>
