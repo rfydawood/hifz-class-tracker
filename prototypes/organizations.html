@@ -929,6 +929,8 @@ function setMe(id){ try{ id?sessionStorage.setItem(KME,id):sessionStorage.remove
 const me=()=>db.people[meId()]||null;
 function notNow(){ try{ return JSON.parse(sessionStorage.getItem(KSKIP)||'[]'); }catch(e){ return []; } }
 function addNotNow(id){ try{ sessionStorage.setItem(KSKIP,JSON.stringify([...notNow(),id])); }catch(e){} }
+/* "Not now" holds only until this person signs in again (or you switch to them again). */
+function clearNotNow(){ try{ sessionStorage.removeItem(KSKIP); }catch(e){} }
 
 /* ----- who belongs where ----- */
 const orgOf=c=>c&&c.orgId?db.orgs[c.orgId]:null;
@@ -1170,19 +1172,54 @@ function signIn(how){
   if(!p){ if(!name) return $('siErr').textContent='Please type your name too.';
     const id='p'+Date.now().toString(36); p=db.people[id]={id,name,email,provider:how}; }
   else p.provider=how;
-  saveDb(); setMe(p.id); fillPicker(); route();
+  saveDb(); clearNotNow(); setMe(p.id); fillPicker(); route();
 }
 
 /* ----- after sign-in: decided by the app, no questions ----- */
+/* After sign-in, in order:
+   1. any invite waiting for this email - with or without classes - is shown
+      ("You're invited", Join / Not now); nobody is ever joined silently;
+   2. a class given to them since they last looked: a one-time notice;
+   3. their last class; 4. an admin with no class: the Organization view;
+   5. a member with no class yet: the waiting screen, never "Set up your class";
+   6. someone brand new: "Set up your class". */
 function route(){
   const p=me(); fillPicker();
   if(!p) return showSignIn();
   const inv=(db.invites||[]).find(i=>i.status==='pending'&&i.email.toLowerCase()===p.email.toLowerCase()&&!notNow().includes(i.id));
   if(inv) return showInvite(inv.id);
   const mine=myClasses(p.id);
+  const fresh=newlyAssigned(p.id); if(fresh.length) return showAssigned(fresh);
   if(mine.length){ const last=(db.lastClass||{})[p.id]; return openClass(mine.some(c=>c.id===last)?last:mine[0].id); }
   const orgs=orgsWithView(p.id); if(orgs.length) return showOrg(orgs[0]);
+  const joined=(db.members||[]).filter(m=>m.personId===p.id);
+  if(joined.length) return showWaiting(joined[0].orgId);
   return showSetupClass();
+}
+/* ----- classes given to someone who had already joined: a one-time notice -----
+   seen[person] = the classes they have already been shown. The first time we
+   look at someone, what they have now counts as seen (no notice for the demo). */
+function seenOf(pid){ db.seen=db.seen||{}; if(!db.seen[pid]){ db.seen[pid]=myClasses(pid).map(c=>c.id); saveDb(); } return db.seen[pid]; }
+function markSeen(pid,cids){ const s=seenOf(pid); let ch=false; cids.forEach(c=>{ if(!s.includes(c)){ s.push(c); ch=true; } }); if(ch) saveDb(); }
+const newlyAssigned=pid=>{ const s=seenOf(pid); return myClasses(pid).filter(c=>c.orgId&&!s.includes(c.id)); };
+function showAssigned(list){
+  SCREEN='assigned'; showView(null);
+  const c=list[0], org=db.orgs[c.orgId];
+  card(`<h2>You've been added to ${esc(classLabel(c))}</h2>
+    <p class="lede">${esc(org.name)} added you as a teacher${list.length>1?`, to ${list.length} classes`:''}.</p>
+    ${list.length>1?`<div class="invcard"><b>${esc(org.name)}</b><ul>${list.map(x=>`<li>${esc(classLabel(x))}</li>`).join('')}</ul></div>`:''}
+    <div class="setup-actions"><button class="btn dark" onclick="openAssigned('${c.id}')">Open ${esc(c.name)}</button></div>`);
+}
+function openAssigned(cid){ const p=me(); markSeen(p.id,newlyAssigned(p.id).map(c=>c.id)); openClass(cid,true); }
+/* ----- a member with no class yet ----- */
+function showWaiting(orgId){
+  SCREEN='waiting'; showView(null);
+  const org=db.orgs[orgId], p=me();
+  const inv=(db.invites||[]).find(i=>i.orgId===orgId&&i.status==='joined'&&i.joinedBy===p.id);
+  const admin=inv?personName(inv.invitedBy):((db.members||[]).filter(m=>m.orgId===orgId&&m.roles.includes('admin')).map(m=>personName(m.personId))[0]||'The admin');
+  card(`<h2>Waiting for your class</h2>
+    <p class="lede" id="waitMsg">You've joined ${esc(org.name)}. ${esc(admin)} hasn't given you a class yet. It will appear here as soon as they do.</p>
+    <div class="quiet"><button onclick="showSetupClass(false,true)">Set up a class of your own instead</button></div>`);
 }
 
 /* ----- "You're invited" ----- */
@@ -1204,19 +1241,21 @@ function joinInvite(id){
   if(!m){ m={orgId:inv.orgId,personId:p.id,roles:inv.role==='admin'?['admin','teacher']:['teacher'],canSee:inv.role==='admin'?'everything':'own'}; db.members.push(m); }
   inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&!c.teacherIds.includes(p.id)) c.teacherIds.push(p.id); });
   inv.status='joined'; inv.joinedBy=p.id; saveDb();
+  markSeen(p.id,inv.classIds);
   toast(`Welcome to ${org.name}`);
   const first=inv.classIds.find(cid=>db.classes[cid]&&db.classes[cid].status!=='archived');
   if(first) openClass(first); else route();
 }
 
 /* ----- someone brand new: "Set up your class" ----- */
-function showSetupClass(fromProfile){
+function showSetupClass(fromProfile,fromWaiting){
   SCREEN='setup'; hideCards(); showView(fromProfile?'profileView':null);
   setupStudents=[]; $('tName').value=(me()||{}).name||''; drawRosterList(); setupCount(); $('setupErr').textContent='';
-  $('setupQuiet').style.display=fromProfile?'none':''; $('setupCancel').style.display=fromProfile?'':'none';
+  $('setupQuiet').style.display=fromProfile||fromWaiting?'none':''; $('setupCancel').style.display=fromProfile||fromWaiting?'':'none';
+  showSetupClass.back=fromWaiting?'route':'profile';
   $('setup').classList.add('show');
 }
-function cancelSetup(){ $('setup').classList.remove('show'); showProfile(); }
+function cancelSetup(){ $('setup').classList.remove('show'); if(showSetupClass.back==='route') route(); else showProfile(); }
 function finishSetup(){
   const name=($('tName').value||'').replace(/[<>"'`]/g,'').trim(), p=me();
   if(!name) return $('setupErr').textContent='Please add your name.';
@@ -1226,7 +1265,7 @@ function finishSetup(){
   const own=Object.values(db.classes).filter(c=>!c.orgId&&c.ownerId===p.id).length;
   db.classes[id]={id,orgId:null,ownerId:p.id,name:own?`${name}'s class ${own+1}`:`${name}'s Hifz Class`,settings:mergeSettings({}),status:'active'};
   lsSet(KCLS(id),{students:setupStudents.map((n,i)=>({id:'s'+i,name:n,active:true})),history:{},day:null,today:null});
-  saveDb(); $('setup').classList.remove('show'); openClass(id); startTour();
+  saveDb(); markSeen(p.id,[id]); $('setup').classList.remove('show'); openClass(id); startTour();
 }
 
 /* ----- open a class (asks first if students are still out in this one) ----- */
@@ -1240,6 +1279,7 @@ function openClass(cid,force){
        <div class="actions"><button class="btn ghost" onclick="closeSheet()">Stay here</button><button class="btn dark" onclick="bringBackAndOpen('${cid}')">Bring them back and open it</button></div>`);
   }
   hideCards(); SCREEN='class'; showView('classView');
+  if(me()) markSeen(me().id,[cid]);
   loadClass(cid,false);
   db.lastClass=db.lastClass||{}; const p=me(); if(p&&db.lastClass[p.id]!==cid){ db.lastClass[p.id]=cid; saveDb(); }
   render();
@@ -1274,9 +1314,24 @@ function showProfile(){
       ${own.length?`<div class="mgroup">Your own</div>${own.map(cardOf).join('')}`:''}
       ${Object.entries(byOrg).map(([o,cs])=>`<div class="mgroup">${esc(db.orgs[o].name)}</div>${cs.map(cardOf).join('')}`).join('')}
       ${!own.length&&!Object.keys(byOrg).length?'<p class="note2">No classes yet.</p>':''}
-      <div class="qlinks"><button class="btn ghost" onclick="showSetupClass(true)">+ Add a class</button><button class="btn ghost" onclick="openOrgSetup()">Set up an organization</button><button class="btn ghost" onclick="openCode()">Have an invite code?</button></div>
+      <div class="qlinks"><button class="btn ghost" onclick="askWhereClass()">+ Add a class</button><button class="btn ghost" onclick="openOrgSetup()">Set up an organization</button><button class="btn ghost" onclick="openCode()">Have an invite code?</button></div>
       <p class="note2">One class is open at a time. Each organization only ever sees its own classes. If an organization invited a different email of yours, use Switch account - nothing is lost; easier still, ask them to invite this email.</p>
     </section></div>`;
+}
+/* Someone in an organization: whose is the new class? An organization class
+   goes through the admin's "Add a class"; a teacher who isn't an admin there
+   can only add one of their own. */
+function askWhereClass(){
+  const p=me(), orgs=[...new Set((db.members||[]).filter(m=>m.personId===p.id).map(m=>m.orgId))];
+  if(!orgs.length) return showSetupClass(true);
+  const opt=o=>{ const acc=orgAccess(o,p.id), org=db.orgs[o];
+    if(acc&&acc.manage) return `<button class="dbtn leaf" onclick="closeSheet();showOrg('${o}','classes');openClassForm()">Add it to ${esc(org.name)}<small>Program, teachers and students, as the organization's admin</small></button>`;
+    const admins=(db.members||[]).filter(m=>m.orgId===o&&m.roles.includes('admin')).map(m=>personName(m.personId)).join(' or ')||'its admin';
+    return `<button class="dbtn" disabled style="opacity:.6">Add it to ${esc(org.name)}<small>Only ${esc(org.name)}'s admins add classes there - ask ${esc(admins)}.</small></button>`; };
+  sheetHTML(`Add it to ${esc(orgs.map(o=>db.orgs[o].name).join(' or '))}, or keep it just for you?`,'',
+    `<div class="body"><div class="rowlist">${orgs.map(opt).join('')}
+      <button class="dbtn" onclick="closeSheet();showSetupClass(true)">Keep it just for me<small>Your own class, outside any organization</small></button></div></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button></div>`);
 }
 function switchAccount(out){ if(SCREEN==='class'&&!readOnly) save(); setMe(null); CUR=null; showSignIn(out?'Signed out. Sign in with any account.':'Choose the account to use. Nothing in the other account is lost.'); fillPicker(); }
 
@@ -1288,7 +1343,10 @@ function openCode(){
     <div class="setup-actions"><button class="btn ghost" onclick="route()">Back</button><button class="btn dark" onclick="useCode()">Continue</button></div><p class="err" id="codeErr"></p>`);
 }
 function useCode(){
-  const code=($('codeIn').value||'').trim().toUpperCase(), inv=(db.invites||[]).find(i=>i.code===code&&i.status==='pending');
+  const code=($('codeIn').value||'').trim().toUpperCase(), any=(db.invites||[]).find(i=>i.code===code), inv=any&&any.status==='pending'?any:null;
+  if(any&&any.status==='joined'){ const o=db.orgs[any.orgId];
+    return $('codeErr').textContent=membership(any.orgId,me().id)?`This invite has already been used. You're already in ${o.name}.`:`This invite has already been used. Ask ${o.name} for a new one.`; }
+  if(any&&any.status==='revoked') return $('codeErr').textContent=`This invite was cancelled. Ask ${db.orgs[any.orgId].name} for a new one.`;
   if(!inv) return $('codeErr').textContent="That code doesn't match a waiting invite. Check it with the person who invited you.";
   const org=db.orgs[inv.orgId];
   if(!domainOk(org,me().email)) return $('codeErr').textContent=domainRefusal(org,me().email);
@@ -1299,7 +1357,7 @@ function useCode(){
 let os=null;
 function openOrgSetup(){
   const p=me(), dom=(p.email.split('@')[1]||'');
-  os={step:1,name:'',domain:/gmail|yahoo|hotmail|outlook|icloud/.test(dom)?'':dom,only:false,teach:false,programs:['Main program']};
+  os={step:1,name:'',domain:/gmail|yahoo|hotmail|outlook|icloud/.test(dom)?'':dom,only:false,teach:false,programs:[]};
   paintOrgSetup();
 }
 function paintOrgSetup(){
@@ -1311,9 +1369,9 @@ function paintOrgSetup(){
     <div class="swrow"><div><b id="osOnlyLbl">Only @${esc(os.domain||'domain')} addresses can join</b><small>Invites to any other address are refused.</small></div><button class="switch ${os.only?'on':''}" role="switch" aria-checked="${os.only}" aria-label="Only domain addresses can join" onclick="os.only=!os.only;this.classList.toggle('on',os.only);this.setAttribute('aria-checked',os.only)"></button></div>
     <div class="swrow" style="margin-top:8px"><div><b>Do you also teach a class?</b><small>Then you'll make your class right after this.</small></div><button class="switch ${os.teach?'on':''}" role="switch" aria-checked="${os.teach}" aria-label="Do you also teach a class?" onclick="os.teach=!os.teach;this.classList.toggle('on',os.teach);this.setAttribute('aria-checked',os.teach)"></button></div>
     <div class="setup-actions"><button class="btn ghost" onclick="route()">Cancel</button><button class="btn dark" onclick="orgSetupNext()">Next</button></div><p class="err" id="osErr"></p>`);
-  card(`<h2>${esc(os.name)}: programs</h2>${dots}<p class="lede">Step 2 of 2 · e.g. Boys Full-time Hifz, Evening Maktab. Each program gets its own times and limits; an organization with just one keeps one.</p>
+  card(`<h2>${esc(os.name)}: programs</h2>${dots}<p class="lede">Step 2 of 2 · each program gets its own times and limits. Add none, and there will be one program named ${esc(os.name)}.</p>
     <div class="plist">${os.programs.map((n,i)=>`<div>${esc(n)}<button onclick="os.programs.splice(${i},1);paintOrgSetup()">Remove</button></div>`).join('')||'<p class="note2">No programs yet.</p>'}</div>
-    <div class="roster-add"><input id="osProg" placeholder="Program name, then Enter" onkeydown="if(event.key==='Enter')orgAddProgram()"><button class="btn ghost" onclick="orgAddProgram()">Add</button></div>
+    <div class="roster-add"><input id="osProg" aria-label="Program name" placeholder="e.g. Boys Full-time Hifz, Evening Maktab" onkeydown="if(event.key==='Enter')orgAddProgram()"><button class="btn ghost" onclick="orgAddProgram()">Add</button></div>
     <div class="setup-actions"><button class="btn ghost" onclick="os.step=1;paintOrgSetup()">Back</button><button class="btn dark" onclick="createOrg()">Create ${esc(os.name)}</button></div><p class="err" id="osErr"></p>`);
 }
 function orgSetupNext(){
@@ -1324,9 +1382,11 @@ function orgSetupNext(){
 }
 function orgAddProgram(){ const n=($('osProg').value||'').replace(/[<>"`]/g,'').trim(); if(n&&!os.programs.includes(n)) os.programs.push(n); paintOrgSetup(); setTimeout(()=>$('osProg')&&$('osProg').focus(),0); }
 function createOrg(){
-  if(!os.programs.length) return $('osErr').textContent='Add at least one program.';
+  if($('osProg')&&$('osProg').value.trim()) orgAddProgram();          // a name typed but not yet added counts
+  // none added: one program named after the organization ("Main program" only if that is blank)
+  const names=os.programs.length?os.programs:[os.name||'Main program'];
   const p=me(), id='o'+Date.now().toString(36);
-  const progIds=os.programs.map((n,i)=>{ const pid=id+'p'+i; db.programs[pid]={id:pid,orgId:id,name:n,days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:{washroom:{min:7,trips:2},water:{min:2,trips:2},wudhu:{min:2,trips:2}},adminId:null}; return pid; });
+  const progIds=names.map((n,i)=>{ const pid=id+'p'+i; db.programs[pid]={id:pid,orgId:id,name:n,days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:{washroom:{min:7,trips:2},water:{min:2,trips:2},wudhu:{min:2,trips:2}},adminId:null}; return pid; });
   db.orgs[id]={id,name:os.name,domain:os.domain,domainOnly:os.only,programs:progIds};
   db.members.push({orgId:id,personId:p.id,roles:os.teach?['admin','teacher']:['admin'],canSee:'everything'});
   saveDb(); toast(`${os.name} is set up`);
@@ -1627,13 +1687,13 @@ function orgReportsHTML(acc){
     <p class="note2" style="margin:0" id="orgRptLine"><b>${esc(what)}</b> · ${ids.length?`${new Date(ids[0]+'T00:00:00').toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})} to ${new Date(ids[ids.length-1]+'T00:00:00').toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}`:''}</p>
     <div class="rcards">
       <div class="rcard" data-card="classes"><h5>Classes</h5><b>${cls.length}</b><small>${running} running now · ${T.students} students</small></div>
-      <div class="rcard" data-card="out"><h5>Time out, per student a day</h5><b>${f1(perDay(T))} min</b><small>${Math.round(T.outMs/60000)} min in all</small></div>
-      <div class="rcard" data-card="breaks"><h5>Breaks</h5><b>${T.breaks}</b><small>${T.days} class days</small></div>
-      <div class="rcard" data-card="over"><h5 class="warn">Over the limit</h5><b>${T.flags}</b><small>${pct(T.flags,T.breaks)}% of breaks</small></div>
-      <div class="rcard" data-card="att"><h5>Attendance</h5><b>${pct(T.here,T.marks)}% present</b><small>${T.tardy} tardy · ${T.absent} absent</small></div></div>
+      <div class="rcard" data-card="out"><h5>Time out, per student a day</h5><b>${T.seat?`${f1(perDay(T))} min`:'-'}</b><small>${T.days?`${Math.round(T.outMs/60000)} min in all`:'No days yet'}</small></div>
+      <div class="rcard" data-card="breaks"><h5>Breaks</h5><b>${T.days?T.breaks:'-'}</b><small>${T.days?`${T.days} class days`:'No days yet'}</small></div>
+      <div class="rcard" data-card="over"><h5 class="warn">Over the limit</h5><b>${T.days?T.flags:'-'}</b><small>${T.breaks?`${pct(T.flags,T.breaks)}% of breaks`:'No breaks yet'}</small></div>
+      <div class="rcard" data-card="att"><h5>Attendance</h5><b>${T.marks?`${pct(T.here,T.marks)}% present`:'-'}</b><small>${T.marks?`${T.tardy} tardy · ${T.absent} absent`:'No days yet'}</small></div></div>
     <div class="rtable"><div class="rrow2 h"><span>Class</span><span class="hide-n">Minutes out a day</span><span class="num">Min</span><span class="num hide-n">Days</span><span class="num hide-n">Breaks</span><span class="num">Flagged</span><span class="num">Present</span></div>
       ${rows.map(({c,r})=>`<div class="rrow2" data-row="${c.id}"><span class="nm"><b>${esc(ORG.rscope==='org'?classLabel(c):c.name)}</b><small>${esc((c.teacherIds||[]).map(personName).join(', ')||'No teacher yet')} · ${r.students} students</small></span>
-        <span class="barw"><i style="width:${Math.round(perDay(r)/max*100)}%"></i></span><span class="num">${f1(perDay(r))} min</span><span class="num hide-n">${r.days}</span><span class="num hide-n">${r.breaks}</span><span class="num ${pct(r.flags,r.breaks)>=40?'hot':''}">${pct(r.flags,r.breaks)}%</span><span class="num">${pct(r.here,r.marks)}%</span></div>`).join('')||'<p class="note2">No classes.</p>'}</div>
+        <span class="barw"><i style="width:${Math.round(perDay(r)/max*100)}%"></i></span><span class="num">${r.seat?`${f1(perDay(r))} min`:'-'}</span><span class="num hide-n">${r.days||'-'}</span><span class="num hide-n">${r.days?r.breaks:'-'}</span><span class="num ${r.breaks&&pct(r.flags,r.breaks)>=40?'hot':''}">${r.breaks?`${pct(r.flags,r.breaks)}%`:'-'}</span><span class="num">${r.marks?`${pct(r.here,r.marks)}%`:'-'}</span></div>`).join('')||'<p class="note2">No classes.</p>'}</div>
     <p class="note2">Minutes out are per student, per class day; Assigned (excused) time isn't counted. Flagged = % of breaks over the limit.</p>`;
 }
 /* For a teacher whose "Can see" is "Own + summaries" (or everything): the
@@ -1644,7 +1704,7 @@ function orgSummaryHTML(ids){
   const others=classesOfOrg(c.orgId).filter(x=>x.id!==c.id&&x.status!=='archived');
   if(!others.length) return '';
   return `<h4 class="rh" id="orgSummary">Other classes at ${esc(db.orgs[c.orgId].name)} · totals only</h4><div class="rowlist">${others.map(x=>{ const r=classStats(x.id,ids);
-    return `<div class="row"><b>${esc(classLabel(x))}</b><span class="time">${r.students} students · ${f1(perDay(r))} min out a day</span><span class="time">${pct(r.flags,r.breaks)}% flagged · ${pct(r.here,r.marks)}% present</span></div>`; }).join('')}</div>`;
+    return `<div class="row"><b>${esc(classLabel(x))}</b><span class="time">${r.students} students · ${r.seat?`${f1(perDay(r))} min out a day`:'no days yet'}</span><span class="time">${r.marks?`${r.breaks?pct(r.flags,r.breaks):0}% flagged · ${pct(r.here,r.marks)}% present`:''}</span></div>`; }).join('')}</div>`;
 }
 
 /* ===== the practice bar ===== */
@@ -1668,7 +1728,7 @@ function fillPicker(){
 function pickPerson(v){
   if(!practiceMode()){ setPracticeMode('scratch'); emptyWorld(); db=lsGet(KDB); }   // picked before choosing: an empty app
   if(SCREEN==='class'&&!readOnly) save();
-  CUR=null; readOnly=false;
+  CUR=null; readOnly=false; clearNotNow(); $('toast').classList.remove('show');
   if(v==='@new'){ setMe(null); fillPicker(); return showSignIn('Someone new to the app. Type any name and email to try it.'); }
   if(v==='@idris'){ const id='idris'; db.people[id]={id,name:'Hafiz Idris',email:'idris@uthmanacademy.org',provider:'google'}; saveDb(); setMe(id); return route(); }
   if(v.startsWith('@inv:')){
@@ -1716,7 +1776,7 @@ function firstChoice(mode){
 /* ===== two tabs as two people: another tab changed something ===== */
 window.addEventListener('storage',e=>{
   if(!e.key||!e.key.startsWith(NS)||SCREEN==='start') return;
-  if(e.key===KDB){ db=lsGet(KDB)||db; fillPicker(); }
+  if(e.key===KDB){ db=lsGet(KDB)||db; fillPicker(); if(SCREEN==='waiting') return route(); }
   if(SCREEN==='org') return paintOrg();
   if(SCREEN==='class'&&CUR&&(e.key===KCLS(CUR)||e.key===KDB)){
     if(!db.classes[CUR]) return route();
