@@ -454,6 +454,63 @@ body{display:flex;flex-direction:column}
   .stage{grid-template-columns:1fr;grid-template-rows:1fr auto}
   .stage>.panel:last-child{max-height:34vh}
 }
+
+/* ===== program teachers and the teacher picker ===== */
+.pthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.pthead b{font-size:15px;font-weight:800}
+.ptcount{display:inline-grid;place-items:center;min-width:26px;height:22px;padding:0 7px;border-radius:999px;background:#E7EDEF;color:var(--mute);font-weight:800;font-size:12.5px}
+.pthead .btn{margin-left:auto}
+.ptlist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.ptrow{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.ptrow:last-child{border-bottom:0}
+.ptrow>div{flex:1;min-width:0}
+.ptrow b{display:block;font-size:14.5px;font-weight:800}
+.ptrow small{display:block;color:var(--mute);font-weight:600;font-size:12.5px;overflow-wrap:anywhere}
+.ptrow .invtxt,.trow .invtxt{color:#8A5A00;font-weight:800}
+.ini.inv{background:var(--gold-soft);color:#6B4B0C}
+.ini.soft{background:var(--leaf-soft);color:var(--leaf)}
+.ptempty{padding:12px;color:var(--mute);font-weight:600;font-size:13.5px}
+.tlrow{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);text-align:left}
+.tlrow div{flex:1;min-width:0}
+.tlrow b{display:block;font-size:14.5px;font-weight:800}
+.tlrow small{display:block;color:var(--mute);font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlrow .chev{font-size:18px;font-weight:800;color:var(--mute);transition:transform .15s}
+.tlrow[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.tlbody{padding:4px 2px 0}
+.pklist{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px;max-height:min(44vh,360px);overflow-y:auto;background:var(--card)}
+.pkrow{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;background:var(--card)}
+.pkrow:last-child{border-bottom:0}
+.pkrow>div{flex:1;min-width:0}
+.pkrow b.nm{display:block;font-size:14.5px;font-weight:800}
+.pkrow small{display:block;color:var(--mute);font-weight:600;font-size:12.5px;overflow-wrap:anywhere}
+.pkrow .box{width:24px;height:24px;border-radius:7px;border:2px solid #B9C6CB;display:grid;place-items:center;color:transparent;font-weight:900;font-size:14px;flex:none;font-style:normal}
+.pkrow[aria-checked="true"] .box{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.pkrow[aria-checked="true"]:not(:disabled){background:#F3FAFA}
+.pkrow:disabled{opacity:1;cursor:default}
+.pkrow:disabled .box{background:#C6D2D6;border-color:#C6D2D6;color:#fff}
+.pkrow:disabled b.nm,.pkrow:disabled small{color:#8B9AA1}
+.pkrow:disabled .ini{opacity:.55}
+.pklink{display:inline-block;margin-top:10px;color:var(--leaf);font-weight:800;font-size:14px}
+.tpick{position:relative;margin-top:7px}
+.tbox{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:50px;padding:7px 40px 7px 8px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;position:relative;text-align:left;width:100%}
+.tpick.open .tbox{border-color:var(--leaf);border-bottom-left-radius:0;border-bottom-right-radius:0}
+.tbox .tmore{color:var(--mute);font-weight:700;font-size:14.5px;padding:4px 4px}
+.tbox .tarrow{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:12px}
+.tpanel{border:1px solid var(--leaf);border-top:0;border-radius:0 0 12px 12px;background:var(--card);max-height:min(46vh,330px);overflow-y:auto}
+.tgroup{padding:7px 12px;background:#F3F7F8;font-size:11.5px;font-weight:800;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.trow{display:flex;align-items:center;gap:10px;width:100%;padding:7px 12px;border-bottom:1px solid var(--line);text-align:left;background:var(--card)}
+.trow>div{flex:1;min-width:0}
+.trow b{display:block;font-size:14.5px;font-weight:800}
+.trow small{display:block;color:var(--mute);font-weight:600;font-size:12.5px}
+.trow .tick{width:20px;text-align:center;color:var(--leaf);font-weight:900;font-size:16px}
+.trow[aria-selected="true"]{background:#F3FAFA}
+.tnew{padding:10px 12px}
+.tnew .row3{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.setup-card .tnew input{flex:1;min-width:180px;margin-top:0}
+.tnew .btn{flex:none;padding:10px 14px;font-size:14px}
+.tnewlink{display:block;width:100%;text-align:left;padding:10px 12px;color:var(--leaf);font-weight:800;font-size:14px}
+.trow b.ini,.ptrow b.ini,.pkrow b.ini{display:inline-grid}
+@media (max-height:560px){ .pklist{max-height:min(34vh,300px)} }
 </style>
 </head>
 <body>
@@ -923,7 +980,19 @@ function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){}
 function practiceKeys(){ const out=[]; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith(NS)) out.push(k); } }catch(e){} return out; }
 let db=null;
 function saveDb(){ lsSet(KDB,db); if(typeof fillPicker==='function'&&$('youAre')) fillPicker(); }   // the "You are:" menu always shows who exists now
-function loadDb(){ db=lsGet(KDB); if(!db||db.v!==1){ if(isScratch()) emptyWorld(); else seedDemo(); db=lsGet(KDB); } }
+function loadDb(){ db=lsGet(KDB); if(!db||db.v!==1){ if(isScratch()) emptyWorld(); else seedDemo(); db=lsGet(KDB); } upgradeDb(); }
+/* Practice data made before "program teachers": fill each program's list from
+   who teaches (or is invited to) its classes, and give the demo its one
+   teacher who is in no program yet. Saved once. */
+function upgradeDb(){
+  let ch=false;
+  Object.values(db.programs||{}).forEach(p=>{ if(p.teacherIds) return; ch=true; p.teacherIds=[]; p.inviteIds=[];
+    Object.values(db.classes).filter(c=>c.programId===p.id&&c.status!=='archived').forEach(c=>(c.teacherIds||[]).forEach(t=>{ if(!p.teacherIds.includes(t)) p.teacherIds.push(t); }));
+    (db.invites||[]).filter(i=>i.status==='pending'&&i.classIds.some(cid=>db.classes[cid]&&db.classes[cid].programId===p.id)).forEach(i=>p.inviteIds.push(i.id)); });
+  if(db.orgs&&db.orgs.uthman&&!db.people.hamza&&!isScratch()){ ch=true; db.people.hamza={id:'hamza',name:'Ustadh Hamza',email:'hamza@uthmanacademy.org',provider:'google'};
+    db.members.push({orgId:'uthman',personId:'hamza',roles:['teacher'],canSee:'own'}); }
+  if(ch) lsSet(KDB,db);
+}
 function meId(){ try{ return sessionStorage.getItem(KME); }catch(e){ return null; } }
 function setMe(id){ try{ id?sessionStorage.setItem(KME,id):sessionStorage.removeItem(KME); }catch(e){} }
 const me=()=>db.people[meId()]||null;
@@ -965,6 +1034,22 @@ function settingsFor(c){
 }
 const invitesPending=orgId=>(db.invites||[]).filter(i=>i.orgId===orgId&&i.status==='pending');
 const invitedNames=c=>(db.invites||[]).filter(i=>i.status==='pending'&&i.classIds.includes(c.id)).map(i=>i.name||i.email);
+
+/* ----- program teachers: each program's list of who teaches there -----
+   teacherIds = people in the organization; inviteIds = invited, not joined
+   yet. Being on a list gives no class. Giving someone a class adds them to
+   that class's program. Taking someone off a list never touches a class. */
+function ptList(p){ p.teacherIds=p.teacherIds||[]; p.inviteIds=p.inviteIds||[]; return p; }
+function addToProgram(progId,who){ const p=db.programs[progId]; if(!p) return; ptList(p);
+  if(who.personId&&!p.teacherIds.includes(who.personId)) p.teacherIds.push(who.personId);
+  if(who.inviteId&&!p.inviteIds.includes(who.inviteId)) p.inviteIds.push(who.inviteId); }
+const progTeachers=p=>ptList(p).teacherIds.filter(id=>db.people[id]);
+const progInvites=p=>ptList(p).inviteIds.map(id=>(db.invites||[]).find(i=>i.id===id)).filter(i=>i&&i.status==='pending');
+const programsOfPerson=(orgId,pid)=>programsOf(orgId).filter(p=>ptList(p).teacherIds.includes(pid));
+const classesInProgram=(progId,pid)=>Object.values(db.classes).filter(c=>c.programId===progId&&c.status!=='archived'&&(c.teacherIds||[]).includes(pid));
+const teachesTxt=(progId,pid)=>{ const cs=classesInProgram(progId,pid); return cs.length?`teaches ${cs.map(c=>c.name).join(', ')}`:'no class yet'; };
+const invitedTxt=(progId,inv)=>{ const cs=inv.classIds.map(id=>db.classes[id]).filter(c=>c&&c.programId===progId); return cs.length?`invited to ${cs.map(c=>c.name).join(', ')}`:'invited, no class yet'; };
+function otherProgramsTxt(orgId,pid){ const ps=programsOfPerson(orgId,pid).map(p=>p.name); return ps.length?ps.join(', '):'not in a program yet'; }
 
 /* ----- a class's own record: students, today, and every day before ----- */
 const reviveDate=v=>v?new Date(v):null;
@@ -1240,6 +1325,8 @@ function joinInvite(id){
   let m=membership(inv.orgId,p.id);
   if(!m){ m={orgId:inv.orgId,personId:p.id,roles:inv.role==='admin'?['admin','teacher']:['teacher'],canSee:inv.role==='admin'?'everything':'own'}; db.members.push(m); }
   inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&!c.teacherIds.includes(p.id)) c.teacherIds.push(p.id); });
+  programsOf(inv.orgId).forEach(pg=>{ ptList(pg); if(pg.inviteIds.includes(inv.id)){ pg.inviteIds=pg.inviteIds.filter(x=>x!==inv.id); addToProgram(pg.id,{personId:p.id}); } });
+  inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&c.programId) addToProgram(c.programId,{personId:p.id}); });
   inv.status='joined'; inv.joinedBy=p.id; saveDb();
   markSeen(p.id,inv.classIds);
   toast(`Welcome to ${org.name}`);
@@ -1469,57 +1556,91 @@ function openClassForm(cid,pre){
   const acc=orgAccess(ORG.id,me().id), c=cid?db.classes[cid]:null;
   cf={cid,name:c?c.name:'',programId:c?c.programId:(ORG.prog!=='all'&&acc.programs.includes(ORG.prog)?ORG.prog:acc.programs[0]),
       teachers:c?[...c.teacherIds.map(id=>({personId:id})),...(db.invites||[]).filter(i=>i.status==='pending'&&i.classIds.includes(cid)).map(i=>({email:i.email,name:i.name}))]:((pre&&pre.teacherIds)||[]).map(id=>({personId:id})),
-      canEdit:c?!!c.canEdit:false,how:'teacher',list:'',err:''};
+      canEdit:c?!!c.canEdit:false,how:'teacher',list:'',err:'',open:false,inviting:false,newEmail:''};
   paintClassForm();
+}
+/* Teachers: picked from the organization - the program's own teachers first,
+   then everyone else - so no email is ever typed wrong. Someone new is still
+   invited by email, at the bottom of the list. */
+function teacherPanelHTML(){
+  const p=db.programs[cf.programId], org=db.orgs[ORG.id];
+  const chosenP=new Set(cf.teachers.filter(t=>t.personId).map(t=>t.personId)), chosenE=new Set(cf.teachers.filter(t=>t.email).map(t=>t.email));
+  const inP=progTeachers(p), invs=progInvites(p);
+  const others=(db.members||[]).filter(m=>m.orgId===ORG.id&&!inP.includes(m.personId)).map(m=>db.people[m.personId]).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
+  const row=(key,iniCls,name,sub,on)=>`<button class="trow" role="option" aria-selected="${on}" data-key="${esc(key)}" onclick="cfPick('${esc(key)}')"><b class="ini mid ${iniCls}">${esc(initials(name))}</b><div><b>${esc(name)}</b><small>${sub}</small></div><span class="tick">${on?'✓':''}</span></button>`;
+  return `<div class="tpanel" role="listbox" aria-multiselectable="true" aria-label="Teachers">
+    <div class="tgroup">In ${esc(p.name)}</div>
+    ${inP.map(id=>{ const x=db.people[id]; return row('p:'+id,'soft',x.name,esc(teachesTxt(p.id,id)),chosenP.has(id)); }).join('')}
+    ${invs.map(i=>row('e:'+i.email,'inv',i.name||i.email,`<span class="invtxt">invited</span> · ${esc(invitedTxt(p.id,i).replace(/^invited(, | to )/,'').replace(/^no class yet$/,'no class yet'))}`,chosenE.has(i.email))).join('')}
+    ${inP.length||invs.length?'':`<div class="ptempty">Nobody in ${esc(p.name)} yet.</div>`}
+    <div class="tgroup">Others in ${esc(org.name)}</div>
+    ${others.map(x=>row('p:'+x.id,'soft',x.name,`${isAdmin(ORG.id,x.id)?'Admin · ':''}${esc(otherProgramsTxt(ORG.id,x.id))}`,chosenP.has(x.id))).join('')||'<div class="ptempty">Nobody else.</div>'}
+    ${cf.inviting?`<div class="tnew"><b>Invite someone new</b><div class="row3"><input id="cfNewEmail" type="email" aria-label="New teacher's email" placeholder="their@email" value="${esc(cf.newEmail)}" oninput="cf.newEmail=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();cfInviteNew()}"><button class="btn dark" onclick="cfInviteNew()">Invite</button></div></div>`
+      :`<button class="tnewlink" onclick="cf.inviting=true;cfKeep();paintClassForm();setTimeout(()=>$('cfNewEmail')&&$('cfNewEmail').focus(),0)">+ Someone new? Invite by email</button>`}
+  </div>`;
+}
+function cfKeep(){ if($('cfName')) cf.name=$('cfName').value; if($('cfList')) cf.list=$('cfList').value; }
+function cfToggleOpen(){ cfKeep(); cf.open=!cf.open; if(!cf.open) cf.inviting=false; paintClassForm(); }
+function cfPick(key){
+  cfKeep();
+  if(key.startsWith('p:')){ const id=key.slice(2), i=cf.teachers.findIndex(t=>t.personId===id); if(i>=0) cf.teachers.splice(i,1); else cf.teachers.push({personId:id}); }
+  else { const email=key.slice(2), i=cf.teachers.findIndex(t=>t.email===email); if(i>=0) cf.teachers.splice(i,1); else cf.teachers.push({email}); }
+  cf.err=''; paintClassForm();
+}
+function cfRemoveChip(i,ev){ if(ev) ev.stopPropagation(); cfKeep(); cf.teachers.splice(i,1); paintClassForm(); }
+/* the existing invite rules: a real address, and "Only @domain" for anyone new */
+function cfInviteNew(){
+  cfKeep();
+  const email=(cf.newEmail||'').trim().toLowerCase(), org=db.orgs[ORG.id];
+  if(!emailOk(email)){ cf.err='That doesn\'t look like an email address.'; return paintClassForm(); }
+  const p=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
+  if(p&&membership(ORG.id,p.id)){ if(!cf.teachers.some(t=>t.personId===p.id)) cf.teachers.push({personId:p.id}); }
+  else { if(!domainOk(org,email)){ cf.err=domainRefusal(org,email); return paintClassForm(); }
+    if(!cf.teachers.some(t=>t.email===email)) cf.teachers.push({email,name:p?p.name:''}); }
+  cf.err=''; cf.newEmail=''; cf.inviting=false; paintClassForm();
 }
 function paintClassForm(){
   const acc=orgAccess(ORG.id,me().id), prog=db.programs[cf.programId];
+  const chips=cf.teachers.map((t,i)=>{ const p=t.personId&&db.people[t.personId], nm=p?p.name:t.email;
+    return `<span class="tchip${p?'':' new'}">${esc(nm)}${p?'':' <small>invited</small>'}<button aria-label="Remove ${esc(nm)}" onclick="cfRemoveChip(${i},event)">×</button></span>`; }).join('');
   card(`<h2>${cf.cid?`Edit ${esc(db.classes[cf.cid].name)}`:'Add a class'}</h2>
     <div class="row2"><label>Class name<input id="cfName" value="${esc(cf.name)}" placeholder="e.g. Class A" oninput="cf.name=this.value"></label>
-    <label>Program<select id="cfProg" onchange="cf.programId=this.value;paintClassForm()">${acc.programs.map(id=>`<option value="${id}" ${id===cf.programId?'selected':''}>${esc(db.programs[id].name)}</option>`).join('')}</select></label></div>
-    <div class="flabel">Teachers</div><div class="tchips">${cf.teachers.map((t,i)=>{ const p=t.personId&&db.people[t.personId];
-       return p?`<span class="tchip">${esc(p.name)} <small>${esc(p.email)}</small><button aria-label="Remove ${esc(p.name)}" onclick="cf.teachers.splice(${i},1);paintClassForm()">×</button></span>`
-               :`<span class="tchip new">${esc(t.email)} <small>new, gets an invite</small><button aria-label="Remove ${esc(t.email)}" onclick="cf.teachers.splice(${i},1);paintClassForm()">×</button></span>`; }).join('')}
-      <input id="cfEmail" aria-label="Add a teacher's email" placeholder="Add a teacher's email" onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();cfAddTeacher()}"></div>
-    <div class="swrow"><div><b>Teacher can change times and limits</b><small>${cf.canEdit?'On: the teacher edits the times and limits, as in their own class.':`Off: the class uses ${esc(prog.name)}'s times and limits, shown to the teacher as "Set by your organization".`}</small></div><button class="switch ${cf.canEdit?'on':''}" role="switch" aria-checked="${cf.canEdit}" aria-label="Teacher can change times and limits" onclick="cf.canEdit=!cf.canEdit;paintClassForm()"></button></div>
-    ${cf.cid?`<p class="note2">Students: ${(classStore(cf.cid).students||[]).filter(s=>s.active).length}. Changing teachers never touches this class's records - they stay with the class.</p>`
-     :`<div class="flabel" style="margin-top:12px">Students</div><div class="segw" role="group" aria-label="Students"><button class="${cf.how==='teacher'?'on':''}" onclick="cf.how='teacher';paintClassForm()">The teacher adds them</button><button class="${cf.how==='now'?'on':''}" onclick="cf.how='now';paintClassForm()">Add them now (type or paste a list)</button></div>
-       ${cf.how==='now'?`<textarea id="cfList" aria-label="Students" placeholder="One name per line, or paste a list" oninput="cf.list=this.value">${esc(cf.list)}</textarea>`:''}`}
+    <label>Program<select id="cfProg" onchange="cfKeep();cf.programId=this.value;paintClassForm()">${acc.programs.map(id=>`<option value="${id}" ${id===cf.programId?'selected':''}>${esc(db.programs[id].name)}</option>`).join('')}</select></label></div>
+    <div class="flabel">Teachers</div>
+    <div class="tpick${cf.open?' open':''}"><div class="tbox" id="cfTeachers" role="button" tabindex="0" aria-label="Choose teachers" aria-expanded="${cf.open}" onclick="cfToggleOpen()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cfToggleOpen()}">${chips}<span class="tmore">${cf.teachers.length?'Choose more…':'Choose teachers…'}</span><span class="tarrow">${cf.open?'▲':'▼'}</span></div>
+      ${cf.open?teacherPanelHTML():''}</div>
+    <p class="note2" style="margin:6px 0 10px">Pick from your organization. No typing, so no mistyped emails.</p>
     <p class="err" id="cfErr">${esc(cf.err)}</p>
+    <div class="swrow"><div><b>Teacher can change times and limits</b><small>${cf.canEdit?'On: the teacher edits the times and limits, as in their own class.':`Off: the class uses ${esc(prog.name)}'s times and limits, shown to the teacher as "Set by your organization".`}</small></div><button class="switch ${cf.canEdit?'on':''}" role="switch" aria-checked="${cf.canEdit}" aria-label="Teacher can change times and limits" onclick="cfKeep();cf.canEdit=!cf.canEdit;paintClassForm()"></button></div>
+    ${cf.cid?`<p class="note2">Students: ${(classStore(cf.cid).students||[]).filter(s=>s.active).length}. Changing teachers never touches this class's records - they stay with the class.</p>`
+     :`<div class="flabel" style="margin-top:12px">Students</div><div class="segw" role="group" aria-label="Students"><button class="${cf.how==='teacher'?'on':''}" onclick="cfKeep();cf.how='teacher';paintClassForm()">The teacher adds them</button><button class="${cf.how==='now'?'on':''}" onclick="cfKeep();cf.how='now';paintClassForm()">Add them now (type or paste a list)</button></div>
+       ${cf.how==='now'?`<textarea id="cfList" aria-label="Students" placeholder="One name per line, or paste a list" oninput="cf.list=this.value">${esc(cf.list)}</textarea>`:''}`}
     <div class="setup-actions"><button class="btn ghost" onclick="showOrg(ORG.id)">Cancel</button><button class="btn dark" onclick="saveClassForm()">${cf.cid?'Save':`Create ${esc(cf.name||'class')}`}</button></div>`);
 }
-function cfAddTeacher(){
-  const el=$('cfEmail'), email=(el.value||'').trim().replace(/,$/,'').toLowerCase(), org=db.orgs[ORG.id];
-  cf.name=$('cfName').value; if($('cfList')) cf.list=$('cfList').value;
-  if(!email) return;
-  if(!emailOk(email)){ cf.err='That doesn\'t look like an email address.'; return paintClassForm(); }
-  const p=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
-  if(p&&membership(ORG.id,p.id)){ if(!cf.teachers.some(t=>t.personId===p.id)) cf.teachers.push({personId:p.id}); cf.err=''; return paintClassForm(); }
-  if(!domainOk(org,email)){ cf.err=domainRefusal(org,email); return paintClassForm(); }
-  if(!cf.teachers.some(t=>t.email===email)) cf.teachers.push({email,name:p?p.name:''});
-  cf.err=''; paintClassForm(); setTimeout(()=>$('cfEmail')&&$('cfEmail').focus(),0);
-}
 function saveClassForm(){
-  if($('cfEmail')&&$('cfEmail').value.trim()) { cfAddTeacher(); if(cf.err) return; }
-  cf.name=($('cfName').value||'').replace(/[<>"`]/g,'').trim();
+  cfKeep();
+  cf.name=(cf.name||'').replace(/[<>"`]/g,'').trim();
   if(!cf.name){ cf.err='Please give the class a name.'; return paintClassForm(); }
-  const p=me(), org=db.orgs[ORG.id];
+  const p=me();
   const cid=cf.cid||('c'+Date.now().toString(36));
   const c=db.classes[cid]||(db.classes[cid]={id:cid,orgId:ORG.id,status:'active',teacherIds:[]});
   c.name=cf.name; c.programId=cf.programId; c.canEdit=cf.canEdit;
   c.teacherIds=cf.teachers.filter(t=>t.personId).map(t=>t.personId);       // the records stay with the class
+  c.teacherIds.forEach(t=>addToProgram(c.programId,{personId:t}));         // a class in a program puts its teachers on that program's list
   const emails=cf.teachers.filter(t=>t.email).map(t=>t.email);
-  (db.invites||[]).filter(i=>i.orgId===ORG.id&&i.status==='pending'&&i.classIds.includes(cid)&&!emails.includes(i.email)).forEach(i=>{ i.classIds=i.classIds.filter(x=>x!==cid); if(!i.classIds.length) i.status='revoked'; });
+  (db.invites||[]).filter(i=>i.orgId===ORG.id&&i.status==='pending'&&i.classIds.includes(cid)&&!emails.includes(i.email)).forEach(i=>{ i.classIds=i.classIds.filter(x=>x!==cid); });
   const newInvites=[];
   emails.forEach(email=>{
     let inv=(db.invites||[]).find(i=>i.orgId===ORG.id&&i.status==='pending'&&i.email===email);
     if(!inv){ inv={id:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),orgId:ORG.id,email,name:'',role:'teacher',classIds:[],invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'}; db.invites.push(inv); newInvites.push(inv); }
     if(!inv.classIds.includes(cid)) inv.classIds.push(cid);
+    addToProgram(c.programId,{inviteId:inv.id});
   });
   if(!cf.cid){
     const names=cf.how==='now'?String(cf.list||'').split(/[\n,;]+/).map(n=>n.replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'`]/g,'').trim()).filter(Boolean):[];
     lsSet(KCLS(cid),{students:names.map((n,i)=>({id:'s'+i,name:n,active:true})),history:{},day:null,today:null});
   }
+  if(c.teacherIds.includes(p.id)) markSeen(p.id,[cid]);
   saveDb(); const was=cf.cid; cf=null; showOrg(ORG.id,'classes');
   toast(was?`${c.name} saved`:`${c.name} created`);
   if(newInvites.length) shareInvite(newInvites[0].id);
@@ -1555,12 +1676,12 @@ function revokeInvite(id){
 let ivf=null;
 function openInvite(){
   const acc=orgAccess(ORG.id,me().id);
-  ivf={email:'',role:'teacher',classIds:[],err:''}; paintInviteForm(acc);
+  ivf={email:'',role:'teacher',classIds:[],err:'',programId:(arguments[0]||{}).programId||null}; paintInviteForm(acc);
 }
 function paintInviteForm(acc){
   acc=acc||orgAccess(ORG.id,me().id);
   const cls=classesOfOrg(ORG.id).filter(c=>c.status!=='archived'&&acc.programs.includes(c.programId));
-  sheetHTML('Invite someone',`To ${esc(db.orgs[ORG.id].name)}. They join by signing in with this email.`,
+  sheetHTML(ivf.programId?`Invite someone to ${esc(db.programs[ivf.programId].name)}`:'Invite someone',`To ${esc(db.orgs[ORG.id].name)}${ivf.programId?`, as a teacher in ${esc(db.programs[ivf.programId].name)}`:''}. They join by signing in with this email.`,
     `<div class="body"><div class="note" style="margin-top:0"><input id="ivEmail" type="email" placeholder="their@email" value="${esc(ivf.email)}" oninput="ivf.email=this.value"></div>
       ${acc.admin?`<div class="seg" style="margin-top:10px"><button class="${ivf.role==='teacher'?'on present':''}" onclick="ivf.role='teacher';paintInviteForm()">Teacher</button><button class="${ivf.role==='admin'?'on present':''}" onclick="ivf.role='admin';paintInviteForm()">Admin</button></div>`:''}
       <div class="sect">Classes</div>${cls.map(c=>`<label class="frow" style="justify-content:flex-start;gap:10px"><input type="checkbox" ${ivf.classIds.includes(c.id)?'checked':''} onchange="ivf.classIds=this.checked?[...ivf.classIds,'${c.id}']:ivf.classIds.filter(x=>x!=='${c.id}')">${esc(classLabel(c))}</label>`).join('')}
@@ -1574,7 +1695,10 @@ function sendInvite(){
   const known=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
   if(known&&membership(ORG.id,known.id)){ ivf.err=`${known.name} is already in ${org.name}. Add them to a class from Classes → Edit.`; return paintInviteForm(); }
   const inv={id:'i'+Date.now().toString(36),orgId:ORG.id,email,name:known?known.name:'',role:ivf.role,classIds:ivf.classIds.slice(),invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'};
-  db.invites.push(inv); saveDb(); paintOrg(); shareInvite(inv.id);
+  db.invites.push(inv);
+  if(ivf.programId) addToProgram(ivf.programId,{inviteId:inv.id});
+  inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&c.programId) addToProgram(c.programId,{inviteId:inv.id}); });
+  saveDb(); paintOrg(); shareInvite(inv.id);
 }
 
 /* ----- People ----- */
@@ -1615,24 +1739,36 @@ function removePerson(pid){
   confirmSheet(`Remove ${esc(personName(pid))} from ${esc(db.orgs[ORG.id].name)}?`,'They lose access to its classes. Every record they made stays with the classes.','Remove',()=>{
     db.members=db.members.filter(x=>x!==m);
     classesOfOrg(ORG.id).forEach(c=>{ c.teacherIds=c.teacherIds.filter(x=>x!==pid); });
-    programsOf(ORG.id).forEach(p=>{ if(p.adminId===pid) p.adminId=null; });
+    programsOf(ORG.id).forEach(p=>{ if(p.adminId===pid) p.adminId=null; ptList(p).teacherIds=p.teacherIds.filter(x=>x!==pid); });
     saveDb(); closeSheet(); toast(`${personName(pid)} removed`);
     if(pid===me().id) route(); else paintOrg();
   },'warn','Keep them');
 }
 
-/* ----- Programs: the organization, and each program's times, limits and admin ----- */
+/* ----- Programs: the organization; each program's teachers, then its times, limits and admin ----- */
+ORG.openTimes=ORG.openTimes||{};
 function orgProgramsHTML(acc){
   const org=db.orgs[ORG.id], dis=acc.admin?'':'disabled';
   const mem=(db.members||[]).filter(m=>m.orgId===ORG.id);
   const progCard=p=>{ const can=acc.manage&&acc.programs.includes(p.id), d=can?'':'disabled';
     const tp=(label,key)=>`<div class="frow">${label}<span class="two">${p[key]?`<input type="time" aria-label="${p.name} ${label} from" ${d} value="${p[key].start}" onchange="setProg('${p.id}','${key}.start',this.value)"><input type="time" aria-label="${p.name} ${label} to" ${d} value="${p[key].end}" onchange="setProg('${p.id}','${key}.end',this.value)">${can?`<button class="lnk" onclick="setProg('${p.id}','${key}',null)">None</button>`:''}`:`<span class="note2" style="margin:0">None</span>${can?`<button class="lnk" style="color:var(--leaf)" onclick="setProg('${p.id}','${key}',{start:'${p.start}',end:'${p.start}'})">Add</button>`:''}`}</span></div>`;
-    return `<div class="pcard2" data-program="${p.id}"><h3>${esc(p.name)}<small class="note2" style="margin:0">Every class in this program starts with these times and limits.</small></h3>
-      <div class="frow">Days<span class="daysel">${DAYN.map((n,i)=>`<button ${d} class="${p.days.includes(i+1)?'on':''}" aria-pressed="${p.days.includes(i+1)}" onclick="toggleProgDay('${p.id}',${i+1})">${n}</button>`).join('')}</span></div>
-      <div class="frow">Class times<span class="two"><input type="time" aria-label="${p.name} class times from" ${d} value="${p.start}" onchange="setProg('${p.id}','start',this.value)"><input type="time" aria-label="${p.name} class times to" ${d} value="${p.end}" onchange="setProg('${p.id}','end',this.value)"></span></div>
-      ${tp('Snack','snack')}${tp('Lunch','lunch')}
-      ${['washroom','water','wudhu'].map(k=>`<div class="frow">${RSN(k).label}${stepperPair(p.limits[k],k,`stepProg_${p.id}`,!can)}</div>`).join('')}
-      <div class="frow"><div>Program admin<small>Optional · manages only ${esc(p.name)}: its classes, teachers and reports</small></div><select aria-label="${p.name} program admin" ${acc.admin?'':'disabled'} onchange="setProg('${p.id}','adminId',this.value||null)"><option value="">None</option>${mem.map(m=>`<option value="${m.personId}" ${p.adminId===m.personId?'selected':''}>${esc(personName(m.personId))}</option>`).join('')}</select></div></div>`; };
+    const people=progTeachers(p), invs=progInvites(p), n=people.length+invs.length, open=!!ORG.openTimes[p.id];
+    const L=p.limits.washroom, sum=`${daysText(p.days)} · ${hm(p.start)}–${hm(p.end)} · Washroom ${L.min} min, ${tripCap(L)?`${L.trips} a day`:'no trip limit'} …`;
+    return `<div class="pcard2" data-program="${p.id}"><h3>${esc(p.name)}</h3>
+      <div class="pthead"><b>Teachers in this program</b><span class="ptcount" data-count>${n}</span>${can?`<button class="btn primary sm" onclick="openTeacherPicker('${p.id}')">+ Add teachers</button>`:''}</div>
+      <div class="ptlist">${people.map(id=>{ const x=db.people[id];
+          return `<div class="ptrow" data-teacher="${id}"><b class="ini mid soft">${esc(initials(x.name))}</b><div><b>${esc(x.name)}</b><small>${esc(x.email)} · ${esc(teachesTxt(p.id,id))}</small></div>${can?`<button class="lnk" aria-label="Remove ${esc(x.name)} from ${esc(p.name)}" onclick="removeFromProgram('${p.id}','person','${id}')">Remove</button>`:''}</div>`; }).join('')}
+        ${invs.map(i=>`<div class="ptrow" data-invite="${i.id}"><b class="ini mid inv">${esc(initials(i.name||i.email))}</b><div><b>${esc(i.name||i.email)}</b><small>${i.name?esc(i.email)+' · ':''}<span class="invtxt">${esc(invitedTxt(p.id,i))}</span></small></div>${can?`<button class="lnk" aria-label="Remove ${esc(i.name||i.email)} from ${esc(p.name)}" onclick="removeFromProgram('${p.id}','invite','${i.id}')">Remove</button>`:''}</div>`).join('')}
+        ${n?'':'<div class="ptempty">No teachers in this program yet.</div>'}</div>
+      <p class="note2">They show first when you pick teachers for a ${esc(p.name)} class. Someone can be in more than one program.</p>
+      <button class="tlrow" aria-expanded="${open}" onclick="ORG.openTimes['${p.id}']=!ORG.openTimes['${p.id}'];paintOrg()"><div><b>Times and limits</b><small>${esc(sum)}</small></div><span class="chev">›</span></button>
+      ${open?`<div class="tlbody">
+        <div class="frow">Days<span class="daysel">${DAYN.map((nm,i)=>`<button ${d} class="${p.days.includes(i+1)?'on':''}" aria-pressed="${p.days.includes(i+1)}" onclick="toggleProgDay('${p.id}',${i+1})">${nm}</button>`).join('')}</span></div>
+        <div class="frow">Class times<span class="two"><input type="time" aria-label="${p.name} class times from" ${d} value="${p.start}" onchange="setProg('${p.id}','start',this.value)"><input type="time" aria-label="${p.name} class times to" ${d} value="${p.end}" onchange="setProg('${p.id}','end',this.value)"></span></div>
+        ${tp('Snack','snack')}${tp('Lunch','lunch')}
+        ${['washroom','water','wudhu'].map(k=>`<div class="frow">${RSN(k).label}${stepperPair(p.limits[k],k,`stepProg_${p.id}`,!can)}</div>`).join('')}
+        <div class="frow"><div>Program admin<small>Optional · manages only ${esc(p.name)}: its classes, teachers and reports</small></div><select aria-label="${p.name} program admin" ${acc.admin?'':'disabled'} onchange="setProg('${p.id}','adminId',this.value||null)"><option value="">None</option>${mem.map(m=>`<option value="${m.personId}" ${p.adminId===m.personId?'selected':''}>${esc(personName(m.personId))}</option>`).join('')}</select></div></div>`:''}
+    </div>`; };
   const progs=acc.programs.map(id=>db.programs[id]);
   progs.forEach(p=>{ window['stepProg_'+p.id]=(k,f,dlt)=>{ p.limits[k][f]=stepVal(p.limits[k],f,dlt); saveDb(); paintOrg(); }; });
   return `${acc.programAdmin?'':`<div class="pcard2"><h3>${esc(org.name)}</h3>
@@ -1642,6 +1778,47 @@ function orgProgramsHTML(acc){
     <div class="sect">Programs</div>${progs.map(progCard).join('')}
     ${acc.admin?`<div class="roster-add"><input id="newProg" placeholder="New program's name" onkeydown="if(event.key==='Enter')addProgram()"><button class="btn ghost" onclick="addProgram()">+ Add a program</button></div>`:''}`;
 }
+/* Off the list only: their classes and every record stay. If they still teach
+   a class in this program, say so first. */
+function removeFromProgram(progId,kind,id){
+  const p=db.programs[progId], acc=orgAccess(ORG.id,me().id);
+  if(!acc||!acc.manage||!acc.programs.includes(progId)) return;
+  const done=()=>{ ptList(p); if(kind==='person') p.teacherIds=p.teacherIds.filter(x=>x!==id); else p.inviteIds=p.inviteIds.filter(x=>x!==id);
+    saveDb(); closeSheet(); paintOrg(); toast(`${kind==='person'?personName(id):((db.invites.find(i=>i.id===id)||{}).email||'They')} left ${p.name}'s list`); };
+  const cs=kind==='person'?classesInProgram(progId,id):[];
+  if(!cs.length) return done();
+  confirmSheet(`Take ${esc(personName(id))} off ${esc(p.name)}'s list?`,`${esc(personName(id))} still teaches ${esc(cs.map(c=>c.name).join(' and '))}. They keep ${cs.length>1?'those classes':'that class'} and every record; they just leave this list.`,'Take off the list',done,'warn','Keep them');
+}
+/* ----- "+ Add teachers": everyone already in the organization ----- */
+let pk=null;
+function openTeacherPicker(progId){ pk={progId,ticked:[],q:''}; paintPicker(); setTimeout(()=>$('pkSearch')&&$('pkSearch').focus(),50); }
+function paintPicker(){
+  const p=db.programs[pk.progId], org=db.orgs[ORG.id];
+  sheetHTML(`Add teachers to ${esc(p.name)}`,`Everyone already in ${esc(org.name)}. Tick the ones who teach in this program.`,
+    `<div class="body"><div class="note" style="margin-top:0"><input id="pkSearch" type="search" aria-label="Search by name or email" placeholder="⌕  Search by name or email" value="${esc(pk.q)}" oninput="pk.q=this.value;paintPickerList()"></div>
+      <div class="pklist" id="pkList" role="group" aria-label="People in ${esc(org.name)}"></div>
+      <button class="pklink" onclick="pickerInvite()">+ Someone new? Invite them by email</button></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" id="pkGo" onclick="pickerAdd()">Add teachers</button></div>`);
+  paintPickerList();
+}
+function paintPickerList(){
+  const p=db.programs[pk.progId], inList=new Set(progTeachers(p)), q=(pk.q||'').trim().toLowerCase();
+  const mem=(db.members||[]).filter(m=>m.orgId===ORG.id).map(m=>db.people[m.personId]).filter(Boolean)
+    .filter(x=>!q||x.name.toLowerCase().includes(q)||x.email.toLowerCase().includes(q))
+    .sort((a,b)=>(inList.has(a.id)-inList.has(b.id))||a.name.localeCompare(b.name));
+  $('pkList').innerHTML=mem.map(x=>{ const already=inList.has(x.id), on=already||pk.ticked.includes(x.id), adm=isAdmin(ORG.id,x.id);
+    return `<button class="pkrow" role="checkbox" aria-checked="${on}" ${already?'disabled aria-disabled="true"':''} data-person="${x.id}" onclick="pickerToggle('${x.id}')"><i class="box">✓</i><b class="ini mid soft">${esc(initials(x.name))}</b><div><b class="nm">${esc(x.name)}</b><small>${already?`Already in ${esc(p.name)}`:`${adm?'Admin':esc(x.email)} · ${esc(otherProgramsTxt(ORG.id,x.id))}`}</small></div></button>`; }).join('')
+    ||`<div class="ptempty">${q?'Nobody matches that.':'Nobody else in the organization yet.'}</div>`;
+  const n=pk.ticked.length, go=$('pkGo'); go.textContent=n?`Add ${n} teacher${n===1?'':'s'}`:'Add teachers'; go.disabled=!n;
+}
+function pickerToggle(pid){ pk.ticked=pk.ticked.includes(pid)?pk.ticked.filter(x=>x!==pid):[...pk.ticked,pid]; paintPickerList(); }
+function pickerAdd(){
+  if(!pk.ticked.length) return;
+  const p=db.programs[pk.progId], n=pk.ticked.length;
+  pk.ticked.forEach(pid=>addToProgram(p.id,{personId:pid}));          // on the list - no class is given
+  saveDb(); closeSheet(); paintOrg(); toast(`${n} teacher${n===1?'':'s'} added to ${p.name}`);
+}
+function pickerInvite(){ const progId=pk.progId; closeSheet(); openInvite({programId:progId}); }
 function setOrg(k,v){ const org=db.orgs[ORG.id]; if(k==='name'){ v=String(v).replace(/[<>"`]/g,'').trim(); if(!v) return paintOrg(); } if(k==='domain') v=String(v).replace(/^@/,'').trim().toLowerCase(); org[k]=v; saveDb(); paintOrg(); }
 function setProg(pid,path,v){ const p=db.programs[pid]; const [a,b]=path.split('.'); if(b){ if(!v) return; p[a][b]=v; } else p[a]=v; saveDb(); paintOrg(); }
 function toggleProgDay(pid,d){ const p=db.programs[pid]; p.days=p.days.includes(d)?p.days.filter(x=>x!==d):[...p.days,d].sort((a,b)=>a-b); saveDb(); paintOrg(); }
@@ -1710,7 +1887,7 @@ function orgSummaryHTML(ids){
 /* ===== the practice bar ===== */
 function fillPicker(){
   const sel=$('youAre'), id=meId();
-  const order=['maryam','aisha','yusuf','bilal','rafaye','khadija','hamid','sumayya','tariq'];
+  const order=['maryam','aisha','yusuf','bilal','rafaye','khadija','hamid','sumayya','hamza','tariq'];
   const people=Object.values(db.people).sort((a,b)=>{ const i=order.indexOf(a.id), j=order.indexOf(b.id); return (i<0?99:i)-(j<0?99:j); });
   const label=p=>{ const roles=(db.members||[]).filter(m=>m.personId===p.id).map(m=>{ const org=db.orgs[m.orgId], pa=programAdminOf(m.orgId,p.id);
     return m.roles.includes('admin')?`admin, ${org.name}`:pa.length?`program admin, ${db.programs[pa[0]].name}`:null; }).filter(Boolean);
@@ -1799,7 +1976,7 @@ function seedDemo(){
     yusuf:P('yusuf','Hafiz Yusuf','yusuf@uthmanacademy.org'),bilal:P('bilal','Ustadh Bilal','bilal@uthmanacademy.org'),
     rafaye:P('rafaye','Hafiz Abdur Rafaye','rfy.dawood@gmail.com'),khadija:P('khadija','Ustadha Khadija','khadija@uthmanacademy.org'),
     hamid:P('hamid','Ustadh Hamid','hamid@uthmanacademy.org'),sumayya:P('sumayya','Ustadha Sumayya','sumayya@uthmanacademy.org'),
-    tariq:P('tariq','Imam Tariq','tariq@masjidalnoor.org')};
+    tariq:P('tariq','Imam Tariq','tariq@masjidalnoor.org'),hamza:P('hamza','Ustadh Hamza','hamza@uthmanacademy.org')};
   const L=(w,wt,wa,wat,wu,wut)=>({washroom:{min:w,trips:wt},water:{min:wa,trips:wat},wudhu:{min:wu,trips:wut}});
   const programs={
     boys:{id:'boys',orgId:'uthman',name:'Boys Full-time Hifz',days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:L(7,2,2,2,3,2),adminId:null},
@@ -1819,7 +1996,7 @@ function seedDemo(){
   const M=(orgId,personId,roles,canSee)=>({orgId,personId,roles,canSee});
   const members=[M('uthman','maryam',['admin'],'everything'),M('uthman','aisha',['admin','teacher'],'everything'),M('uthman','yusuf',['teacher'],'own'),
     M('uthman','bilal',['teacher'],'own'),M('uthman','rafaye',['teacher'],'summaries'),M('uthman','khadija',['teacher'],'own'),M('uthman','hamid',['teacher'],'own'),
-    M('uthman','sumayya',['teacher'],'own'),M('alnoor','tariq',['admin'],'everything'),M('alnoor','rafaye',['teacher'],'own')];
+    M('uthman','sumayya',['teacher'],'own'),M('uthman','hamza',['teacher'],'own'),M('alnoor','tariq',['admin'],'everything'),M('alnoor','rafaye',['teacher'],'own')];
   const invites=[{id:'invIdris',orgId:'uthman',email:'idris@uthmanacademy.org',name:'Hafiz Idris',role:'teacher',classIds:['bA','e1'],invitedBy:'maryam',at:now-2*86400000,code:'K7P-4QX',status:'pending'}];
   const d={v:1,people,orgs,programs,classes,members,invites,lastClass:{rafaye:'bB'}};
   lsSet(KDB,d);
