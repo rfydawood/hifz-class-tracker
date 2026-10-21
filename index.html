@@ -649,7 +649,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.0.1",APP_BUILD="a8b8a26671",APP_BUILD_TIME="2026-10-21T02:20:46.209Z";
+/*BUILD_STAMP*/const APP_VERSION="4.0.1",APP_BUILD="a24a5c6fca",APP_BUILD_TIME="2026-10-21T02:41:07.470Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1086,6 +1086,7 @@ async function googleCredential(){
   if(EMULATOR&&window.__hifzTestGoogle) return firebase.auth.GoogleAuthProvider.credential(JSON.stringify(window.__hifzTestGoogle));
   if(window.hifzDesktop){
     const t=await window.hifzDesktop.googleSignIn();
+    if(t&&t.superseded) throw Object.assign(new Error('Sign-in started again'),{code:'auth/superseded'});
     if(!t) throw Object.assign(new Error('Sign-in cancelled'),{code:'auth/popup-closed-by-user'});
     return firebase.auth.GoogleAuthProvider.credential(t);
   }
@@ -1109,11 +1110,15 @@ function signInMessage(e){
 function showSignIn(){ $('setup').classList.remove('show'); $('signinErr').textContent=''; $('signinBtn').disabled=false; $('signin').classList.add('show'); }
 function hideSignIn(){ $('signin').classList.remove('show'); }
 async function signInFromGate(){
-  const btn=$('signinBtn'); btn.disabled=true; $('signinErr').textContent='';
+  // The desktop app signs in in the browser, so its button stays usable:
+  // pressing it again just opens the browser again.
+  const btn=$('signinBtn'), desk=!!window.hifzDesktop;
+  btn.disabled=!desk; $('signinErr').textContent=desk?'Finish signing in in your web browser, then come back here.':'';
   try{
     await signInWithGoogle();
     await routeSignedIn();
-  }catch(e){ $('signinErr').textContent=signInMessage(e); }
+    $('signinErr').textContent='';
+  }catch(e){ if(e&&e.code==='auth/superseded') return; $('signinErr').textContent=signInMessage(e); }
   finally{ btn.disabled=false; }
 }
 async function signInWithGoogle(){
@@ -1132,7 +1137,7 @@ async function signInToKeepClass(){
     if(u&&u.isAnonymous&&ORG_ID) return await linkAnonymous(u);
     await signInWithGoogle();
     await routeSignedIn();
-  }catch(e){ toast(signInMessage(e)); }
+  }catch(e){ if(!(e&&e.code==='auth/superseded')) toast(signInMessage(e)); }
 }
 async function linkAnonymous(u){
   let cred=null;

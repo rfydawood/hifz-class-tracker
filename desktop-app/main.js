@@ -19,7 +19,7 @@ const path = require('node:path');
 
 const APP_URL = 'https://rfydawood.github.io/hifz-class-tracker/';
 const SIGNIN_URL = APP_URL + 'desktop-signin.html';
-const SIGNIN_TIMEOUT_MS = 5 * 60 * 1000;
+const SIGNIN_TIMEOUT_MS = 10 * 60 * 1000;
 
 let win = null;
 
@@ -99,13 +99,13 @@ ipcMain.handle('google-sign-in', (event) => {
   return new Promise((resolve) => {
     const state = crypto.randomBytes(16).toString('hex');
     let done = false;
-    let finish = (token) => {
+    const finish = (token) => {
       if (done) return;
       done = true;
       clearTimeout(timer);
       server.close();
       pendingSignIn = null;
-      if (token && win) {
+      if (typeof token === 'string' && win) {
         if (win.isMinimized()) win.restore();
         win.show();
         win.focus();
@@ -124,16 +124,13 @@ ipcMain.handle('google-sign-in', (event) => {
       finish(token);
     });
     const timer = setTimeout(() => finish(null), SIGNIN_TIMEOUT_MS);
-    pendingSignIn = { cancel: () => finish(null) };
-    // Coming back to the app without finishing in the browser = gave up, so
-    // the sign-in button works again straight away instead of after 5 minutes.
-    const onFocus = () => finish(null);
-    setTimeout(() => { if (!done && win) win.once('focus', onFocus); }, 1500);
-    const finishThen = finish;
-    finish = (token) => { if (win) win.removeListener('focus', onFocus); finishThen(token); };
+    // Pressing Sign in again starts over: the earlier wait ends quietly. (Not
+    // on window focus - Google's window closing by itself can hand focus back
+    // to the app a moment before the browser hands the token over.)
+    pendingSignIn = { cancel: () => finish({ superseded: true }) };
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
-      shell.openExternal(`${SIGNIN_URL}#port=${port}&state=${state}`);
+      shell.openExternal(`${SIGNIN_URL}?port=${port}&state=${state}`);
     });
   });
 });
