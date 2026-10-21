@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in - Hifz Class Tracker</title>
+<link rel="icon" href="favicon.png">
+<meta name="robots" content="noindex">
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#E3EAEC;color:#1F2E36;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  .card{background:#fff;border-radius:16px;padding:32px 28px;max-width:380px;margin:16px;text-align:center;box-shadow:0 4px 20px rgba(31,46,54,.12)}
+  img{width:64px;height:64px;border-radius:14px}
+  h1{font-size:20px;margin:14px 0 6px}
+  p{margin:0 0 20px;color:#5b6b73}
+  button{font:inherit;font-weight:600;background:#1F2E36;color:#fff;border:0;border-radius:10px;padding:12px 22px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:default}
+  .err{color:#b3261e;min-height:1.5em;margin:14px 0 0;font-size:14px}
+</style>
+</head>
+<body>
+<!-- The desktop app (desktop-app/) opens this page in the computer's own
+     browser, because Google doesn't allow its sign-in inside an app window.
+     It signs in here, then hands the Google ID token straight back to the app
+     on this computer (127.0.0.1) - nothing is kept in this browser. -->
+<div class="card">
+  <img src="icons/icon-192.png" alt="">
+  <h1>Sign in to the desktop app</h1>
+  <p id="msg">Sign in with Google to open your classes in the Hifz Class Tracker desktop app.</p>
+  <button id="btn" onclick="go()">Sign in with Google</button>
+  <div class="err" id="err"></div>
+</div>
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script>
+const FIREBASE_CONFIG={
+  projectId:"hifz-class-tracker-dece7",
+  appId:"1:726082000637:web:c4bc54fd73d8853f44d094",
+  storageBucket:"hifz-class-tracker-dece7.firebasestorage.app",
+  apiKey:"AIzaSyAZS_OEMnmcvc5xDzNESMVBvXJ4oGWCUBo",
+  authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
+  messagingSenderId:"726082000637"
+};
+const q=new URLSearchParams(location.hash.slice(1));
+const port=q.get('port'), state=q.get('state');
+const ok=/^\d{2,5}$/.test(port||'')&&/^[0-9a-f]{32,}$/.test(state||'');
+if(!ok){
+  document.getElementById('msg').textContent='Open this page from the Hifz Class Tracker desktop app (Sign in with Google).';
+  document.getElementById('btn').style.display='none';
+}
+// A separate, memory-only Firebase app: signing in here must never touch a
+// class the website itself has open in this browser.
+const app=firebase.initializeApp(FIREBASE_CONFIG,'desktop-signin');
+const auth=firebase.auth(app);
+async function go(){
+  const btn=document.getElementById('btn'), err=document.getElementById('err');
+  btn.disabled=true; err.textContent='';
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    const r=await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    const t=r.credential&&r.credential.idToken;
+    if(!t) throw new Error('no token');
+    await auth.signOut();
+    location.replace('http://127.0.0.1:'+port+'/done?state='+encodeURIComponent(state)+'&t='+encodeURIComponent(t));
+  }catch(e){
+    const c=(e&&e.code)||'';
+    err.textContent=c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request'?'Sign-in was cancelled.'
+      :c==='auth/popup-blocked'?'The sign-in window was blocked. Allow pop-ups for this page and try again.'
+      :c==='auth/network-request-failed'?'Signing in needs an internet connection. Connect and try again.'
+      :'Could not sign in. Please try again.';
+    btn.disabled=false;
+  }
+}
+</script>
+</body>
+</html>

@@ -649,7 +649,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.0.1",APP_BUILD="128d0f9eb4",APP_BUILD_TIME="2026-10-08T03:44:55.509Z";
+/*BUILD_STAMP*/const APP_VERSION="4.0.1",APP_BUILD="a8b8a26671",APP_BUILD_TIME="2026-10-21T02:20:46.209Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1078,9 +1078,17 @@ function nativeAuthPlugin(){
    popup does the whole sign-in itself. On the native app the plugin runs
    Android's own account picker and hands back an ID token only
    (skipNativeAuth in capacitor.config.json) - the web SDK below stays the
-   one and only signed-in user. Tests (emulator only) supply a token. */
+   one and only signed-in user. Tests (emulator only) supply a token. The
+   desktop app (desktop-app/) can't show Google's sign-in inside its window,
+   so it signs in in the computer's own browser (desktop-signin.html) and
+   hands back an ID token the same way. */
 async function googleCredential(){
   if(EMULATOR&&window.__hifzTestGoogle) return firebase.auth.GoogleAuthProvider.credential(JSON.stringify(window.__hifzTestGoogle));
+  if(window.hifzDesktop){
+    const t=await window.hifzDesktop.googleSignIn();
+    if(!t) throw Object.assign(new Error('Sign-in cancelled'),{code:'auth/popup-closed-by-user'});
+    return firebase.auth.GoogleAuthProvider.credential(t);
+  }
   const P=nativeAuthPlugin();
   if(P){
     const r=await P.signInWithGoogle();
@@ -2708,7 +2716,7 @@ function paintProfile(){
      <h4>Backup</h4>
      ${Store.native?`<small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Backups download from the website, not this app - open rfydawood.github.io/hifz-class-tracker on a computer or phone and use Download a backup there.</small>`
        :`<button class="dbtn" onclick="backupAll()">Download a backup<small>Every class and every day it has recorded, saved as a file</small></button>`}
-     <small class="ver">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':' · web'}</small>
+     <small class="ver">v${APP_VERSION} · build ${APP_BUILD}${window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?' · native app':window.hifzDesktop?' · desktop app':' · web'}</small>
    </section>
    <section class="pclasses">
      <h3>My classes</h3>

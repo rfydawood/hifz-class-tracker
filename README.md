@@ -31,6 +31,20 @@ A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`c
 
 **Trade-off of going fully native:** unlike the old wrapper, this app's content is bundled at build time, so a code change no longer shows up automatically — it needs a new build pushed to Firebase App Distribution (see "Rebuilding the native app" below). The web app / PWA above is unaffected and still updates instantly.
 
+## Desktop app (Windows)
+
+Download page: https://rfydawood.github.io/hifz-class-tracker/download.html
+
+`desktop-app/` is an Electron shell around the live website, so it always runs the same version as the website - no rebuild per release. Google sign-in goes through the computer's own browser (`desktop-signin.html`). Installers live on GitHub Releases in `rfydawood/hifz-class-tracker-desktop`, and the shell updates itself from there. Rebuild only when `desktop-app/` changes:
+
+```
+cd desktop-app
+npm install
+# bump "version" in package.json
+CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist:win
+gh release create v<version> --repo rfydawood/hifz-class-tracker-desktop --title "<version>" --notes "<notes>" dist/Hifz-Class-Tracker-Setup.exe dist/Hifz-Class-Tracker-Setup.exe.blockmap dist/latest.yml
+```
+
 ## Cloud sync (Google accounts)
 
 Every class lives in Firestore from the moment it's set up (see `IMPLEMENTATION_PLAN.md` Phase 2). The app still works fully offline (Firestore's local cache queues writes and flushes them on reconnect); there just isn't a separate localStorage copy competing with it.
