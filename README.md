@@ -19,6 +19,8 @@ Classroom attendance and break tracker for hifz teachers. Pure client-side app â
 
 **Different times on different days (since 4.0).** Each class has a usual day; a weekday can differ (e.g. early dismissal on Fridays) and a single date can differ (with a note). A date beats its weekday, which beats the usual day. Whole-class breaks are named (Snack, Lunch and recess, Jumu'ah...), and each gets its banner and Start/End when it's due. When today isn't the usual day, a banner on Log says how. Each day saves the times it actually had when class starts, so changing the schedule later never changes old reports.
 
+**Teacher mode (since 4.1).** The padlock at the end of the bar (after Profile) stops students changing things. Tap it the first time to set a 4-number PIN; from then on, tap it and type the PIN to unlock, and tap it once to lock again. While locked, students can still start and end their own breaks, but the break minutes, Fix/Cancel break, "left for the day", the â˜° menu, the Start/End class button and the Roster, Settings and Profile tabs ask for the PIN (Reports stay open). Each device has its own PIN, kept on that device only. "Forgot the PIN?" resets it after signing in again with the class's Google account. A device that never sets a PIN works as before.
+
 The chevron at the right end of the bar tucks it away (remembered on that device); a small handle in the bottom-right corner brings it back. The Log tab shows a gold count of students out while you're on another tab, red when anyone is past their limit.
 
 ## Native Android app (optional)
