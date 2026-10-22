@@ -1370,12 +1370,12 @@ function startGo(){ if(startPick==='org') return openOrgSetup(); if(startPick===
 let oc=null;
 function showSetupClass(fromProfile,from){
   hideCards(); showView(fromProfile?'profileView':null);
-  oc={step:1,back:fromProfile?'profile':'route',name:(me()||{}).name||'',cls:'',school:false,days:[],start:'',end:'',snack:{start:'',end:''},lunch:{start:'',end:''},mode:'one',students:[],paste:''};
+  oc={step:1,back:fromProfile?'profile':'route',name:cleanTxt((me()||{}).name),cls:'',school:false,days:[],start:'',end:'',snack:{start:'',end:''},lunch:{start:'',end:''},mode:'one',students:[],paste:''};
   paintSetupClass();
 }
 function ocBack(){ if(oc.step===1){ const b=oc.back; oc=null; return b==='profile'?(hideCards(),showProfile()):route(); } ocKeep(); oc.step--; paintSetupClass(); }
-function ocKeep(){ ['ocName','ocCls','ocStart','ocEnd','ocSnackS','ocSnackE','ocLunchS','ocLunchE','ocPaste'].forEach(id=>{ const e=$(id); if(!e) return; const v=e.value;
-  ({ocName:()=>oc.name=v,ocCls:()=>oc.cls=v,ocStart:()=>oc.start=v,ocEnd:()=>oc.end=v,ocSnackS:()=>oc.snack.start=v,ocSnackE:()=>oc.snack.end=v,ocLunchS:()=>oc.lunch.start=v,ocLunchE:()=>oc.lunch.end=v,ocPaste:()=>oc.paste=v})[id](); }); }
+function ocKeep(){ ['ocCls','ocStart','ocEnd','ocSnackS','ocSnackE','ocLunchS','ocLunchE','ocPaste'].forEach(id=>{ const e=$(id); if(!e) return; const v=e.value;
+  ({ocCls:()=>oc.cls=v,ocStart:()=>oc.start=v,ocEnd:()=>oc.end=v,ocSnackS:()=>oc.snack.start=v,ocSnackE:()=>oc.snack.end=v,ocLunchS:()=>oc.lunch.start=v,ocLunchE:()=>oc.lunch.end=v,ocPaste:()=>oc.paste=v})[id](); }); }
 function ocSchedErr(){
   if(!oc.days.length) return 'Pick the days the class meets.';
   if(!oc.start||!oc.end) return 'Set the class start and end times.';
@@ -1397,8 +1397,7 @@ function paintSetupClass(){
   SCREEN='setup';
   const steps=`<div class="osteps">${['Your class','Schedule','Students'].map((l,i)=>`<span class="${oc.step>i+1?'done':oc.step===i+1?'on':''}">${i+1} ${l}</span>`).join('')}</div>`;
   if(oc.step===1) return card(`<h2>Set up your class</h2>${steps}
-    <label>Your name<input id="ocName" value="${esc(oc.name)}" placeholder="e.g. Ustadh Bilal"></label>
-    <label>Class name<input id="ocCls" value="${esc(oc.cls)}" placeholder="e.g. Boys Hifz A"><span class="hint">Shown at the top of the app. Leave it empty for "${esc((oc.name||'Your').split(' ').slice(-1)[0])}'s Hifz Class".</span></label>
+    <label>Class name<input id="ocCls" value="${esc(oc.cls)}" placeholder="e.g. Boys Hifz A"><span class="hint">Shown at the top of the app. Leave it empty for "${esc(oc.name)}'s Hifz Class".</span></label>
     <div class="swrow"><div><b>I'm part of a school</b><small>${oc.school?'Your class can join your school later, when its admin invites you. It keeps every record.':'No need to set one up now. Your class can join a school later.'}</small></div><button class="switch ${oc.school?'on':''}" role="switch" aria-checked="${oc.school}" aria-label="I'm part of a school" onclick="ocKeep();oc.school=!oc.school;paintSetupClass()"></button></div>
     <div class="setup-actions" style="margin-top:18px"><button class="btn ghost" onclick="ocBack()">${oc.back==='profile'?'Cancel':'Back'}</button><button class="btn dark" onclick="ocNext()">Next</button></div><p class="err" id="ocErr"></p>`);
   if(oc.step===2){ const t=(id,v,lbl)=>`<input id="${id}" type="time" aria-label="${lbl}" value="${v}" onchange="ocKeep();ocSchedHint()">`;
@@ -1429,7 +1428,7 @@ function ocSchedHint(){ const e=ocSchedErr(), el=$('ocSched'); if(!el) return;
   $('ocErr').textContent=e&&oc.days.length&&oc.start&&oc.end?e:''; $('ocNextBtn').disabled=!!e; }
 function ocNext(){
   ocKeep();
-  if(oc.step===1){ oc.name=cleanTxt(oc.name); oc.cls=cleanTxt(oc.cls); if(!oc.name) return $('ocErr').textContent='Please add your name.'; }
+  if(oc.step===1) oc.cls=cleanTxt(oc.cls);
   if(oc.step===2){ const e=ocSchedErr(); if(e) return $('ocErr').textContent=e; }
   oc.step++; paintSetupClass();
 }
@@ -1437,7 +1436,6 @@ function ocAddStudent(){ const n=cleanTxt($('ocStudent').value); if(!n) return; 
 function ocRemoveStudent(i){ oc.students.splice(i,1); paintSetupClass(); }
 function ocCreate(){
   ocKeep(); const p=me(), names=[...new Set(ocRoster())];
-  p.name=oc.name;
   const id='own'+Date.now().toString(36);
   const own=Object.values(db.classes).filter(c=>!c.orgId&&c.ownerId===p.id).length;
   const name=oc.cls||(own?`${oc.name}'s class ${own+1}`:`${oc.name}'s Hifz Class`);
