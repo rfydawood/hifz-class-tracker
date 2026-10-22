@@ -107,6 +107,7 @@ input,select{font:inherit;color:inherit}
 
 .scrim{position:absolute;inset:0;background:rgba(31,46,54,.5);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 .scrim.show{display:flex}
+.scrim.over{position:fixed;z-index:90}   /* a popup opened over a full-screen setup card */
 .sheet{width:100%;max-width:720px;max-height:100%;background:var(--card);border-radius:22px;padding:22px 24px 24px;display:flex;flex-direction:column;animation:up .18s ease-out}
 @keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}
 .sheet-head{display:flex;align-items:flex-start;gap:14px}
@@ -386,6 +387,36 @@ body{display:flex;flex-direction:column}
 .flabel{font-weight:800;font-size:14px;margin:4px 0 0}
 .setup-card .tchips{margin-bottom:12px}
 .setup-card #cfList{display:block;width:100%;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font:inherit;font-size:15px;background:var(--paper)}
+.osteps{display:flex;gap:6px;margin:12px 0 18px}
+.osteps span{flex:1;text-align:center;font-size:12.5px;font-weight:800;padding:6px 8px;border-radius:999px;background:var(--paper);color:var(--mute);border:1px solid var(--line);white-space:nowrap}
+.osteps .on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.osteps .done{background:var(--leaf-soft);color:var(--leaf);border-color:var(--leaf-soft)}
+.popts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:0 0 16px}
+.popt{display:flex;align-items:center;gap:8px;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:800;font-size:14px;text-align:left;color:var(--ink)}
+.popt .tk{width:20px;height:20px;border-radius:6px;border:1.5px solid #C6D2D6;display:grid;place-items:center;font-style:normal;font-size:13px;flex:none;color:#fff}
+.popt.on{background:var(--leaf-soft);border-color:var(--leaf);color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf)}
+.popt.on .tk{background:var(--leaf);border-color:var(--leaf)}
+.setup-card .otherlbl{margin:0 0 6px}
+.setup-card .roster-add input{margin-top:0}
+.pdlist{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.pdrow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.pdrow .nm{flex:1;min-width:180px}
+.pdrow .nm b{display:block;font-size:15px}
+.pdrow .nm small{display:block;color:var(--mute);font-weight:600;font-size:13px;margin-top:2px}
+.lnk2{color:var(--leaf);font-weight:800;font-size:13px;padding:0;text-decoration:underline}
+.pcnt{font-size:13px;font-weight:800;padding:7px 12px;border-radius:999px;background:var(--leaf-soft);color:var(--leaf);text-decoration:underline;text-underline-offset:2px;min-height:34px}
+.pcnt.zero{background:var(--paper);color:var(--mute);border:1px solid var(--line)}
+.sheet .flab{display:block;font-weight:800;font-size:14px;margin-top:12px}
+.clrow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.clrow .who{flex:1;min-width:0}
+.clrow .who b{display:block;font-size:15px}
+.clrow .who small{display:block;color:var(--mute);font-weight:600;font-size:13px}
+.clrow .who.ask b{color:var(--ember)}
+.clrow input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:14px;background:var(--paper)}
+.icob{width:40px;height:40px;flex:none;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.icob svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icob.del{color:var(--ember)}
+.icob.ok{background:var(--ink);border-color:var(--ink);color:#fff}
 .stepdots{display:flex;gap:6px;margin:4px 0 14px}
 .stepdots i{flex:1;height:4px;border-radius:3px;background:var(--line)}
 .stepdots i.on{background:var(--leaf)}
@@ -805,7 +836,7 @@ function sheetHTML(title,sub,body,extra){
   $('sheet').innerHTML=`<div class="sheet-head"><div><h3>${title}</h3>${sub?`<p>${sub}</p>`:''}</div>${extra||''}<button class="x" aria-label="Close" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}`;
   $('scrim').classList.add('show');
 }
-function closeSheet(){ $('scrim').classList.remove('show'); }
+function closeSheet(){ $('scrim').classList.remove('show','over'); }
 function openReason(sid){
   const bs=state.breaks.filter(b=>b.sid===sid), mins=Math.round(bs.reduce((a,b)=>a+b.dur,0)/60000), fl=bs.filter(b=>b.flag).length;
   const dots = bs.length ? `<div class="bdots" title="Breaks so far today"><div class="d">${bs.map(b=>`<i class="${b.reason}${b.flag?' flagged':''}" title="${b.label} · ${fmtDur(b.dur)}"></i>`).join('')}</div><span>${bs.length} today · ${mins} min${fl?` · ${fl} flagged`:''}</span></div>` : '';
@@ -1440,46 +1471,161 @@ function useCode(){
   showInvite(inv.id,true);
 }
 
-/* ===== Set up an organization: two steps ===== */
+/* ===== Set up an organization: Organization, Programs, Details =====
+   Step 2 picks programs from a list (or types others); step 3 gives each one
+   its hours and its classes, with each class's teacher invited by email. */
+const PROGRAM_TYPES=[
+  {name:'Boys Full-time Hifz',days:[1,2,3,4,5],start:'08:00',end:'15:30',full:true},
+  {name:'Girls Full-time Hifz',days:[1,2,3,4,5],start:'08:00',end:'15:30',full:true},
+  {name:'Part-time Hifz',days:[1,2,3,4,5],start:'16:30',end:'19:00'},
+  {name:'Evening Maktab',days:[1,2,3,4],start:'17:00',end:'19:00'},
+  {name:'Weekend School',days:[6,7],start:'10:00',end:'13:00'},
+  {name:'Nazirah (reading)',days:[1,2,3,4],start:'17:00',end:'18:30'},
+  {name:'Summer Hifz',days:[1,2,3,4,5],start:'09:00',end:'13:00'},
+  {name:'Adult Classes',days:[6],start:'19:00',end:'20:30'},
+  {name:'Revision (Dawr)',days:[1,2,3,4,5],start:'06:30',end:'07:30'}
+];
+const cleanTxt=v=>String(v||'').replace(/[<>"`]/g,'').trim();
+const classCountTxt=n=>n===0?'No classes yet':n===1?'1 class':`${n} classes`;
 let os=null;
 function openOrgSetup(){
   const p=me(), dom=(p.email.split('@')[1]||'');
-  os={step:1,name:'',domain:/gmail|yahoo|hotmail|outlook|icloud/.test(dom)?'':dom,only:false,teach:false,programs:[]};
+  os={step:1,name:'',domain:/gmail|yahoo|hotmail|outlook|icloud/.test(dom)?'':dom,only:false,teach:false,
+      options:PROGRAM_TYPES.map(t=>t.name),picked:[],other:'',progs:{},hours:null,ledit:-1,ldel:-1};
   paintOrgSetup();
 }
+function osDefaults(n){ const t=PROGRAM_TYPES.find(x=>x.name===n)||{days:[1,2,3,4,5],start:'08:00',end:'15:30',full:true};
+  return {days:t.days.slice(),start:t.start,end:t.end,full:!!t.full,classes:[]}; }
+// none picked: one program named after the organization, as before
+function osProgNames(){ const n=os.options.filter(x=>os.picked.includes(x)); return n.length?n:[os.name]; }
+function osProg(i){ const n=osProgNames()[i]; return n&&(os.progs[n]||(os.progs[n]=osDefaults(n))); }
 function paintOrgSetup(){
   SCREEN='orgsetup'; showView(null);
-  const dots=`<div class="stepdots"><i class="on"></i><i class="${os.step>1?'on':''}"></i></div>`;
-  if(os.step===1) return card(`<h2>Set up an organization</h2>${dots}<p class="lede">Step 1 of 2 · its name and who can join.</p>
+  const steps=`<div class="osteps">${['Organization','Programs','Details'].map((l,i)=>`<span class="${os.step>i+1?'done':os.step===i+1?'on':''}">${i+1} ${l}</span>`).join('')}</div>`;
+  if(os.step===1) return card(`<h2>Set up an organization</h2>${steps}
     <label>Organization name<input id="osName" value="${esc(os.name)}" placeholder="e.g. Uthman Academy" oninput="os.name=this.value"></label>
     <label>Email domain (optional)<input id="osDomain" value="${esc(os.domain)}" placeholder="e.g. uthmanacademy.org" oninput="os.domain=this.value.replace(/^@/,'').trim().toLowerCase();$('osOnlyLbl').textContent='Only @'+(os.domain||'domain')+' addresses can join'"></label>
     <div class="swrow"><div><b id="osOnlyLbl">Only @${esc(os.domain||'domain')} addresses can join</b><small>Invites to any other address are refused.</small></div><button class="switch ${os.only?'on':''}" role="switch" aria-checked="${os.only}" aria-label="Only domain addresses can join" onclick="os.only=!os.only;this.classList.toggle('on',os.only);this.setAttribute('aria-checked',os.only)"></button></div>
     <div class="swrow" style="margin-top:8px"><div><b>Do you also teach a class?</b><small>Then you'll make your class right after this.</small></div><button class="switch ${os.teach?'on':''}" role="switch" aria-checked="${os.teach}" aria-label="Do you also teach a class?" onclick="os.teach=!os.teach;this.classList.toggle('on',os.teach);this.setAttribute('aria-checked',os.teach)"></button></div>
-    <div class="setup-actions"><button class="btn ghost" onclick="route()">Cancel</button><button class="btn dark" onclick="orgSetupNext()">Next</button></div><p class="err" id="osErr"></p>`);
-  card(`<h2>${esc(os.name)}: programs</h2>${dots}<p class="lede">Step 2 of 2 · each program gets its own times and limits. Add none, and there will be one program named ${esc(os.name)}.</p>
-    <div class="plist">${os.programs.map((n,i)=>`<div>${esc(n)}<button onclick="os.programs.splice(${i},1);paintOrgSetup()">Remove</button></div>`).join('')||'<p class="note2">No programs yet.</p>'}</div>
-    <div class="roster-add"><input id="osProg" aria-label="Program name" placeholder="e.g. Boys Full-time Hifz, Evening Maktab" onkeydown="if(event.key==='Enter')orgAddProgram()"><button class="btn ghost" onclick="orgAddProgram()">Add</button></div>
-    <div class="setup-actions"><button class="btn ghost" onclick="os.step=1;paintOrgSetup()">Back</button><button class="btn dark" onclick="createOrg()">Create ${esc(os.name)}</button></div><p class="err" id="osErr"></p>`);
+    <div class="setup-actions" style="margin-top:18px"><button class="btn ghost" onclick="route()">Cancel</button><button class="btn dark" onclick="orgSetupNext()">Next</button></div><p class="err" id="osErr"></p>`);
+  if(os.step===2){ const n=os.picked.length;
+    return card(`<h2>Which programs do you run?</h2>${steps}<p class="lede">Tap each one ${esc(os.name)} has. Pick as many as you like.</p>
+    <div class="popts" role="group" aria-label="Programs">${os.options.map((x,i)=>{ const on=os.picked.includes(x);
+      return `<button class="popt${on?' on':''}" data-i="${i}" aria-pressed="${on}" onclick="osTogglePick(${i})"><i class="tk" aria-hidden="true">${on?'✓':''}</i>${esc(x)}</button>`; }).join('')}</div>
+    <label class="otherlbl" for="osOther">Other</label>
+    <div class="roster-add"><input id="osOther" value="${esc(os.other)}" placeholder="Type another program, e.g. Tajweed class" oninput="os.other=this.value" onkeydown="if(event.key==='Enter')osAddOther()"><button class="btn ghost sm" onclick="osAddOther()">Add</button></div>
+    <p class="note2">${n?`${n} picked.`:`None picked yet. Pick none, and there will be one program named ${esc(os.name)}.`}</p>
+    <div class="setup-actions" style="margin-top:14px"><button class="btn ghost" onclick="os.step=1;paintOrgSetup()">Back</button><button class="btn dark" onclick="osToDetails()">Next: details</button></div><p class="err" id="osErr"></p>`); }
+  const names=osProgNames(), total=names.reduce((a,n,i)=>a+osProg(i).classes.length,0);
+  card(`<h2>Program details</h2>${steps}<p class="lede">Usual hours are filled in. Add each program's classes and who teaches them - or add them later from Classes.</p>
+    <div class="pdlist">${names.map((n,i)=>{ const p=osProg(i), k=p.classes.length;
+      return `<div class="pdrow"><div class="nm"><b>${esc(n)}</b><small>${daysText(p.days)} · ${hm(p.start)}–${hm(p.end)} · <button class="lnk2" onclick="osEditHours(${i})">Edit hours</button></small></div>
+        <button class="pcnt${k?'':' zero'}" aria-label="${esc(classCountTxt(k))} in ${esc(n)}: see the list" onclick="osClassList(${i})">${classCountTxt(k)}</button>
+        <button class="btn ghost sm" onclick="osAddClass(${i})">+ Add class</button></div>`; }).join('')}</div>
+    <p class="note2">${total?classCountTxt(total):'No classes yet'} across ${names.length} program${names.length===1?'':'s'}.</p>
+    <div class="setup-actions" style="margin-top:14px"><button class="btn ghost" onclick="os.step=2;paintOrgSetup()">Back</button><button class="btn dark" onclick="createOrg()">${names.some((n,i)=>osProg(i).classes.some(c=>c.email))?'Create and invite':`Create ${esc(os.name)}`}</button></div><p class="err" id="osErr"></p>`);
 }
 function orgSetupNext(){
-  os.name=(os.name||'').replace(/[<>"`]/g,'').trim();
+  os.name=cleanTxt(os.name);
   if(!os.name) return $('osErr').textContent='Please give the organization a name.';
   if(os.only&&!os.domain) return $('osErr').textContent='Type the email domain, or turn off "Only … addresses can join".';
   os.step=2; paintOrgSetup();
 }
-function orgAddProgram(){ const n=($('osProg').value||'').replace(/[<>"`]/g,'').trim(); if(n&&!os.programs.includes(n)) os.programs.push(n); paintOrgSetup(); setTimeout(()=>$('osProg')&&$('osProg').focus(),0); }
-function createOrg(){
-  if($('osProg')&&$('osProg').value.trim()) orgAddProgram();          // a name typed but not yet added counts
-  // none added: one program named after the organization ("Main program" only if that is blank)
-  const names=os.programs.length?os.programs:[os.name||'Main program'];
-  const p=me(), id='o'+Date.now().toString(36);
-  const progIds=names.map((n,i)=>{ const pid=id+'p'+i; db.programs[pid]={id:pid,orgId:id,name:n,days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:{washroom:{min:7,trips:2},water:{min:2,trips:2},wudhu:{min:2,trips:2}},adminId:null}; return pid; });
-  db.orgs[id]={id,name:os.name,domain:os.domain,domainOnly:os.only,programs:progIds};
-  db.members.push({orgId:id,personId:p.id,roles:os.teach?['admin','teacher']:['admin'],canSee:'everything'});
-  saveDb(); toast(`${os.name} is set up`);
-  const teach=os.teach; os=null; showOrg(id,'classes');
-  if(teach) openClassForm(null,{teacherIds:[p.id]});
+function osTogglePick(i){ const n=os.options[i]; os.picked=os.picked.includes(n)?os.picked.filter(x=>x!==n):[...os.picked,n]; paintOrgSetup();
+  const b=document.querySelector(`.popt[data-i="${i}"]`); if(b) b.focus(); }
+function osAddOther(){ const n=cleanTxt(os.other); if(!n) return;
+  const known=os.options.find(x=>x.toLowerCase()===n.toLowerCase()), name=known||n;
+  if(!known) os.options.push(name); if(!os.picked.includes(name)) os.picked.push(name);
+  os.other=''; paintOrgSetup(); setTimeout(()=>$('osOther')&&$('osOther').focus(),0); }
+function osToDetails(){ if(cleanTxt(os.other)) osAddOther(); os.step=3; paintOrgSetup(); }
+/* ----- step 3 popups ----- */
+function osEditHours(i){ const p=osProg(i); os.hours={i,days:p.days.slice(),start:p.start,end:p.end}; paintHours(); }
+function paintHours(){ const h=os.hours, n=osProgNames()[h.i]; $('scrim').classList.add('over');
+  sheetHTML(`Hours for ${esc(n)}`,'Change them any time later in Programs → Times and limits.',
+    `<div class="body"><div class="frow">Days<span class="daysel">${DAYN.map((d,j)=>`<button class="${h.days.includes(j+1)?'on':''}" aria-pressed="${h.days.includes(j+1)}" onclick="osHourDay(${j+1})">${d}</button>`).join('')}</span></div>
+      <div class="frow">Class times<span class="two"><input type="time" aria-label="${esc(n)} from" value="${h.start}" onchange="os.hours.start=this.value"><input type="time" aria-label="${esc(n)} to" value="${h.end}" onchange="os.hours.end=this.value"></span></div>
+      <p class="err" id="hrErr"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="osSaveHours()">Save</button></div>`); }
+function osHourDay(d){ const h=os.hours; h.days=h.days.includes(d)?h.days.filter(x=>x!==d):[...h.days,d].sort((a,b)=>a-b); paintHours(); }
+function osSaveHours(){ const h=os.hours, p=osProg(h.i);
+  if(!h.days.length) return $('hrErr').textContent='Pick at least one day.';
+  if(!h.start||!h.end||toMin(h.end)<=toMin(h.start)) return $('hrErr').textContent='The end time has to be after the start time.';
+  p.days=h.days; p.start=h.start; p.end=h.end;
+  p.full=toMin(p.start)<=toMin('10:10')&&toMin(p.end)>=toMin('13:05');   // snack and lunch only where they fit the day
+  os.hours=null; closeSheet(); paintOrgSetup(); }
+function osAddClass(i,back){ const n=osProgNames()[i], k=osProg(i).classes.length; $('scrim').classList.add('over');
+  sheetHTML(`Add a class to ${esc(n)}`,`${classCountTxt(k)} in this program so far.`,
+    `<div class="body"><label class="flab" for="ocName">Class name</label><div class="note" style="margin-top:6px"><input id="ocName" placeholder="e.g. Class A" onkeydown="if(event.key==='Enter')osSaveClass(${i},${!!back})"></div>
+      <label class="flab" for="ocEmail">Teacher's email (optional)</label><div class="note" style="margin-top:6px"><input id="ocEmail" type="email" placeholder="${esc(os.domain?'e.g. teacher@'+os.domain:'their@email')}" onkeydown="if(event.key==='Enter')osSaveClass(${i},${!!back})"></div>
+      <p class="note2">They're invited when you create ${esc(os.name)}, and open straight into this class. Leave it empty to choose a teacher later.</p>
+      <p class="err" id="ocErr"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="${back?`osClassList(${i})`:'closeSheet()'}">Cancel</button><button class="btn dark" onclick="osSaveClass(${i},${!!back})">Add class</button></div>`);
+  setTimeout(()=>$('ocName')&&$('ocName').focus(),50); }
+// the existing invite rules: a real address, and "Only @domain" when it's on
+function osEmailErr(email){
+  if(!email) return '';
+  if(!emailOk(email)) return "That doesn't look like an email address.";
+  if(!domainOk({domainOnly:os.only,domain:os.domain},email)) return `${os.name} only lets @${os.domain} addresses join, so ${email} can't be invited.`;
+  return '';
 }
+function osSaveClass(i,back){ const p=osProg(i), name=cleanTxt($('ocName').value), email=cleanTxt($('ocEmail').value).toLowerCase();
+  if(!name) return $('ocErr').textContent='Please give the class a name.';
+  if(p.classes.some(c=>c.name.toLowerCase()===name.toLowerCase())) return $('ocErr').textContent=`${osProgNames()[i]} already has a class called ${name}.`;
+  const e=osEmailErr(email); if(e) return $('ocErr').textContent=e;
+  p.classes.push({name,email});
+  if(back) return osClassList(i,true);
+  closeSheet(); paintOrgSetup(); toast(`${name} added to ${osProgNames()[i]}`); }
+function osClassList(i,keep){ if(!keep){ os.ledit=-1; os.ldel=-1; } const n=osProgNames()[i], cs=osProg(i).classes; $('scrim').classList.add('over');
+  const ico={pen:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5l4 4L8 20H4v-4z"/></svg>',x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>'};
+  sheetHTML(`Classes in ${esc(n)}`,`${classCountTxt(cs.length)} · the pencil edits a line, the x asks before removing it.`,
+    `<div class="body">${cs.map((c,j)=>os.ledit===j
+        ?`<div class="clrow"><input id="leName" aria-label="Class name" value="${esc(c.name)}"><input id="leEmail" type="email" aria-label="Teacher's email" value="${esc(c.email)}" placeholder="Teacher's email (optional)"><button class="icob ok" aria-label="Save changes" onclick="osSaveEdit(${i},${j})">${ico.ok}</button><button class="icob" aria-label="Cancel editing" onclick="os.ledit=-1;osClassList(${i},true)">${ico.x}</button></div>`
+        :os.ldel===j
+        ?`<div class="clrow"><div class="who ask"><b>Remove ${esc(c.name)}?</b><small>${c.email?`${esc(c.email)} will not be invited.`:'It has no teacher yet.'}</small></div><button class="btn ghost sm" onclick="os.ldel=-1;osClassList(${i},true)">Keep</button><button class="btn warn sm" onclick="osRemoveClass(${i},${j})">Remove</button></div>`
+        :`<div class="clrow"><div class="who"><b>${esc(c.name)}</b><small>${c.email?esc(c.email):'No teacher yet'}</small></div><button class="icob" aria-label="Edit ${esc(c.name)}" onclick="os.ledit=${j};os.ldel=-1;osClassList(${i},true)">${ico.pen}</button><button class="icob del" aria-label="Remove ${esc(c.name)}" onclick="os.ldel=${j};os.ledit=-1;osClassList(${i},true)">${ico.x}</button></div>`).join('')
+      ||'<div class="ptempty">No classes yet. Add the first one below.</div>'}<p class="err" id="leErr"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="osAddClass(${i},true)">+ Add class</button><button class="btn dark" onclick="closeSheet();paintOrgSetup()">Done</button></div>`);
+  if(os.ledit>=0) setTimeout(()=>$('leName')&&$('leName').focus(),50); }
+function osSaveEdit(i,j){ const cs=osProg(i).classes, name=cleanTxt($('leName').value), email=cleanTxt($('leEmail').value).toLowerCase();
+  if(!name) return $('leErr').textContent='Please give the class a name.';
+  if(cs.some((c,k)=>k!==j&&c.name.toLowerCase()===name.toLowerCase())) return $('leErr').textContent=`There's already a class called ${name} here.`;
+  const e=osEmailErr(email); if(e) return $('leErr').textContent=e;
+  cs[j]={name,email}; os.ledit=-1; osClassList(i,true); }
+function osRemoveClass(i,j){ const cs=osProg(i).classes, c=cs[j]; cs.splice(j,1); os.ldel=-1; osClassList(i,true); toast(`${c.name} removed`); }
+function createOrg(){
+  const names=osProgNames(), p=me(), id='o'+Date.now().toString(36);
+  const progIds=names.map((n,i)=>{ const d=osProg(i), pid=id+'p'+i;
+    db.programs[pid]={id:pid,orgId:id,name:n,days:d.days.slice(),start:d.start,end:d.end,snack:d.full?{start:'10:10',end:'10:20'}:null,lunch:d.full?{start:'12:05',end:'13:05'}:null,limits:{washroom:{min:7,trips:2},water:{min:2,trips:2},wudhu:{min:2,trips:2}},adminId:null}; return pid; });
+  db.orgs[id]={id,name:os.name,domain:os.domain,domainOnly:os.only,programs:progIds};
+  // each class: the admin's own email makes them its teacher; any other email is invited to it
+  const invited=[]; let mine=false, nClasses=0;
+  names.forEach((n,i)=>osProg(i).classes.forEach(cl=>{
+    const cid='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); nClasses++;
+    const c=db.classes[cid]={id:cid,orgId:id,status:'active',teacherIds:[],name:cl.name,programId:progIds[i],canEdit:false};
+    lsSet(KCLS(cid),{students:[],history:{},day:null,today:null});
+    if(!cl.email) return;
+    const known=Object.values(db.people).find(x=>x.email.toLowerCase()===cl.email);
+    if(known&&known.id===p.id){ c.teacherIds.push(p.id); addToProgram(c.programId,{personId:p.id}); markSeen(p.id,[cid]); mine=true; return; }
+    let inv=db.invites.find(x=>x.orgId===id&&x.status==='pending'&&x.email===cl.email);
+    if(!inv){ inv={id:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),orgId:id,email:cl.email,name:known?known.name:'',role:'teacher',classIds:[],invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'}; db.invites.push(inv); invited.push(inv); }
+    inv.classIds.push(cid); addToProgram(c.programId,{inviteId:inv.id});
+  }));
+  db.members.push({orgId:id,personId:p.id,roles:os.teach||mine?['admin','teacher']:['admin'],canSee:'everything'});
+  saveDb();
+  const org=db.orgs[id], teach=os.teach&&!mine; os=null; showOrg(id,'classes');
+  if(!invited.length){ toast(`${org.name} is set up`); if(teach) openClassForm(null,{teacherIds:[p.id]}); return; }
+  osDone.teach=teach;
+  const msg=`Assalamu alaikum! ${org.name} now uses Hifz Class Tracker.
+
+1. Open https://rfydawood.github.io/hifz-class-tracker/
+2. Sign in with the email your invite was sent to${org.domain?` (your @${org.domain} address)`:''}.
+
+Your class will be waiting.`;
+  sheetHTML(`${esc(org.name)} is ready`,`${names.length} program${names.length===1?'':'s'} · ${nClasses} class${nClasses===1?'':'es'} · ${invited.length} teacher${invited.length===1?'':'s'} invited. The app can't send email, so send this to your staff by WhatsApp, text or email. Practice copy: nothing is sent.`,
+    `<div class="body"><textarea class="msgbox" id="invMsg" readonly>${esc(msg)}</textarea><p class="note2">Signing in with a different email? Each teacher's own invite, with its code, is under People.</p><p class="okmsg" id="copied"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="osDone()">Go to ${esc(org.name)}</button><button class="btn dark" onclick="copyInvite()">Copy message</button></div>`);
+}
+function osDone(){ closeSheet(); if(osDone.teach){ osDone.teach=false; openClassForm(null,{teacherIds:[me().id]}); } }
 
 /* ===== the organization view ===== */
 const ORG={id:null,tab:'classes',prog:'all',rscope:'org',rprog:null,rclass:null,rrange:'thisweek'};
