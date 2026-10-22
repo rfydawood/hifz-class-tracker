@@ -387,6 +387,22 @@ body{display:flex;flex-direction:column}
 .flabel{font-weight:800;font-size:14px;margin:4px 0 0}
 .setup-card .tchips{margin-bottom:12px}
 .setup-card #cfList{display:block;width:100%;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font:inherit;font-size:15px;background:var(--paper)}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--card);text-align:left;color:var(--ink);min-height:64px}
+.choice div{flex:1}
+.choice b{display:block;font-size:16px}
+.choice small{display:block;color:var(--mute);font-weight:600;font-size:13px;margin-top:2px}
+.choice .tk{width:24px;height:24px;border-radius:50%;border:1.5px solid #C6D2D6;display:grid;place-items:center;font-style:normal;font-size:14px;color:#fff;flex:none}
+.choice.on{background:var(--leaf-soft);border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf)}
+.choice.on b{color:var(--leaf)}
+.choice.on .tk{background:var(--leaf);border-color:var(--leaf)}
+.ocdays{margin:8px 0 14px}
+.ocdays button{min-width:48px;padding:8px 10px;font-size:13px}
+.ocrow{display:grid;grid-template-columns:90px minmax(0,1fr) 24px minmax(0,1fr);align-items:center;gap:8px;margin-top:8px}
+.ocrow b{font-size:14px}
+.ocrow span{text-align:center;color:var(--mute);font-weight:700;font-size:13px}
+.setup-card .ocrow input{margin-top:0;padding:9px 10px}
+.segw.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .osteps{display:flex;gap:6px;margin:12px 0 18px}
 .osteps span{flex:1;text-align:center;font-size:12.5px;font-weight:800;padding:6px 8px;border-radius:999px;background:var(--paper);color:var(--mute);border:1px solid var(--line);white-space:nowrap}
 .osteps .on{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -596,25 +612,6 @@ body{display:flex;flex-direction:column}
   <!-- full-screen cards: sign in, invited, set up, add a class, organization setup, invite code -->
   <div class="setup ontop" id="screen"><div class="setup-card" id="screenCard"></div></div>
 
-  <div class="setup" id="setup"><div class="setup-card">
-    <h2>Set up your class</h2>
-    <p class="lede">Two things and you are ready.</p>
-    <label>Your name
-      <input id="tName" placeholder="e.g. Ustadh Bilal" oninput="setupCount()">
-      <span class="hint">Shown in the corner as &ldquo;[your name]'s Hifz Class&rdquo;.</span>
-    </label>
-    <label>Your students
-      <div class="roster-list" id="rosterList"></div>
-      <div class="roster-add">
-        <input id="tStudent" placeholder="Type a name and press Enter" onkeydown="if(event.key==='Enter')addSetupStudent()">
-        <button class="btn ghost" onclick="addSetupStudent()">Add</button>
-      </div>
-      <span class="hint">Add them one by one. You can add or remove students anytime later.</span>
-    </label>
-    <div class="setup-actions"><span id="setupCount">0 students</span><button class="btn ghost" id="setupCancel" onclick="cancelSetup()">Cancel</button><button class="btn dark" onclick="finishSetup()">Create my class</button></div>
-    <p class="err" id="setupErr"></p>
-    <div class="quiet" id="setupQuiet"><button onclick="openOrgSetup()">Setting up an organization instead?</button><button onclick="openCode()">Have an invite code?</button></div>
-  </div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
   <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" onclick="undo()">Undo</button></div>
@@ -888,20 +885,6 @@ function openDaySummary(){
 }
 
 /* ===== first run: set up your own class ===== */
-let setupStudents=[];
-function setupCount(){ $('setupCount').textContent=`${setupStudents.length} student${setupStudents.length===1?'':'s'}`; }
-function addSetupStudent(){
-  const inp=$('tStudent'), name=(inp.value||'').replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'`]/g,'').trim();
-  if(!name) return;
-  if(setupStudents.includes(name)) return inp.value='';
-  setupStudents.push(name); inp.value=''; drawRosterList(); setupCount();
-}
-function removeSetupStudent(i){ setupStudents.splice(i,1); drawRosterList(); setupCount(); }
-/* Fixed: each Remove button used to show the student's name instead of "Remove". */
-function drawRosterList(){
-  $('rosterList').innerHTML=setupStudents.length?setupStudents.map((n,i)=>`<div class="roster-item"><span>${esc(n)}</span><button onclick="removeSetupStudent(${i})" aria-label="Remove ${esc(n)}">Remove</button></div>`).join(''):
-    `<div style="padding:12px;text-align:center;color:var(--mute);font-size:14px">No students yet</div>`;
-}
 
 /* ===== the short tour, after setting up a class =====
    Fixed: each step dot was written <i class="..."</i> (a broken tag). */
@@ -1263,7 +1246,7 @@ function tick(){
 /* ===== screens ===== */
 let SCREEN='class';
 function showView(id){ ['classView','orgView','profileView'].forEach(v=>$(v).classList.toggle('on',v===id)); }
-function hideCards(){ $('screen').classList.remove('show'); $('setup').classList.remove('show'); closeSheet(); closeDrawer(); endTour(); }
+function hideCards(){ $('screen').classList.remove('show'); closeSheet(); closeDrawer(); endTour(); }
 function card(html){ hideCards(); $('screenCard').innerHTML=html; $('screen').classList.add('show'); $('screen').scrollTop=0; }
 
 /* ----- sign in ----- */
@@ -1310,7 +1293,7 @@ function route(){
   const orgs=orgsWithView(p.id); if(orgs.length) return showOrg(orgs[0]);
   const joined=(db.members||[]).filter(m=>m.personId===p.id);
   if(joined.length) return showWaiting(joined[0].orgId);
-  return showSetupClass();
+  return showStart();
 }
 /* ----- classes given to someone who had already joined: a one-time notice -----
    seen[person] = the classes they have already been shown. The first time we
@@ -1366,24 +1349,106 @@ function joinInvite(id){
 }
 
 /* ----- someone brand new: "Set up your class" ----- */
-function showSetupClass(fromProfile,fromWaiting){
-  SCREEN='setup'; hideCards(); showView(fromProfile?'profileView':null);
-  setupStudents=[]; $('tName').value=(me()||{}).name||''; drawRosterList(); setupCount(); $('setupErr').textContent='';
-  $('setupQuiet').style.display=fromProfile||fromWaiting?'none':''; $('setupCancel').style.display=fromProfile||fromWaiting?'':'none';
-  showSetupClass.back=fromWaiting?'route':'profile';
-  $('setup').classList.add('show');
+/* ----- after sign-up: someone with no invite, class or organization yet ----- */
+const START_CHOICES=[
+  {id:'class',label:'I teach a class',sub:'Set up my own class · about 2 minutes',go:'Continue: set up my class'},
+  {id:'org',label:'I run a school or program',sub:'Set up an organization: programs, classes, teachers',go:'Continue: set up my organization'},
+  {id:'invite',label:'I was invited',sub:'Join with an invite code',go:'Continue: enter my invite code'}
+];
+let startPick='class';
+function showStart(){
+  const p=me(); SCREEN='start'; showView(null);
+  card(`<h2>Assalamu alaikum, ${esc(p.name)}</h2>
+    <p class="lede" style="margin-bottom:6px">Signed in as ${esc(p.email)} · <button class="lnk2" onclick="switchAccount()">Not you? Switch account</button></p>
+    <p class="lede" style="margin-top:0">What brings you here?</p>
+    <div class="choices" role="group" aria-label="What brings you here?">${START_CHOICES.map(c=>`<button class="choice${startPick===c.id?' on':''}" aria-pressed="${startPick===c.id}" onclick="startPick='${c.id}';showStart()"><div><b>${c.label}</b><small>${c.sub}</small></div><i class="tk" aria-hidden="true">${startPick===c.id?'✓':''}</i></button>`).join('')}</div>
+    <div class="setup-actions" style="margin-top:18px"><button class="btn dark" onclick="startGo()">${START_CHOICES.find(c=>c.id===startPick).go}</button></div>`);
 }
-function cancelSetup(){ $('setup').classList.remove('show'); if(showSetupClass.back==='route') route(); else showProfile(); }
-function finishSetup(){
-  const name=($('tName').value||'').replace(/[<>"'`]/g,'').trim(), p=me();
-  if(!name) return $('setupErr').textContent='Please add your name.';
-  if(!setupStudents.length) return $('setupErr').textContent='Please add at least one student.';
-  p.name=name;
+function startGo(){ if(startPick==='org') return openOrgSetup(); if(startPick==='invite') return openCode(); showSetupClass(false,'start'); }
+
+/* ----- set up your own class: Your class, Schedule, Students ----- */
+let oc=null;
+function showSetupClass(fromProfile,from){
+  hideCards(); showView(fromProfile?'profileView':null);
+  oc={step:1,back:fromProfile?'profile':'route',name:(me()||{}).name||'',cls:'',school:false,days:[],start:'',end:'',snack:{start:'',end:''},lunch:{start:'',end:''},mode:'one',students:[],paste:''};
+  paintSetupClass();
+}
+function ocBack(){ if(oc.step===1){ const b=oc.back; oc=null; return b==='profile'?(hideCards(),showProfile()):route(); } ocKeep(); oc.step--; paintSetupClass(); }
+function ocKeep(){ ['ocName','ocCls','ocStart','ocEnd','ocSnackS','ocSnackE','ocLunchS','ocLunchE','ocPaste'].forEach(id=>{ const e=$(id); if(!e) return; const v=e.value;
+  ({ocName:()=>oc.name=v,ocCls:()=>oc.cls=v,ocStart:()=>oc.start=v,ocEnd:()=>oc.end=v,ocSnackS:()=>oc.snack.start=v,ocSnackE:()=>oc.snack.end=v,ocLunchS:()=>oc.lunch.start=v,ocLunchE:()=>oc.lunch.end=v,ocPaste:()=>oc.paste=v})[id](); }); }
+function ocSchedErr(){
+  if(!oc.days.length) return 'Pick the days the class meets.';
+  if(!oc.start||!oc.end) return 'Set the class start and end times.';
+  if(toMin(oc.end)<=toMin(oc.start)) return 'The class has to end after it starts.';
+  for(const [n,b] of [['Snack',oc.snack],['Lunch',oc.lunch]]){
+    if(!b.start&&!b.end) continue;
+    if(!b.start||!b.end) return `${n} needs both a start and an end time.`;
+    if(toMin(b.end)<=toMin(b.start)) return `${n} has to end after it starts.`;
+    if(toMin(b.start)<toMin(oc.start)||toMin(b.end)>toMin(oc.end)) return `${n} has to be inside the class time.`;
+  }
+  return '';
+}
+const ocBreak=b=>b.start&&b.end?{start:b.start,end:b.end}:null;
+function ocSchedLine(){ const br=[['Snack',oc.snack],['Lunch',oc.lunch]].filter(([,b])=>ocBreak(b)).map(([n,b])=>`${n} ${hm(b.start)}`);
+  return `${daysText(oc.days)} · ${hm(oc.start)}–${hm(oc.end)} · ${br.length?br.join(', '):'no breaks'}`; }
+const ocPasted=()=>String(oc.paste||'').split(/[\n,;]+/).map(n=>n.replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'`]/g,'').trim()).filter(Boolean);
+const ocRoster=()=>oc.mode==='one'?oc.students:oc.mode==='paste'?ocPasted():[];
+function paintSetupClass(){
+  SCREEN='setup';
+  const steps=`<div class="osteps">${['Your class','Schedule','Students'].map((l,i)=>`<span class="${oc.step>i+1?'done':oc.step===i+1?'on':''}">${i+1} ${l}</span>`).join('')}</div>`;
+  if(oc.step===1) return card(`<h2>Set up your class</h2>${steps}
+    <label>Your name<input id="ocName" value="${esc(oc.name)}" placeholder="e.g. Ustadh Bilal"></label>
+    <label>Class name<input id="ocCls" value="${esc(oc.cls)}" placeholder="e.g. Boys Hifz A"><span class="hint">Shown at the top of the app. Leave it empty for "${esc((oc.name||'Your').split(' ').slice(-1)[0])}'s Hifz Class".</span></label>
+    <div class="swrow"><div><b>I'm part of a school</b><small>${oc.school?'Your class can join your school later, when its admin invites you. It keeps every record.':'No need to set one up now. Your class can join a school later.'}</small></div><button class="switch ${oc.school?'on':''}" role="switch" aria-checked="${oc.school}" aria-label="I'm part of a school" onclick="ocKeep();oc.school=!oc.school;paintSetupClass()"></button></div>
+    <div class="setup-actions" style="margin-top:18px"><button class="btn ghost" onclick="ocBack()">${oc.back==='profile'?'Cancel':'Back'}</button><button class="btn dark" onclick="ocNext()">Next</button></div><p class="err" id="ocErr"></p>`);
+  if(oc.step===2){ const t=(id,v,lbl)=>`<input id="${id}" type="time" aria-label="${lbl}" value="${v}" onchange="ocKeep();ocSchedHint()">`;
+    return card(`<h2>When does it meet?</h2>${steps}
+    <div class="flabel">Days</div>
+    <div class="daysel ocdays" role="group" aria-label="Days the class meets">${DAYN.map((d,j)=>`<button class="${oc.days.includes(j+1)?'on':''}" aria-pressed="${oc.days.includes(j+1)}" onclick="ocKeep();ocDay(${j+1})">${d}</button>`).join('')}</div>
+    <div class="ocrow"><b>Class time</b>${t('ocStart',oc.start,'Class starts')}<span>to</span>${t('ocEnd',oc.end,'Class ends')}</div>
+    <div class="flabel" style="margin-top:14px">Breaks <span style="font-weight:600;color:var(--mute)">(optional, leave empty if none)</span></div>
+    <div class="ocrow"><b>Snack</b>${t('ocSnackS',oc.snack.start,'Snack starts')}<span>to</span>${t('ocSnackE',oc.snack.end,'Snack ends')}</div>
+    <div class="ocrow"><b>Lunch</b>${t('ocLunchS',oc.lunch.start,'Lunch starts')}<span>to</span>${t('ocLunchE',oc.lunch.end,'Lunch ends')}</div>
+    <p class="note2" id="ocSched"></p>
+    <p class="note2" style="margin-top:4px">Break limits use the usual defaults. Change any time in Settings.</p>
+    <div class="setup-actions" style="margin-top:14px"><button class="btn ghost" onclick="ocBack()">Back</button><button class="btn dark" id="ocNextBtn" onclick="ocNext()">Next</button></div><p class="err" id="ocErr"></p>`), ocSchedHint(); }
+  const n=ocRoster().length;
+  card(`<h2>Your students</h2>${steps}
+    <div class="segw three" role="group" aria-label="How to add students">${[['one','One by one'],['paste','Paste a list'],['later','Add them later']].map(([k,l])=>`<button class="${oc.mode===k?'on':''}" aria-pressed="${oc.mode===k}" onclick="ocKeep();oc.mode='${k}';paintSetupClass()">${l}</button>`).join('')}</div>
+    ${oc.mode==='one'?`<div class="roster-add" style="margin-top:14px"><input id="ocStudent" aria-label="Student's name" placeholder="Type a name and press Enter" onkeydown="if(event.key==='Enter')ocAddStudent()"><button class="btn ghost sm" onclick="ocAddStudent()">Add</button></div>
+      <div class="roster-list">${oc.students.map((s,i)=>`<div class="roster-item"><span>${esc(s)}</span><button aria-label="Remove ${esc(s)}" onclick="ocRemoveStudent(${i})">Remove</button></div>`).join('')||'<div class="roster-item" style="color:var(--mute)">No students yet.</div>'}</div>`
+    :oc.mode==='paste'?`<textarea id="ocPaste" aria-label="Students, one per line" style="margin-top:14px" placeholder="Paste names from WhatsApp, Excel or a note, one per line. Numbers like &quot;1.&quot; are taken off." oninput="oc.paste=this.value;$('ocCount').textContent=ocCountTxt()">${esc(oc.paste)}</textarea>`
+    :`<p class="note2" style="margin:14px 0">The class starts empty. Add students any time from the Roster.</p>`}
+    <div class="setup-actions" style="margin-top:14px"><span id="ocCount">${ocCountTxt()}</span><button class="btn ghost" style="flex:none;margin-left:auto" onclick="ocBack()">Back</button><button class="btn dark" style="margin-left:0" onclick="ocCreate()">Create my class</button></div><p class="err" id="ocErr"></p>`);
+  if(oc.mode==='one') setTimeout(()=>$('ocStudent')&&$('ocStudent').focus(),0);
+}
+function ocCountTxt(){ const n=ocRoster().length; return oc.mode==='later'||!n?'No students yet':n===1?'1 student':`${n} students`; }
+function ocDay(d){ oc.days=oc.days.includes(d)?oc.days.filter(x=>x!==d):[...oc.days,d].sort((a,b)=>a-b); paintSetupClass(); }
+function ocSchedHint(){ const e=ocSchedErr(), el=$('ocSched'); if(!el) return;
+  el.textContent=e?(oc.days.length&&oc.start&&oc.end?'':'Pick the days and set the class time to go on.'):ocSchedLine();
+  $('ocErr').textContent=e&&oc.days.length&&oc.start&&oc.end?e:''; $('ocNextBtn').disabled=!!e; }
+function ocNext(){
+  ocKeep();
+  if(oc.step===1){ oc.name=cleanTxt(oc.name); oc.cls=cleanTxt(oc.cls); if(!oc.name) return $('ocErr').textContent='Please add your name.'; }
+  if(oc.step===2){ const e=ocSchedErr(); if(e) return $('ocErr').textContent=e; }
+  oc.step++; paintSetupClass();
+}
+function ocAddStudent(){ const n=cleanTxt($('ocStudent').value); if(!n) return; if(!oc.students.includes(n)) oc.students.push(n); paintSetupClass(); }
+function ocRemoveStudent(i){ oc.students.splice(i,1); paintSetupClass(); }
+function ocCreate(){
+  ocKeep(); const p=me(), names=[...new Set(ocRoster())];
+  p.name=oc.name;
   const id='own'+Date.now().toString(36);
   const own=Object.values(db.classes).filter(c=>!c.orgId&&c.ownerId===p.id).length;
-  db.classes[id]={id,orgId:null,ownerId:p.id,name:own?`${name}'s class ${own+1}`:`${name}'s Hifz Class`,settings:mergeSettings({}),status:'active'};
-  lsSet(KCLS(id),{students:setupStudents.map((n,i)=>({id:'s'+i,name:n,active:true})),history:{},day:null,today:null});
-  saveDb(); markSeen(p.id,[id]); $('setup').classList.remove('show'); openClass(id); startTour();
+  const name=oc.cls||(own?`${oc.name}'s class ${own+1}`:`${oc.name}'s Hifz Class`);
+  db.classes[id]={id,orgId:null,ownerId:p.id,name,partOfSchool:oc.school,
+    settings:mergeSettings({startTime:oc.start,endTime:oc.end,days:oc.days.slice(),snack:ocBreak(oc.snack),lunch:ocBreak(oc.lunch)}),status:'active'};
+  lsSet(KCLS(id),{students:names.map((n,i)=>({id:'s'+i,name:n,active:true})),history:{},day:null,today:null});
+  saveDb(); markSeen(p.id,[id]);
+  const line=`${ocSchedLine()} · ${names.length?`${names.length} student${names.length===1?'':'s'}`:'no students yet'}`; oc=null;
+  card(`<h2>${esc(name)} is ready</h2><p class="lede">${esc(line)}</p>
+    <p class="note2" style="margin-top:0">Taught by ${esc(p.name)}. Sign in with the same account on the tablet and the class is already there.</p>
+    <div class="setup-actions" style="margin-top:18px"><button class="btn ghost" onclick="hideCards();openClass('${id}');startTour()">Take the 1-minute tour</button><button class="btn dark" onclick="hideCards();openClass('${id}')">Start today's class</button></div>`);
 }
 
 /* ----- open a class (asks first if students are still out in this one) ----- */
