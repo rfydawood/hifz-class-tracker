@@ -33,16 +33,36 @@ A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`c
 
 **Trade-off of going fully native:** unlike the old wrapper, this app's content is bundled at build time, so a code change no longer shows up automatically — it needs a new build pushed to Firebase App Distribution (see "Rebuilding the native app" below). The web app / PWA above is unaffected and still updates instantly.
 
+The installed app is called **BreakLog** (its user-visible name; the package id stays `com.hifztracker.app`, so it still upgrades in place).
+
+### Google Play build (.aab)
+
+Google Play takes an Android App Bundle (`.aab`), not an APK. It is built beside the APK flow, which stays exactly as it is for Firebase App Distribution:
+
+```
+npm run build          # as for an APK: refresh capacitor-app/www/
+npm run build:aab      # cap sync android, gradlew bundleRelease, sign with the upload key, verify
+```
+
+`scripts/build-aab.mjs` writes `capacitor-app/android/app/build/outputs/bundle/release/breaklog-<versionName>-<versionCode>.aab` (gitignored), signed with the **upload key** and checked with `jarsigner -verify`. A `.aab` can't be installed directly - it is only for uploading in Play Console. It finds the key at `android-app/upload.keystore` (in this checkout, or the main checkout when run from a git worktree) and reads the password from `android-app/UPLOAD_KEY_PASSWORD_KEEP_SAFE.txt` next to it; `HIFZ_UPLOAD_KEYSTORE`, `HIFZ_UPLOAD_KEY_ALIAS` and `HIFZ_UPLOAD_STORE_PASSWORD` override those. The password goes to `jarsigner` through an environment variable, never the command line. It uses JDK 21 and the Android SDK at their usual paths on this machine unless `JAVA_HOME`/`ANDROID_HOME` are set. `versionCode` must be higher than any build already uploaded to Play.
+
+**Signing plan for Play (two keys, both local only, both gitignored):**
+- **App signing key** = the existing `android-app/android.keystore` (the one every APK is signed with). It is handed to Google **once**, through **Play App Signing** with Google's **PEPK** tool (Play Console > Test and release > App integrity > choose to use your own key, export it with PEPK and upload the encrypted file). Google then signs what users download with this same key, so Firebase installs update in place from Play and Google sign-in (registered with this key's SHA-1/SHA-256) keeps working. Never generate a new app signing key.
+- **Upload key** = `android-app/upload.keystore` (alias `upload`, password in `android-app/UPLOAD_KEY_PASSWORD_KEEP_SAFE.txt`, public certificate `android-app/upload_certificate.pem`). It only proves uploads come from us; register it in the same App integrity step by uploading `upload_certificate.pem`. If it is ever lost or leaked, Google can reset it - the app signing key can never be replaced.
+- Back up **both** keystores and both password files somewhere private outside git (e.g. a password manager or an encrypted drive). `*.keystore`, `*KEEP_SAFE*` and `upload_certificate.pem` are in `.gitignore`.
+
 ## iOS app (set up, not switched on)
 
-`capacitor-app/ios/` is the same Capacitor app built for iPhone/iPad (Swift Package Manager, no CocoaPods). It uses the same `www/` content and syncs through the same Firebase project. The iOS app `com.hifztracker.app` is registered in Firebase and its public config is `capacitor-app/ios/App/App/GoogleService-Info.plist`; the Google sign-in return URL (`REVERSED_CLIENT_ID`) is in `Info.plist`. The GitHub Action `.github/workflows/ios-build.yml` builds it, unsigned, for the simulator on a free GitHub Mac whenever `capacitor-app/` changes. That only proves it compiles. It can't put the app on a real phone.
+`capacitor-app/ios/` is the same Capacitor app built for iPhone/iPad (Swift Package Manager, no CocoaPods). It uses the same `www/` content and syncs through the same Firebase project. The iOS app `com.hifztracker.app` is registered in Firebase and its public config is `capacitor-app/ios/App/App/GoogleService-Info.plist`; the Google sign-in return URL (`REVERSED_CLIENT_ID`) is in `Info.plist`. The GitHub Action `.github/workflows/ios-build.yml` builds it, unsigned, for the simulator on a free GitHub Mac whenever `capacitor-app/` changes. That only proves it compiles. It can't put the app on a real phone. On the home screen it is called **BreakLog** (`CFBundleDisplayName`; the bundle id stays `com.hifztracker.app`). It has its real 1024x1024 App Store icon and launch screen (both drawn by `make_icons.py`), and `ITSAppUsesNonExemptEncryption` is false in `Info.plist` so uploads don't stop at the export-compliance question.
 
-After `npm run build`, run `npx cap sync ios` as well as `npx cap sync android`.
+After `npm run build`, run `npx cap sync ios` as well as `npx cap sync android`. `npm run build` also copies Android's `versionName`/`versionCode` (from `capacitor-app/android/app/build.gradle`) into the iOS project's `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`, and `npm run verify` fails if they differ - so bump only the Android numbers and run `npm run build`.
+
+**TestFlight upload (switched off):** `.github/workflows/ios-testflight.yml` archives the app with automatic signing on a GitHub Mac and uploads it to App Store Connect / TestFlight. It only runs when started by hand (Actions tab > "iOS TestFlight upload" > Run workflow), and does nothing until four repository secrets exist: `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_KEY_P8` (the whole `.p8` file text) and `APPLE_TEAM_ID`. Without them its first job just reports which are missing.
 
 **To switch it on later** (costs money: Apple Developer Program, $99/year; needs a Mac or a cloud Mac):
 1. Join the Apple Developer Program with the owner's Apple ID.
-2. On a Mac: `cd capacitor-app && npm ci && npx cap sync ios && npx cap open ios`. In Xcode, pick the team under Signing & Capabilities and add an app icon.
-3. Archive, upload to App Store Connect, and invite testers through TestFlight. Like Android, it does not update itself, so every release is a new upload with `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` bumped to match Android's `versionName`/`versionCode`.
+2. In App Store Connect, create the app (bundle id `com.hifztracker.app`, name BreakLog) and an API key with Admin access (Users and Access > Integrations); add the four secrets above to the GitHub repo.
+3. Run "iOS TestFlight upload" from the Actions tab, then invite testers through TestFlight. Like Android, it does not update itself, so every release is a new upload, with the version bumped as above. (Without the workflow: on a Mac, `cd capacitor-app && npm ci && npx cap sync ios && npx cap open ios`, pick the team under Signing & Capabilities, Archive and upload.)
 
 ## Desktop app (Windows)
 
@@ -117,7 +137,7 @@ cd android
 # (see android-app/KEYSTORE_PASSWORD_KEEP_SAFE.txt), then
 # firebase appdistribution:distribute <signed.apk> --app 1:726082000637:android:5627f387c8f7218644d094 --project hifz-class-tracker-dece7 --groups hifz-testers
 ```
-Remember to bump `versionCode`/`versionName` in `capacitor-app/android/app/build.gradle` each time.
+Remember to bump `versionCode`/`versionName` in `capacitor-app/android/app/build.gradle` each time (then `npm run build`, which carries them to iOS too). For Google Play, `npm run build:aab` makes the upload-key-signed `.aab` from the same code (see "Google Play build (.aab)").
 
 ## Rolling back
 

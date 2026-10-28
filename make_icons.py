@@ -137,6 +137,29 @@ def make_splash(w, h, filename=None):
         img.save(filename)
     return img
 
+def make_ios_app_icon(size=1024, filename=None):
+    """App Store / Xcode icon: full-bleed, opaque RGB (Apple rejects alpha;
+    iOS rounds the corners itself). Same artwork as the apple-touch icon,
+    drawn at full size rather than upscaled."""
+    img = make_apple_touch(size).convert('RGB')
+    if filename:
+        img.save(filename)
+    return img
+
+APP_BG = (0xE3, 0xEA, 0xEC)  # #E3EAEC, the app's background (capacitor.config.json)
+
+def make_ios_splash(size=2732, filename=None):
+    """iOS launch image: the app background colour with the rounded icon in
+    the middle. LaunchScreen.storyboard scales it to fill the screen, so the
+    icon is kept small (about a fifth of the square)."""
+    img = Image.new('RGB', (size, size), APP_BG)
+    icon_size = int(size * 0.2)
+    icon = make_icon(icon_size, maskable=False)
+    img.paste(icon, ((size - icon_size) // 2, (size - icon_size) // 2), icon)
+    if filename:
+        img.save(filename)
+    return img
+
 out = "icons"
 make_icon(192, maskable=False, filename=f"{out}/icon-192.png")
 make_icon(512, maskable=False, filename=f"{out}/icon-512.png")
@@ -173,5 +196,11 @@ splash_sizes = {
 }
 for rel, (w, h) in splash_sizes.items():
     make_splash(w, h, filename=f"{android_res}/{rel}")
+
+# iOS (capacitor-app/ios/App/App/Assets.xcassets/).
+ios_assets = "capacitor-app/ios/App/App/Assets.xcassets"
+make_ios_app_icon(1024, filename=f"{ios_assets}/AppIcon.appiconset/AppIcon-512@2x.png")
+for name in ("splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"):
+    make_ios_splash(2732, filename=f"{ios_assets}/Splash.imageset/{name}")
 
 print("done")

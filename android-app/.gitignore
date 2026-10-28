@@ -13,3 +13,8 @@ KEYSTORE_PASSWORD_KEEP_SAFE.txt
 *.apk
 *.apk.idsig
 *.aab
+
+# Play upload key (separate from android.keystore) - also never commit.
+*.keystore
+*KEEP_SAFE*
+upload_certificate.pem
