@@ -1,6 +1,6 @@
 {
   "appId": "com.hifztracker.app",
-  "appName": "Hifz Class Tracker",
+  "appName": "BreakLog",
   "webDir": "www",
   "backgroundColor": "#E3EAEC",
   "server": {
