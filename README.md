@@ -33,6 +33,17 @@ A fully native Android app, built with [Capacitor](https://capacitorjs.com/) (`c
 
 **Trade-off of going fully native:** unlike the old wrapper, this app's content is bundled at build time, so a code change no longer shows up automatically — it needs a new build pushed to Firebase App Distribution (see "Rebuilding the native app" below). The web app / PWA above is unaffected and still updates instantly.
 
+## iOS app (set up, not switched on)
+
+`capacitor-app/ios/` is the same Capacitor app built for iPhone/iPad (Swift Package Manager, no CocoaPods). It uses the same `www/` content and syncs through the same Firebase project. The iOS app `com.hifztracker.app` is registered in Firebase and its public config is `capacitor-app/ios/App/App/GoogleService-Info.plist`; the Google sign-in return URL (`REVERSED_CLIENT_ID`) is in `Info.plist`. The GitHub Action `.github/workflows/ios-build.yml` builds it, unsigned, for the simulator on a free GitHub Mac whenever `capacitor-app/` changes. That only proves it compiles. It can't put the app on a real phone.
+
+After `npm run build`, run `npx cap sync ios` as well as `npx cap sync android`.
+
+**To switch it on later** (costs money: Apple Developer Program, $99/year; needs a Mac or a cloud Mac):
+1. Join the Apple Developer Program with the owner's Apple ID.
+2. On a Mac: `cd capacitor-app && npm ci && npx cap sync ios && npx cap open ios`. In Xcode, pick the team under Signing & Capabilities and add an app icon.
+3. Archive, upload to App Store Connect, and invite testers through TestFlight. Like Android, it does not update itself, so every release is a new upload with `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` bumped to match Android's `versionName`/`versionCode`.
+
 ## Desktop app (Windows)
 
 Download page: https://rfydawood.github.io/hifz-class-tracker/download.html
