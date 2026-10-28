@@ -1,9 +1,10 @@
-/*BUILD_STAMP*/const APP_BUILD="dec540da34";
+/*BUILD_STAMP*/const APP_BUILD="e22535308d";
 const CACHE = 'hifz-tracker-' + APP_BUILD;
 const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
+  './account-delete.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-192.png',
