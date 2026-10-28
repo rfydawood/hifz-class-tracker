@@ -8,7 +8,10 @@
     "verify": "node scripts/build.mjs --verify",
     "build:aab": "node scripts/build-aab.mjs",
     "test:rules": "firebase emulators:exec --only firestore \"node --test tests/rules.test.mjs\"",
-    "test:e2e": "firebase emulators:exec --only firestore,auth \"playwright test\""
+    "test:e2e": "firebase emulators:exec --only firestore,auth \"playwright test\"",
+    "store:screens": "firebase emulators:exec --config firebase.store-screens.json --only firestore,auth --project hifz-class-tracker-dece7 \"node scripts/store-screens.mjs\"",
+    "store:images": "python scripts/store_icons.py && node scripts/store-feature-graphic.mjs",
+    "store:check": "python scripts/store_check.py"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
