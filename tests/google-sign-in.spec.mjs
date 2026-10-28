@@ -96,6 +96,8 @@ test('a Google account that already exists takes the class over by invite, losin
   await signInOnGate(w, email);
   await w.locator('#setup.show').waitFor();
   const googleUid = await currentUid(w);
+  // the acceptance is written without waiting; let it reach the server before this window closes
+  await expect.poll(async () => (await readAs(w, `users/${googleUid}`))?.policy?.version, { timeout: 15000 }).toBeTruthy();
   await ctxW.close();
 
   const ctx = await browser.newContext(); const page = await ctx.newPage();
