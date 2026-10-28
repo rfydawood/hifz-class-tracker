@@ -21,6 +21,8 @@ Classroom attendance and break tracker for hifz teachers. Pure client-side app �
 
 **Teacher mode (since 4.1).** The padlock at the end of the bar (after Profile) stops students changing things. Tap it the first time to set a 4-number PIN; from then on, tap it and type the PIN to unlock, and tap it once to lock again. While locked, students can still start and end their own breaks, but the break minutes, Fix/Cancel break, "left for the day", the ☰ menu, the Start/End class button and the Roster, Settings and Profile tabs ask for the PIN (Reports stay open). Each device has its own PIN, kept on that device only. "Forgot the PIN?" resets it after signing in again with the class's Google account. A device that never sets a PIN works as before.
 
+**Delete my account.** At the bottom of Profile (teacher mode, internet needed). It explains what goes, offers a backup first, asks you to type DELETE and to sign in with Google again, then deletes every class the account owns (every day, break and student), its My classes list and the Google sign-in for the app, and signs out other devices. It can't be undone. The same is on the web at https://rfydawood.github.io/hifz-class-tracker/delete-account.html (the page Google Play links to), with an email fallback. Both run `account-delete.js`.
+
 The chevron at the right end of the bar tucks it away (remembered on that device); a small handle in the bottom-right corner brings it back. The Log tab shows a gold count of students out while you're on another tab, red when anyone is past their limit.
 
 ## Native Android app (optional)
@@ -94,7 +96,8 @@ Every class lives in Firestore from the moment it's set up (see `IMPLEMENTATION_
 - `manifest.json`, `sw.js`, `icons/` — PWA support (installability + offline)
 - `vendor/firebase/` — the Firebase SDK files the app loads, committed here so the native app never needs a CDN at startup
 - `scripts/build.mjs` — stamps a version/build id into `index.html`/`sw.js` and copies the canonical files into `capacitor-app/www/`. Run via `npm run build`. This is the **only** way `capacitor-app/www/` should be updated — never hand-edit or hand-copy into it, that's what caused web fixes to silently never reach the tablet.
-- `firebase.json`, `firestore.rules` — cloud sync backend config (see above)
+- `firebase.json`, `firestore.rules` — cloud sync backend config (see above). The rules allow deleting only for Delete my account: the active admin of a personal org may delete the org, and its invites and member docs together with it or after it; anyone may delete their own `users/{uid}`.
+- `account-delete.js`, `delete-account.html` — Delete my account: the shared deletion logic, and the public web page for it
 - `capacitor-app/` — the current native Android app (Capacitor). Buildable from scratch; `node_modules/`, Gradle build output, and the built APK are intentionally **not** committed. `capacitor-app/www/` **is** committed — it's the build script's output, kept in git so a CI check can catch drift (see below)
 - `android-app/` — the earlier Trusted Web Activity native wrapper (Bubblewrap). Legacy/reference only — no longer built or distributed (see above)
 - `make_icons.py` — regenerates the app icons if the design ever changes

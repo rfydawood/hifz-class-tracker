@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete your BreakLog account</title>
+<meta name="description" content="Delete your BreakLog account and all of its class data.">
+<link rel="icon" href="favicon.png">
+<meta name="theme-color" content="#1F2E36">
+<style>
+  :root{--bg:#F2F5F6;--ink:#1F2E36;--mute:#5B6B73;--card:#fff;--line:#D6DFE2;--ember:#C0503A;--ember-soft:#F8E5E0;--ember-line:#E4B4A6;--btn:#1F2E36;--btnink:#fff;--ok:#0F7B7B}
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#1F2E36;--ink:#fff;--mute:#b7c4ca;--card:#2a3d47;--line:#3a505c;--ember:#F08A72;--ember-soft:#3b2f2f;--ember-line:#7a4a40;--btn:#fff;--btnink:#1F2E36;--ok:#7fd1cf}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{display:flex;align-items:center;gap:10px;padding:24px 16px;max-width:760px;margin:0 auto}
+  header img{width:36px;height:36px;border-radius:9px}
+  header b{font-size:18px}
+  header a.open{margin-left:auto;background:var(--btn);color:var(--btnink);text-decoration:none;font-weight:600;padding:9px 18px;border-radius:999px;white-space:nowrap}
+  main{max-width:760px;margin:0 auto;padding:16px 16px 64px}
+  h1{font-size:clamp(30px,6vw,48px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+  .lead{font-size:17px;color:var(--mute);margin:0 0 24px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px}
+  .box h2{font-size:17px;margin:0 0 8px}
+  .box p,.box ul,.box ol{margin:0 0 10px;color:var(--mute);font-size:15px}
+  .box ul,.box ol{padding-left:20px}
+  .box p:last-child,.box ul:last-child{margin-bottom:0}
+  .box a{color:inherit}
+  .danger{border-color:var(--ember-line);background:var(--ember-soft)}
+  .danger h2{color:var(--ember)}
+  button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:13px 22px;cursor:pointer;background:var(--btn);color:var(--btnink)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.warn{background:var(--ember);color:#fff}
+  label{display:block;font-weight:600;margin:14px 0 12px;color:var(--ink)}
+  input{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;letter-spacing:.08em;padding:12px 14px;border-radius:12px;border:1px solid var(--ember-line);background:var(--bg);color:var(--ink)}
+  .who{font-weight:600;color:var(--ok)}
+  .msg{min-height:1.5em;margin:12px 0 0;font-weight:600;color:var(--ember)}
+  .done{color:var(--ok)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <img src="icons/icon-192.png" alt="">
+  <b>BreakLog</b>
+  <a class="open" href="./">Open BreakLog</a>
+</header>
+<main>
+  <h1>Delete your BreakLog account</h1>
+  <p class="lead">You can delete your BreakLog account and everything it holds here, or from inside the app: Profile → Delete my account.</p>
+
+  <div class="box">
+    <h2>What is deleted</h2>
+    <ul>
+      <li>Every class your account owns, with every day, break and student in it</li>
+      <li>Your "My classes" list</li>
+      <li>Your Google sign-in for BreakLog. Any other device signed in to your account is signed out.</li>
+    </ul>
+    <p>It happens straight away and can't be undone. Nothing is kept afterwards. If you belong to an organization that other people use too, you leave it, and its classes stay with the organization.</p>
+  </div>
+
+  <div class="box">
+    <h2>Keep a copy first</h2>
+    <p>To keep your records, download a backup before you delete: open <a href="./">BreakLog on the website</a>, sign in, then Profile → Backup → Download a backup.</p>
+  </div>
+
+  <div class="box danger" id="flow">
+    <h2>Delete my account</h2>
+    <div id="step1">
+      <p>Sign in with the Google account you use for BreakLog. You need an internet connection.</p>
+      <button id="signinBtn" onclick="signIn()">Sign in with Google</button>
+    </div>
+    <div id="step2" hidden>
+      <p>Signed in as <span class="who" id="who"></span>.</p>
+      <ul id="summary"></ul>
+      <label>Type DELETE to confirm<input id="word" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="document.getElementById('go').disabled=this.value.trim().toUpperCase()!=='DELETE'"></label>
+      <button class="warn" id="go" disabled onclick="runDelete()">Delete my account</button>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+  </div>
+
+  <div class="box">
+    <h2>Can't sign in?</h2>
+    <p>Email <a href="mailto:rfy.dawood@gmail.com?subject=Delete%20my%20BreakLog%20account">rfy.dawood@gmail.com</a> from the address of your BreakLog account and ask for it to be deleted. You get a reply once it is done.</p>
+  </div>
+</main>
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script src="vendor/firebase/firebase-firestore-compat.js"></script>
+<!-- The deletion itself is shared with the app's Profile → Delete my account. -->
+<script src="account-delete.js"></script>
+<script>
+const FIREBASE_CONFIG={
+  projectId:"hifz-class-tracker-dece7",
+  appId:"1:726082000637:web:c4bc54fd73d8853f44d094",
+  storageBucket:"hifz-class-tracker-dece7.firebasestorage.app",
+  apiKey:"AIzaSyAZS_OEMnmcvc5xDzNESMVBvXJ4oGWCUBo",
+  authDomain:"hifz-class-tracker-dece7.firebaseapp.com",
+  messagingSenderId:"726082000637"
+};
+const EMULATOR=!!new URLSearchParams(location.search).get('emulator');
+// A separate, memory-only Firebase app: nothing about this sign-in is kept
+// in this browser, and the website's own sign-in is left alone.
+const app=firebase.initializeApp(FIREBASE_CONFIG,'delete-account');
+const auth=firebase.auth(app), db=firebase.firestore(app);
+if(EMULATOR){                                     // tests only
+  db.useEmulator('127.0.0.1',8080);
+  auth.useEmulator('http://127.0.0.1:9099',{disableWarnings:true});
+}
+const $=id=>document.getElementById(id);
+const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let user=null, plan=null;
+function say(t,ok){ $('msg').textContent=t||''; $('msg').classList.toggle('done',!!ok); }
+function signInMessage(e){
+  const c=(e&&e.code)||'';
+  if(c==='auth/network-request-failed'||!navigator.onLine) return 'This needs an internet connection. Connect and try again.';
+  if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request') return 'Sign-in was cancelled.';
+  if(c==='auth/popup-blocked') return 'The sign-in window was blocked. Allow pop-ups for this page and try again.';
+  return 'Could not sign in. Please try again.';
+}
+async function googleSignIn(){
+  if(EMULATOR&&window.__hifzTestGoogle) return auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(JSON.stringify(window.__hifzTestGoogle)));
+  return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+}
+function myEmail(){ return String((user&&user.email)||'').toLowerCase(); }
+async function signIn(){
+  if(!navigator.onLine) return say('This needs an internet connection. Connect and try again.');
+  $('signinBtn').disabled=true; say('');
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    user=(await googleSignIn()).user;
+    say('Checking what your account holds…');
+    plan=await HifzAccountDelete.plan(db,user.uid,myEmail(),[]);
+    showPlan();
+  }catch(e){
+    plan=null; say(e&&e.code&&e.code.indexOf('auth/')===0?signInMessage(e):'Could not reach your account. Check the internet and try again.');
+  }finally{ $('signinBtn').disabled=false; }
+}
+function showPlan(){
+  $('who').textContent=myEmail();
+  if(plan.blocked.length){
+    $('step1').hidden=true; $('step2').hidden=true;
+    return say(`${plan.blocked.map(o=>o.name||'One of your classes').join(', ')} is shared with other people, so it can't be deleted from here. Email rfy.dawood@gmail.com and ask for your account to be deleted.`);
+  }
+  const n=plan.classes.length;
+  $('summary').innerHTML=(n?`<li>${n} class${n===1?'':'es'} you own (${plan.classes.map(c=>esc(c.name||'Class')).join(', ')}), with every day, break and student</li>`:'<li>No classes are left on this account</li>')
+    +'<li>Your My classes list and your Google sign-in for BreakLog</li>'
+    +plan.leaving.map(o=>`<li>You leave ${esc(o.name||'an organization')}; its classes stay</li>`).join('');
+  $('step1').hidden=true; $('step2').hidden=false; say('');
+}
+/* Same order and safeguards as the app: from the server, then users/{uid},
+   then the sign-in itself. Safe to run again after a failure. */
+async function runDelete(){
+  if(!user||!plan) return;
+  if(!navigator.onLine) return say('This needs an internet connection. Connect and try again.');
+  $('go').disabled=true; say('Deleting… keep this page open until it finishes.');
+  try{
+    plan=await HifzAccountDelete.plan(db,user.uid,myEmail(),[]);
+    await HifzAccountDelete.run(db,plan);
+    await user.delete();
+  }catch(e){
+    if(e&&e.code==='auth/requires-recent-login'){
+      $('step2').hidden=true; $('step1').hidden=false;
+      return say('Your classes are deleted. Sign in once more to finish removing the account.');
+    }
+    $('go').disabled=false;
+    return say(e&&e.code==='account/blocked'?'Your account can\'t be deleted here. Email rfy.dawood@gmail.com and ask for it to be deleted.'
+      :'Not everything could be deleted. Check the internet and press Delete my account again - it carries on from where it stopped.');
+  }
+  // The website on this same browser keeps its own copy of where your class
+  // was; forget it too.
+  try{
+    const keys=[...HifzAccountDelete.LOCAL_KEYS];
+    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.indexOf(HifzAccountDelete.LOCAL_PREFIX)===0) keys.push(k); }
+    keys.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  user=null; plan=null;
+  $('step2').hidden=true;
+  say('Your BreakLog account and all of its classes have been deleted.',true);
+}
+</script>
+</body>
+</html>

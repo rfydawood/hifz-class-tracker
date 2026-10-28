@@ -71,6 +71,18 @@ service cloud.firestore {
         && get(classPath(orgId, classId)).data.status == 'archived';
     }
 
+    // Delete my account (Google Play / App Store account deletion): the
+    // admin of a personal org closes it. The org doc goes in the same batch
+    // as - or before - its invites and other member docs, which is what
+    // !existsAfter() checks, so nothing at org level can be deleted while the
+    // org itself stays. (Its classes go first, each archived and then deleted
+    // through deletesArchivedClass() above, unchanged.) A shared org
+    // (kind != 'personal') is never closed this way.
+    function closesPersonalOrg(orgId) {
+      return isAdmin(orgId) && !existsAfter(orgPath(orgId))
+        && (!exists(orgPath(orgId)) || get(orgPath(orgId)).data.kind == 'personal');
+    }
+
     // ---- users/{uid}: where a signed-in account finds its classes ----
     // Only a pointer - listing an org here grants nothing; the org's own
     // rules decide access.
@@ -81,7 +93,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['orgIds','updatedAt'])
         && request.resource.data.orgIds is list
         && request.resource.data.orgIds.size() <= 50;
-      allow delete: if false;
+      // Delete my account: your own pointer, last of the data.
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     // ---- orgs/{orgId} ----
@@ -105,7 +118,8 @@ service cloud.firestore {
         && request.resource.data.kind == resource.data.kind
         && request.resource.data.name is string && request.resource.data.name.size() < 200;
 
-      allow delete: if false;
+      // Delete my account: only a personal org, only by its admin.
+      allow delete: if isAdmin(orgId) && resource.data.kind == 'personal';
 
       // ---- orgs/{orgId}/members/{uid} ----
       match /members/{uid} {
@@ -152,7 +166,12 @@ service cloud.firestore {
               || (request.auth.uid == uid
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email','displayName'])));
 
-        allow delete: if false;
+        // Delete my account: in a personal org, every member doc goes only
+        // with the org (closesPersonalOrg - the account's own one last). A
+        // shared org is left by deleting only your own member doc.
+        allow delete: if closesPersonalOrg(orgId)
+          || (signedIn() && request.auth.uid == uid
+              && exists(orgPath(orgId)) && get(orgPath(orgId)).data.kind != 'personal');
       }
 
       // ---- orgs/{orgId}/invites/{inviteId} ----
@@ -178,7 +197,8 @@ service cloud.firestore {
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','claimedBy','claimedAt'])
                   && request.resource.data.status == 'claimed'
                   && request.resource.data.claimedBy == request.auth.uid));
-        allow delete: if false;
+        // Delete my account: with the personal org they belong to.
+        allow delete: if closesPersonalOrg(orgId);
       }
 
       // ---- orgs/{orgId}/classes/{classId} ----

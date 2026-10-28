@@ -591,3 +591,96 @@ test('4.0.1: a stranger, or a member who is not the admin, cannot delete an arch
   }
   await assertFails(testEnv.unauthenticatedContext().firestore().collection('orgs').doc(ORG_ID).collection('classes').doc('c2').delete());
 });
+
+// ---- Delete my account (Google Play / App Store account deletion) ----
+// account-delete.js: every class archived then deleted as above, then the
+// org doc with its invites and other member docs in one batch, then the
+// account's own member doc, then users/{uid}.
+
+const orgAs = (uid) => testEnv.authenticatedContext(uid).firestore().collection('orgs').doc(ORG_ID);
+async function seedWholeAccount() {
+  await seedOrgWithMember('uidA');
+  await seedClassWithRecords('c2', 'archived');
+  await addMember('anonOld', { email: '' });                        // the same teacher's device from before Google sign-in
+  await seedInvite('i1', { status: 'claimed', claimedBy: 'uidA' });
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('users').doc('uidA').set({ orgIds: [ORG_ID], updatedAt: null });
+  });
+}
+
+test('delete my account: the admin of a personal org deletes all of it - classes, org, invites, members, users entry', async () => {
+  await seedWholeAccount();
+  const db = testEnv.authenticatedContext('uidA').firestore();
+  const org = db.collection('orgs').doc(ORG_ID);
+  await assertSucceeds(org.collection('classes').doc(CLASS_ID).set({ status: 'archived' }, { merge: true }));   // the active class, archived first
+  await assertSucceeds(org.collection('classes').doc(CLASS_ID).delete());
+  await assertSucceeds(deleteAll(org.collection('classes').doc('c2')));
+  const b = db.batch();
+  b.delete(org);
+  b.delete(org.collection('invites').doc('i1'));
+  b.delete(org.collection('members').doc('anonOld'));
+  await assertSucceeds(b.commit());
+  await assertSucceeds(org.collection('members').doc('uidA').delete());
+  await assertSucceeds(db.collection('users').doc('uidA').delete());
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const o = ctx.firestore().collection('orgs').doc(ORG_ID);
+    assert.equal((await o.get()).exists, false);
+    assert.equal((await o.collection('members').get()).size, 0);
+    assert.equal((await o.collection('invites').get()).size, 0);
+    assert.equal((await o.collection('classes').get()).size, 0);
+    assert.equal((await ctx.firestore().collection('users').doc('uidA').get()).exists, false);
+  });
+});
+
+test('delete my account: a retry after the org doc is gone can still remove what is left', async () => {
+  await seedWholeAccount();
+  await testEnv.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().collection('orgs').doc(ORG_ID).delete(); });
+  const org = orgAs('uidA');
+  await assertSucceeds(org.collection('invites').doc('i1').delete());
+  await assertSucceeds(org.collection('members').doc('anonOld').delete());
+  await assertSucceeds(org.collection('members').doc('uidA').delete());
+  // and nobody else can do that for them
+  await seedInvite('i2');
+  await assertFails(orgAs('uidX').collection('invites').doc('i2').delete());
+});
+
+test('delete my account: org-level docs only go with the org - not while it stays', async () => {
+  await seedWholeAccount();
+  const org = orgAs('uidA');
+  await assertFails(org.collection('invites').doc('i1').delete());
+  await assertFails(org.collection('members').doc('anonOld').delete());
+});
+
+test('delete my account: nobody but the active admin can delete the org or its members, invites and users entry', async () => {
+  await seedWholeAccount();
+  await addMember('uidT', { roles: ['teacher'] });
+  await addMember('uidGone', { status: 'revoked' });
+  for (const uid of ['uidX', 'uidT', 'uidGone']) {
+    const org = orgAs(uid);
+    await assertFails(org.delete());
+    const b = org.firestore.batch();
+    b.delete(org); b.delete(org.collection('members').doc('anonOld'));
+    await assertFails(b.commit());
+    await assertFails(org.collection('members').doc('uidA').delete());
+    await assertFails(org.collection('invites').doc('i1').delete());
+  }
+  await assertFails(testEnv.unauthenticatedContext().firestore().collection('orgs').doc(ORG_ID).delete());
+  await assertFails(testEnv.authenticatedContext('uidX').firestore().collection('users').doc('uidA').delete());
+  // the active class is still not deletable as it is (archive first)
+  await assertFails(orgAs('uidA').collection('classes').doc(CLASS_ID).delete());
+});
+
+test('delete my account: a shared (non-personal) org is never deleted by its admin; any member may leave it', async () => {
+  await seedOrgWithMember('uidA');
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('orgs').doc(ORG_ID).update({ kind: 'organization' });
+  });
+  await addMember('uidT', { roles: ['teacher'], email: 'other@example.com' });
+  const admin = orgAs('uidA');
+  await assertFails(admin.delete());
+  const b = admin.firestore.batch();
+  b.delete(admin); b.delete(admin.collection('members').doc('uidT'));
+  await assertFails(b.commit());
+  await assertFails(admin.collection('members').doc('uidT').delete());          // can't remove someone else
+  await assertSucceeds(orgAs('uidT').collection('members').doc('uidT').delete()); // leaving: your own member doc
+});

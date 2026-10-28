@@ -578,6 +578,17 @@ input,select{font:inherit;color:inherit}
 .btn.warn:disabled{opacity:.45;cursor:not-allowed}
 .ccard .cbtns{display:flex;gap:6px;flex:none}
 .ccard .cdel{color:var(--ember);border-color:#E4B4A6}
+/* Delete my account */
+.pdanger{margin-top:14px;border:1px solid #E4B4A6;background:var(--ember-soft);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pdanger div{flex:1 1 220px;min-width:0}
+.pdanger b{display:block;font-weight:800;color:var(--ember)}
+.pdanger small{display:block;color:var(--mute);font-size:12.5px;font-weight:600;margin-top:2px}
+.pdanger .pdel{flex:none;padding:9px 16px;font-size:14px;border-radius:11px;color:var(--ember);border-color:#E4B4A6;background:var(--card)}
+.dlist{margin:0 0 12px 20px;font-size:14.5px;line-height:1.5}
+.dlist li{margin:4px 0}
+.dtype{display:block;margin-top:12px;font-weight:700;font-size:14px}
+.dtype input{display:block;width:100%;margin-top:6px;border:1px solid #E4B4A6;border-radius:12px;padding:12px 14px;font-size:16px;background:var(--paper);letter-spacing:.08em}
+.delmsg{margin-top:12px;font-size:14.5px;line-height:1.5;color:var(--ember);font-weight:700;min-height:1.5em}
 </style>
 </head>
 <body>
@@ -662,8 +673,9 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-app-compat.js"></script>
 <script src="vendor/firebase/firebase-auth-compat.js"></script>
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
+<script src="account-delete.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.1",APP_BUILD="dec540da34",APP_BUILD_TIME="2026-10-22T04:24:37.735Z";
+/*BUILD_STAMP*/const APP_VERSION="4.1",APP_BUILD="e22535308d",APP_BUILD_TIME="2026-10-28T02:49:17.716Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -845,7 +857,20 @@ const Store=(function(){
     if(native){ Prefs.remove({key}).catch(()=>{}); return; }
     try{ localStorage.removeItem(key); }catch(e){}
   }
-  return {hydrate,get,set,remove,native};
+  /* Gone for good (Delete my account): on native also the WebView's own
+     localStorage copy, or hydrate()'s fallback above would bring it back. */
+  async function purge(key){
+    cache[key]=null;
+    try{ localStorage.removeItem(key); }catch(e){}
+    if(native){ try{ await Prefs.remove({key}); }catch(e){} }
+  }
+  async function keys(){
+    const out=[];
+    try{ for(let i=0;i<localStorage.length;i++) out.push(localStorage.key(i)); }catch(e){}
+    if(native&&Prefs.keys){ try{ const r=await Prefs.keys(); out.push(...((r&&r.keys)||[])); }catch(e){} }
+    return out;
+  }
+  return {hydrate,get,set,remove,purge,keys,native};
 })();
 
 /* ===== legacy local keys - read-only from here on =====
@@ -1121,7 +1146,11 @@ function signInMessage(e){
   return 'Could not sign in. Please try again.';
 }
 /* The sign-in screen: new installs, and anyone signed out. */
-function showSignIn(){ $('setup').classList.remove('show'); $('signinErr').textContent=''; $('signinBtn').disabled=false; $('signin').classList.add('show'); }
+const SIGNIN_NOTICE_KEY='hifz.signinNotice';             // sessionStorage: one line for the next sign-in screen (Delete my account)
+function showSignIn(){
+  $('setup').classList.remove('show'); $('signinErr').textContent=''; $('signinBtn').disabled=false; $('signin').classList.add('show');
+  try{ const n=sessionStorage.getItem(SIGNIN_NOTICE_KEY); if(n){ sessionStorage.removeItem(SIGNIN_NOTICE_KEY); $('signinErr').textContent=n; } }catch(e){}
+}
 function hideSignIn(){ $('signin').classList.remove('show'); }
 async function signInFromGate(){
   // The desktop app signs in in the browser, so its button stays usable:
@@ -1326,11 +1355,12 @@ async function attachListeners(){
   // change is put back a moment later, instead of staying wrong on screen.
   classSeen=false;
   unsubOrg=org.onSnapshot({includeMetadataChanges:true},snap=>{
+    if(!snap.exists&&!snap.metadata.fromCache&&!snap.metadata.hasPendingWrites) return accountGoneHere();   // deleted (Delete my account)
     if(!snap.exists||snap.metadata.hasPendingWrites) return;
     const d=snap.data(); orgDefaults=d.defaults||null;
     if(classSeen) state.settings=computeSettings();
     render();
-  },()=>{ syncStatus='error'; render(); });
+  },e=>{ syncStatus='error'; render(); if(e&&e.code==='permission-denied') checkAccountStillThere(); });
   unsubClass=cls.onSnapshot(snap=>{
     if(snap.metadata.hasPendingWrites) return;
     if(!snap.exists){ if(!snap.metadata.fromCache) openFallbackClass(); return; }
@@ -2757,7 +2787,8 @@ function paintProfile(){
      <button class="addcls" onclick="openAddClass()">+ Add a class</button>
      ${archived.length?`<button class="showarch" onclick="showArchived=!showArchived;paintProfile()">${showArchived?'Hide':'Show'} archived (${archived.length})</button>
        ${showArchived?`<div class="clist">${archived.map(c=>`<div class="ccard gone" data-class="${c.id}"><div class="ctop"><b>${esc(c.name||'Class')}</b><span class="cbtns"><button class="btn ghost copen" onclick="restoreClass('${c.id}')">Restore</button><button class="btn ghost copen cdel" onclick="askDeleteClass('${c.id}')">Delete forever</button></span></div><small>Archived - its days and students are kept</small></div>`).join('')}</div>`:''}`:''}
-   </section></div></div>`;
+   </section></div>
+   <section class="pdanger"><div><b>Delete my account</b><small>Deletes your BreakLog account and every class it owns, for good.</small></div><button class="btn ghost pdel" onclick="askDeleteAccount()">Delete my account</button></section></div>`;
 }
 
 /* ----- rename, archive, restore: never a delete ----- */
@@ -2829,16 +2860,123 @@ async function deleteClassForever(cid){
   }catch(e){ closeSheet(); paintProfile(); toast('Not everything could be deleted. Check the internet and try again.'); }
 }
 /* The writer: read everything under the class from the server, then delete
-   it in batches, the class doc last. */
+   it in batches, the class doc last (account-delete.js, shared with Delete
+   my account). */
 async function writeDeleteClass(cid){
-  const cls=classRefFor(cid), refs=[];
-  const days=await cls.collection('days').get({source:'server'});
-  for(const d of days.docs){ (await d.ref.collection('breaks').get({source:'server'})).docs.forEach(b=>refs.push(b.ref)); refs.push(d.ref); }
-  (await cls.collection('students').get({source:'server'})).docs.forEach(x=>refs.push(x.ref));
-  for(let i=0;i<refs.length;i+=400){ const b=fbDb.batch(); refs.slice(i,i+400).forEach(r=>b.delete(r)); await fsWrite(b.commit()); }
-  await fsWrite(cls.delete());
+  await HifzAccountDelete.deleteClassTree(fbDb,classRefFor(cid),fsWrite);
 }
 function restoreClass(cid){ writeClassMeta(cid,{status:'active'}); paintProfile(); toast(`${classNameOf(cid)} restored`); }
+
+/* ----- Delete my account (Google Play / App Store account deletion) -----
+   Profile -> Delete my account; the same deletion runs on the web page
+   delete-account.html, both through account-delete.js. Needs teacher mode,
+   a connection, DELETE typed, and signing in again with the class's Google
+   account. Then: every class this account owns, with every day, break and
+   student; its orgs' invites and member docs; users/{uid}; and the Google
+   sign-in itself. A shared org (someone else's email among its members)
+   keeps its classes - only this account leaves it. Safe to run again after
+   a failure: each step deletes only what is still there. */
+const DELETE_EMAIL='rfy.dawood@gmail.com';
+let delPlan=null;
+function delSheet(title,sub,msg,retry){
+  sheetHTML(title,sub,`<div class="body"><p class="delmsg" id="delMsg">${msg||''}</p></div>
+    <div class="actions"><button class="btn ghost" onclick="closeSheet()">Close</button>${retry?`<button class="btn warn" onclick="${retry}">Try again</button>`:''}</div>`);
+}
+async function askDeleteAccount(){
+  if(!asTeacher(askDeleteAccount)) return;
+  if(!isGoogleUser()) return sheetHTML('Delete my account','This device is not signed in with Google, so it has no BreakLog account to delete.',
+    `<div class="body"><p class="rnote" style="margin:0">Sign in with Google first (Profile → Sign in with Google), then come back here. Or email ${DELETE_EMAIL} and ask for your account to be deleted.</p></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Close</button></div>`);
+  if(!navigator.onLine) return toast('Deleting your account needs an internet connection. Connect and try again.');
+  sheetHTML('Delete my account?','Checking what your account holds…','');
+  try{ if(!await initFirestore()) throw new Error('offline'); delPlan=await HifzAccountDelete.plan(fbDb,fbUid,myEmail(),[ORG_ID]); }
+  catch(e){ delPlan=null; closeSheet(); return toast('Deleting your account needs an internet connection. Connect and try again.'); }
+  if(delPlan.blocked.length) return delSheet('Your account can\'t be deleted here yet',
+    `${delPlan.blocked.map(o=>esc(o.name||'One of your classes')).join(', ')} is shared with other people, so it can't be deleted from here. Email ${DELETE_EMAIL} and ask for your account to be deleted.`);
+  const cs=delPlan.classes, n=cs.length;
+  const names=cs.map(c=>esc(c.name||'Class')).join(', ');
+  const leaving=delPlan.leaving.map(o=>`<li>You leave ${esc(o.name||'an organization')}. Its classes belong to the organization and stay.</li>`).join('');
+  const backup=Store.native
+    ?`<p class="rnote" style="margin:0 0 4px">To keep a copy, download a backup first on the website: rfydawood.github.io/hifz-class-tracker → Profile → Backup.</p>`
+    :`<button class="dbtn" onclick="backupAll()">Download a backup first<small>Every class and every day it has recorded, saved as a file</small></button>`;
+  sheetHTML('Delete my account?','This deletes your BreakLog account for good. It can\'t be undone.',
+    `<div class="body"><ul class="dlist">
+       <li>${n?`${n} class${n===1?'':'es'} you own (${names}), with every day, break and student in ${n===1?'it':'them'}`:'Your classes, with every day, break and student in them'}</li>
+       <li>Your My classes list</li>
+       <li>Your Google sign-in for BreakLog (${esc(myEmail())})</li>
+       <li>Other devices signed in to this account are signed out</li>${leaving}
+     </ul>${backup}
+     <label class="dtype">Type DELETE to confirm<input id="delWord" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="$('delAcct').disabled=this.value.trim().toUpperCase()!=='DELETE'"></label></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Keep my account</button><button class="btn warn" id="delAcct" disabled onclick="deleteMyAccount()">Delete my account</button></div>`);
+}
+async function deleteMyAccount(){
+  if(!delPlan||!teacherOn()||!isGoogleUser()) return closeSheet();
+  if(!navigator.onLine) return delSheet('Delete my account','Nothing has been deleted.','Deleting your account needs an internet connection. Connect and try again.','askDeleteAccount()');
+  delSheet('Confirm it\'s you','Sign in with your Google account to confirm.','');
+  try{ await reauthGoogle(); }
+  catch(e){
+    const msg=e&&e.code==='auth/user-mismatch'?`That is a different Google account. Sign in with ${esc(myEmail())}.`:signInMessage(e);
+    return delSheet('Delete my account','Nothing has been deleted.',msg,'deleteMyAccount()');
+  }
+  sheetHTML('Deleting your account…','Keep BreakLog open until it finishes.','');
+  const classIds=new Set((state.classes||[]).map(c=>c.id).concat(delPlan.classes.map(c=>c.id)));
+  detachListeners(); held=[];
+  try{
+    delPlan=await HifzAccountDelete.plan(fbDb,fbUid,myEmail(),[ORG_ID]);    // as it is now, after signing in again
+    await writeDeleteAccount(delPlan);
+    await firebase.auth(fbApp).currentUser.delete();
+  }catch(e){
+    if(ORG_ID&&fbUid) attachListeners().catch(()=>{});
+    const msg=e&&e.code==='auth/requires-recent-login'?'Your classes are deleted. Sign in once more to finish removing the account.'
+      :e&&e.code==='account/blocked'?`Your account can't be deleted here. Email ${DELETE_EMAIL} and ask for it to be deleted.`
+      :'Not everything could be deleted. Check the internet and try again - it carries on from where it stopped.';
+    return delSheet('Your account is not fully deleted yet','',msg,'askDeleteAccount()');
+  }
+  await forgetAccountHere([...classIds],'Your BreakLog account and its classes have been deleted.');
+  location.reload();
+}
+/* The writer for Delete my account (account-delete.js does the work). */
+async function writeDeleteAccount(plan){
+  await HifzAccountDelete.run(fbDb,plan,fsWrite);
+}
+/* This device forgets the account: session, instant-paint caches, the legacy
+   local copies and history, the teacher PIN, Firestore's offline copy. Both
+   Preferences and localStorage on native (Store.purge). Not ui.tabsHidden -
+   that is the device's, not the account's. */
+async function forgetAccountHere(classIds,notice){
+  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,
+    ...HifzAccountDelete.LOCAL_KEYS,...(classIds||[]).map(cacheKey)]);
+  (await Store.keys()).forEach(k=>{ if(k&&k.indexOf(HifzAccountDelete.LOCAL_PREFIX)===0) keys.add(k); });
+  await Promise.all([...keys].map(k=>Store.purge(k)));
+  try{ if(fbDb){ await fbDb.terminate(); await fbDb.clearPersistence(); } }catch(e){}
+  try{ if(notice) sessionStorage.setItem(SIGNIN_NOTICE_KEY,notice); }catch(e){}
+}
+/* Another device deleted this account: its org is gone from the server, or
+   this device is no longer a member and the sign-in itself is gone. Sign out
+   here, forget it, back to the sign-in screen. */
+async function accountGoneHere(){
+  if(accountGoneHere.busy||!isGoogleUser()) return;
+  accountGoneHere.busy=true;
+  detachListeners(); held=[];
+  const ids=(state.classes||[]).map(c=>c.id);
+  try{ await firebase.auth(fbApp).signOut(); }catch(e){}
+  await forgetAccountHere(ids,'This BreakLog account was deleted, so it has been signed out on this device.');
+  location.reload();
+}
+async function checkAccountStillThere(){
+  if(!isGoogleUser()||!ORG_ID||checkAccountStillThere.busy) return;
+  checkAccountStillThere.busy=true;
+  try{
+    const u=firebase.auth(fbApp).currentUser;
+    try{ if(u) await u.reload(); }
+    catch(e){ if(e&&/user-not-found|user-disabled|user-token-expired/.test(e.code||'')) return accountGoneHere(); }
+    const me=await orgRef().collection('members').doc(fbUid).get({source:'server'});
+    if(me.exists) return;
+    const idx=await fbDb.collection('users').doc(fbUid).get({source:'server'});
+    if(!(idx.exists&&(idx.data().orgIds||[]).includes(ORG_ID))) return accountGoneHere();
+  }catch(e){}
+  finally{ checkAccountStillThere.busy=false; }
+}
 
 /* ----- switching: one class open at a time ----- */
 function openClass(cid){
@@ -3214,16 +3352,23 @@ async function forgotPin(){
   const m=$('pinMsg');
   if(m){ m.style.color='var(--mute)'; m.textContent='Sign in with your Google account to reset it…'; }
   try{
-    if(!await initFirestore()) throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'});
-    const u=firebase.auth(fbApp).currentUser;
-    if(!u) throw Object.assign(new Error('signed out'),{code:'auth/no-current-user'});
-    const cred=await googleCredential();
-    if(cred) await u.reauthenticateWithCredential(cred); else await u.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());
+    await reauthGoogle();
     Store.remove(PIN_KEY); paintLock(); openPin('set');
   }catch(e){
     const msg=e&&e.code==='auth/user-mismatch'?'That is a different Google account from the one this class uses.':signInMessage(e);
     const m2=$('pinMsg'); if(m2){ m2.style.color=''; m2.textContent=msg; }
   }
+}
+/* Signing in again with the account already signed in here - proof it is the
+   teacher (Forgot the PIN, Delete my account). Same credential path as
+   signing in: the native plugin, the desktop app's browser sign-in, the
+   website's popup. A different Google account fails with auth/user-mismatch. */
+async function reauthGoogle(){
+  if(!await initFirestore()) throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'});
+  const u=firebase.auth(fbApp).currentUser;
+  if(!u) throw Object.assign(new Error('signed out'),{code:'auth/no-current-user'});
+  const cred=await googleCredential();
+  if(cred) await u.reauthenticateWithCredential(cred); else await u.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 function showTab(t){
   if(LOCKED_TABS.includes(t)&&!asTeacher(()=>showTab(t))) return;
