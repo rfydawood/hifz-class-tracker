@@ -249,6 +249,30 @@ input,select{font:inherit;color:inherit}
 .setup-actions span{color:var(--mute);font-size:14px;font-weight:700}
 .setup-actions .btn{margin-left:auto}
 .err{color:var(--ember);font-weight:700;font-size:14px;margin-top:12px;min-height:18px}
+/* Terms of use and Privacy policy (ensurePolicy): above every other screen.
+   While boot is still finding out, the card waits hidden (.checking) so the
+   class never flashes up behind it. */
+.setup.policy{z-index:90}
+.setup.policy.checking .setup-card{visibility:hidden}
+.policy .setup-card{max-width:560px;padding:26px 28px}
+.policy .setup-card .lede{margin-bottom:16px}
+.pchanges{background:var(--gold-soft);border:1px solid #EBD3A1;border-radius:12px;padding:12px 16px;margin:0 0 16px}
+.pchanges h4{font-size:12px;letter-spacing:.09em;font-weight:800;color:#8A6412}
+.pchanges ul{margin:6px 0 0 18px;font-size:14px;line-height:1.5;font-weight:600}
+.plinks{display:flex;flex-wrap:wrap;gap:10px}
+.plinks a{flex:1 1 180px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;font-weight:800;font-size:15px;color:var(--leaf);text-decoration:none;background:var(--card)}
+.plinks a svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.setup-card label.ptoggle{display:flex;align-items:center;gap:14px;margin:16px 0 18px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--paper);font-weight:700;font-size:15px;line-height:1.35;cursor:pointer}
+.setup-card .ptoggle input{appearance:none;-webkit-appearance:none;flex:none;display:block;width:50px;height:30px;margin:0;padding:0;border:0;border-radius:15px;background:#B5C3C8;position:relative;cursor:pointer;transition:background .15s}
+.setup-card .ptoggle input::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(31,46,54,.3);transition:transform .15s}
+.setup-card .ptoggle input:checked{background:var(--leaf)}
+.setup-card .ptoggle input:checked::after{transform:translateX(20px)}
+.pacts{display:flex;flex-wrap:wrap-reverse;gap:10px}
+.pacts .btn{flex:1 1 200px;padding:14px}
+.btn.dark:disabled{opacity:.4;cursor:not-allowed}
+.policy .err{margin-top:8px;min-height:0}
+@media (max-width:480px){ .setup.policy{padding:14px} .policy .setup-card{padding:20px 18px} .policy .setup-card h2{font-size:23px} }
+@media (max-height:560px){ .policy .setup-card{padding:18px 22px} .policy .setup-card h2{font-size:22px} .policy .setup-card .lede{margin:6px 0 12px} .setup-card label.ptoggle{margin:12px 0} }
 .tour{position:fixed;inset:0;background:rgba(31,46,54,.55);display:none;place-items:center;z-index:70;padding:24px}
 .tour.show{display:grid}
 .tour-card{background:var(--card);border-radius:20px;max-width:540px;width:100%;padding:28px}
@@ -658,6 +682,15 @@ input,select{font:inherit;color:inherit}
     <button class="btn dark" id="signinBtn" style="width:100%" onclick="signInFromGate()">Sign in with Google</button>
     <p class="err" id="signinErr"></p>
   </div></div>
+  <div class="setup policy" id="policy" role="dialog" aria-modal="true" aria-labelledby="policyTitle"><div class="setup-card">
+    <h2 id="policyTitle">Terms and privacy</h2>
+    <p class="lede" id="policyLede"></p>
+    <div class="pchanges" id="policyChanges" hidden><h4>WHAT'S CHANGED</h4><ul></ul></div>
+    <div class="plinks"><a id="termsLink" href="https://rfydawood.github.io/breaklog/terms.html" target="_blank" rel="noopener">Terms of use<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a><a id="privacyLink" href="https://rfydawood.github.io/breaklog/privacy.html" target="_blank" rel="noopener">Privacy policy<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></div>
+    <label class="ptoggle"><input type="checkbox" role="switch" id="policyOk" onchange="$('policyAccept').disabled=!this.checked"><span>I have read and accept the Terms of use and Privacy policy</span></label>
+    <div class="pacts"><button class="btn ghost" id="policyOut" onclick="policySignOut()">Sign out</button><button class="btn dark" id="policyAccept" disabled onclick="acceptPolicy()">Accept and continue</button></div>
+    <p class="err" id="policyErr"></p>
+  </div></div>
   <div class="setup addclass" id="addClass"><div class="setup-card" id="acCard"></div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
@@ -675,7 +708,7 @@ input,select{font:inherit;color:inherit}
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script src="account-delete.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.2",APP_BUILD="55cf20c2f1",APP_BUILD_TIME="2026-10-28T03:06:32.943Z";
+/*BUILD_STAMP*/const APP_VERSION="4.2",APP_BUILD="42ec6e6d31",APP_BUILD_TIME="2026-10-28T03:40:28.069Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -1177,7 +1210,7 @@ async function signInToKeepClass(){
   try{
     if(!await initFirestore()) throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'});
     const u=firebase.auth(fbApp).currentUser;
-    if(u&&u.isAnonymous&&ORG_ID) return await linkAnonymous(u);
+    if(u&&u.isAnonymous&&ORG_ID){ await linkAnonymous(u); return ensurePolicy(); }   // a handover signs in as another account
     await signInWithGoogle();
     await routeSignedIn();
   }catch(e){ if(!(e&&e.code==='auth/superseded')) toast(signInMessage(e)); }
@@ -1189,6 +1222,7 @@ async function linkAnonymous(u){
     const r=cred?await u.linkWithCredential(cred):await u.linkWithPopup(new firebase.auth.GoogleAuthProvider());
     setUser(r.user);                                          // same uid as before
     await recordGoogleAccount(ORG_ID);
+    if(policyCurrent(policyNotes()[fbUid])) writePolicyAcceptance(true);   // accepted here as the anonymous user: now on the account too
     toast('Signed in — this class is saved to your Google account'); render();
   }catch(e){
     if(e&&e.code==='auth/credential-already-in-use'){
@@ -1268,18 +1302,19 @@ async function claimPendingInvites(){
 async function routeSignedIn(){
   syncStatus='connecting'; render();
   await claimPendingInvites();
-  let orgIds=[];
-  try{ const u=await fbDb.collection('users').doc(fbUid).get(); orgIds=(u.exists&&u.data().orgIds)||[]; }
+  let orgIds=[], acct=null;
+  try{ const u=await fbDb.collection('users').doc(fbUid).get(); orgIds=(u.exists&&u.data().orgIds)||[]; acct=u.metadata.fromCache?null:policyInfo(u); }
   catch(e){ syncStatus='error'; render(); throw Object.assign(new Error('offline'),{code:'auth/network-request-failed'}); }
-  hideSignIn();
   const want=PENDING_ORG||Store.get(SESSION_ORG_KEY);
-  if(want&&orgIds.includes(want)) return enterOrg(want);
-  if(want&&state.setup&&!orgIds.length){
+  if(want&&!orgIds.includes(want)&&state.setup&&!orgIds.length){
     // this device's class isn't on this account - don't set up a new one over it
-    syncStatus='signedout'; render();
+    hideSignIn(); syncStatus='signedout'; render();
     await firebase.auth(fbApp).signOut(); setUser(null);
     return toast('That Google account has no class yet. Sign in with the account you used for this class.');
   }
+  await ensurePolicy(acct);                                // Terms and privacy first, then the class
+  hideSignIn();
+  if(want&&orgIds.includes(want)) return enterOrg(want);
   if(orgIds.length===1) return enterOrg(orgIds[0]);
   if(orgIds.length>1) return openOrgChooser(orgIds);
   if(state.setup) return bootstrapOrg();                   // a class on this device, not in the cloud yet
@@ -1311,6 +1346,118 @@ async function signOut(){
   Store.remove(SESSION_ORG_KEY); Store.remove(SESSION_CLASS_KEY); Store.remove(CACHE_KEY);
   Store.remove(KEY); Store.remove(PKEY);                   // legacy copies of the class; the cloud has it
   location.reload();
+}
+
+/* ===== Terms of use and Privacy policy =====
+   Every account accepts the current POLICY_VERSION before using the app:
+   after signing in (routeSignedIn) and at boot for anyone already signed in.
+   To ask everyone again, raise POLICY_VERSION (a date, compared as text - an
+   older app never re-asks someone who accepted a newer one) and put one short
+   line per change in POLICY_CHANGES; anyone who had accepted an older version
+   sees them under "What's changed". Acceptance is kept on users/{uid}.policy
+   (writePolicyAcceptance) and in this device's own note per uid (POLICY_KEY,
+   in the boot hydrate list), so a boot with no connection isn't blocked. Not
+   behind the teacher PIN - it is about the account - and it never changes tab.
+   Tests (emulator only) can set window.__hifzTestPolicy = {version, changes}. */
+const POLICY_TEST=(EMULATOR&&window.__hifzTestPolicy)||null;
+const POLICY_VERSION=(POLICY_TEST&&POLICY_TEST.version)||'2026-10-27';
+const POLICY_CHANGES=(POLICY_TEST&&POLICY_TEST.changes)||[
+  // one short line per change, e.g. 'Backups now include every class.'
+];
+const POLICY_KEY='policy.accepted';                     // JSON {uid: version accepted on this device}
+const POLICY_READ_MS=5000;                               // longest boot waits on the server before letting the teacher in
+let policyState='idle';                                  // idle | checking | asking | ok | deferred
+Object.defineProperty(window,'__hifzPolicy',{get:()=>policyState});
+const policyCurrent=v=>typeof v==='string'&&v>=POLICY_VERSION;
+function policyNotes(){ try{ return JSON.parse(Store.get(POLICY_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function policyInfo(snap){
+  const d=snap.exists?snap.data():{};
+  return {known:true,hasDoc:snap.exists,version:(d.policy&&d.policy.version)||'',hasClasses:!!(d.orgIds||[]).length};
+}
+/* Boot, before the app is revealed: a device with a class whose note doesn't
+   cover this version yet keeps it covered until the account has answered. */
+function policyCoverAtBoot(){
+  if(!(Store.get(SESSION_ORG_KEY)||state.setup)) return;
+  if(Object.values(policyNotes()).some(policyCurrent)) return;
+  policyState='checking'; $('policy').classList.add('show','checking');
+}
+function policyLetIn(st){ policyState=st; $('policy').classList.remove('show','checking'); }
+/* What users/{uid} says. Online: the server. Offline, or no answer in time:
+   the device's cached copy, which can only ever say "already accepted" -
+   anything else is unknown, and the teacher is let in and asked later. */
+async function readPolicyOnAccount(uid){
+  const ref=fbDb.collection('users').doc(uid);
+  if(navigator.onLine){
+    try{ return policyInfo(await Promise.race([ref.get({source:'server'}),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),POLICY_READ_MS))])); }catch(e){}
+  }
+  try{ const i=policyInfo(await ref.get({source:'cache'})); if(policyCurrent(i.version)) return i; }catch(e){}
+  return {known:false};
+}
+/* Resolves once the signed-in account may use the app: accepted now or
+   before, or unknown for now (offline). Calls made while one is running get
+   the same answer. `known`: users/{uid} as the caller just read it. */
+async function ensurePolicy(known){
+  if(ensurePolicy.p) return ensurePolicy.p;
+  const p=ensurePolicy.p=(async()=>{
+    try{
+      if(!await initFirestore()||!fbUid) return policyLetIn('idle');
+      const uid=fbUid, here=policyNotes()[uid];
+      if(policyCurrent(here)) return policyLetIn('ok');
+      if(policyState!=='asking') policyState='checking';
+      const acct=known||await readPolicyOnAccount(uid);
+      if(fbUid!==uid) return policyLetIn('idle');
+      if(acct.known&&policyCurrent(acct.version)){ notePolicyHere(uid,acct.version); return policyLetIn('ok'); }
+      if(!acct.known){ armPolicyRetry(); return policyLetIn('deferred'); }
+      const older=acct.version||here||'';
+      return await askPolicy({uid,hasDoc:acct.hasDoc,updated:!!older||acct.hasClasses||state.setup,changes:older?POLICY_CHANGES:[]});
+    }catch(e){ armPolicyRetry(); return policyLetIn('deferred'); }
+  })();
+  try{ return await p; } finally{ if(ensurePolicy.p===p) ensurePolicy.p=null; }
+}
+function armPolicyRetry(){
+  if(armPolicyRetry.on) return;
+  armPolicyRetry.on=true;
+  const again=()=>{ if(!armPolicyRetry.on) return; armPolicyRetry.on=false; removeEventListener('online',again); clearTimeout(t); ensurePolicy(); };
+  addEventListener('online',again);
+  const t=setTimeout(again,60000);
+}
+function notePolicyHere(uid,version){ const n=policyNotes(); n[uid]=version; Store.set(POLICY_KEY,JSON.stringify(n)); }
+function askPolicy({uid,hasDoc,updated,changes}){
+  policyState='asking';
+  $('policyLede').textContent=updated
+    ?"We've updated the Terms of use and the Privacy policy. Please read them and accept them to keep using BreakLog."
+    :"Before you start, please read and accept BreakLog's Terms of use and Privacy policy.";
+  $('policyChanges').hidden=!changes.length;
+  $('policyChanges').querySelector('ul').innerHTML=changes.map(c=>`<li>${esc(c)}</li>`).join('');
+  $('policyOk').checked=false; $('policyAccept').disabled=true; $('policyErr').textContent='';
+  // An install from before 3.7 has no Google account to sign out of (signing
+  // its anonymous user out would lose the class), so it only gets Accept.
+  $('policyOut').hidden=!isGoogleUser();
+  closeDrawer();
+  const el=$('policy'); el.classList.remove('checking'); el.classList.add('show');
+  return new Promise(res=>{ askPolicy.pending={uid,hasDoc,res}; });
+}
+function acceptPolicy(){
+  const a=askPolicy.pending;
+  if(!a||!$('policyOk').checked) return;
+  if(a.uid!==fbUid){ $('policyErr').textContent='Something changed. Please sign in again.'; return; }
+  askPolicy.pending=null;
+  writePolicyAcceptance(a.hasDoc);
+  policyLetIn('ok'); a.res();
+}
+function policySignOut(){ askPolicy.pending=null; $('policyAccept').disabled=true; $('policyOut').disabled=true; signOut(); }
+/* Writer: the signed-in account accepted the current terms. Merged into
+   users/{uid}, nothing else on it touched; firestore.rules allow exactly
+   {version, acceptedAt: request.time}. Not awaited: offline, Firestore keeps
+   it and sends it later, and this device's note lets the teacher in meanwhile.
+   A pre-3.7 anonymous install with no users doc keeps only this device's
+   note - there is no account to put it on (linking to Google carries it over,
+   see linkAnonymous()). */
+function writePolicyAcceptance(hasDoc){
+  const uid=fbUid; if(!uid) return;
+  notePolicyHere(uid,POLICY_VERSION);
+  if(!fbDb||(!isGoogleUser()&&!hasDoc)) return;
+  fsWrite(fbDb.collection('users').doc(uid).set({policy:{version:POLICY_VERSION,acceptedAt:firebase.firestore.FieldValue.serverTimestamp()}},{merge:true})).catch(()=>{});
 }
 
 function detachListeners(){ [unsubOrg,unsubClass,unsubStudents,unsubDay,unsubBreaks,unsubClasses].forEach(u=>u&&u()); unsubOrg=unsubClass=unsubStudents=unsubDay=unsubBreaks=unsubClasses=null; }
@@ -2944,7 +3091,7 @@ async function writeDeleteAccount(plan){
    Preferences and localStorage on native (Store.purge). Not ui.tabsHidden -
    that is the device's, not the account's. */
 async function forgetAccountHere(classIds,notice){
-  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,
+  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,POLICY_KEY,
     ...HifzAccountDelete.LOCAL_KEYS,...(classIds||[]).map(cacheKey)]);
   (await Store.keys()).forEach(k=>{ if(k&&k.indexOf(HifzAccountDelete.LOCAL_PREFIX)===0) keys.add(k); });
   await Promise.all([...keys].map(k=>Store.purge(k)));
@@ -3746,15 +3893,17 @@ function tick(){
   const reveal=()=>document.querySelector('.app').classList.remove('booting');
   const failsafe=setTimeout(reveal,3000);
   try{
-    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY]);
+    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,POLICY_KEY]);
     paintLock();
     if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');
     CLASS_ID=Store.get(SESSION_CLASS_KEY)||'default';
     if(CLASS_ID!=='default') await Store.hydrate([cacheKey(CLASS_ID)]);
     if(!loadFromCache()){ loadProfile(); load(); DAY_STATE_ID=dayId(new Date()); }
     render();
+    policyCoverAtBoot();
   } finally { clearTimeout(failsafe); reveal(); }
   setInterval(tick,1000);
+  ensurePolicy();                               // Terms and privacy, alongside opening the class
   const sessionOrgId=Store.get(SESSION_ORG_KEY);
   if(sessionOrgId){
     await attachToOrg(sessionOrgId);

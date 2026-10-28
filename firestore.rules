@@ -85,14 +85,34 @@ service cloud.firestore {
 
     // ---- users/{uid}: where a signed-in account finds its classes ----
     // Only a pointer - listing an org here grants nothing; the org's own
-    // rules decide access.
+    // rules decide access. Also where the account's acceptance of the Terms
+    // of use and Privacy policy is kept (4.2: `policy`, writePolicyAcceptance
+    // in index.html). An update is checked against the whole doc it leaves,
+    // existing fields included, so 'policy' must be allowed here for older
+    // app versions too: they write only orgIds/updatedAt, and their writes
+    // pass as long as they leave `policy` exactly as it was.
+    function policyShape() {
+      let p = request.resource.data.policy;
+      return p is map && p.keys().hasAll(['version','acceptedAt']) && p.keys().hasOnly(['version','acceptedAt'])
+        && p.version is string && p.version.size() > 0 && p.version.size() <= 32
+        && p.acceptedAt == request.time;
+    }
+    function userShape() {
+      return request.resource.data.keys().hasOnly(['orgIds','updatedAt','policy'])
+        && request.resource.data.get('orgIds', []) is list
+        && request.resource.data.get('orgIds', []).size() <= 50;
+    }
     match /users/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow list: if false;
-      allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['orgIds','updatedAt'])
-        && request.resource.data.orgIds is list
-        && request.resource.data.orgIds.size() <= 50;
+      // A new account may accept the terms before it has any class, so
+      // orgIds isn't required.
+      allow create: if signedIn() && request.auth.uid == uid && userShape()
+        && (!('policy' in request.resource.data) || policyShape());
+      allow update: if signedIn() && request.auth.uid == uid && userShape()
+        && (!('policy' in request.resource.data)
+            || ('policy' in resource.data && request.resource.data.policy == resource.data.policy)
+            || policyShape());
       // Delete my account: your own pointer, last of the data.
       allow delete: if signedIn() && request.auth.uid == uid;
     }

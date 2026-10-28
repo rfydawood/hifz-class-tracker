@@ -358,6 +358,55 @@ test('users/{uid} is readable and writable only by that uid, with a size-capped 
   await assertFails(me.collection('users').get());
 });
 
+// ---- 4.2: accepting the Terms of use and Privacy policy (users/{uid}.policy) ----
+
+const now = () => firebase.firestore.FieldValue.serverTimestamp();
+const policy = (version = '2026-10-27') => ({ policy: { version, acceptedAt: now() } });
+
+test('policy: an account accepts the terms on its own users doc - before it has a class, and alongside orgIds', async () => {
+  const me = testEnv.authenticatedContext('uidA').firestore();
+  await assertSucceeds(me.collection('users').doc('uidA').set(policy(), { merge: true }));          // brand-new account, no class yet
+  await assertSucceeds(me.collection('users').doc('uidA').set({ orgIds: [ORG_ID], updatedAt: now() }, { merge: true }));
+  await assertSucceeds(me.collection('users').doc('uidA').set(policy('2027-01-01'), { merge: true })); // accepting a newer version
+  const g = testEnv.authenticatedContext('uidG', { email: 'g@example.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore();
+  await assertSucceeds(g.collection('users').doc('uidG').set({ orgIds: [ORG_ID], updatedAt: now(), ...policy() }));
+  const anon = testEnv.authenticatedContext('uidN', { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+  await assertSucceeds(anon.collection('users').doc('uidN').set(policy(), { merge: true }));         // a pre-3.7 install, same shape
+});
+
+test('policy: an older app version still updates orgIds when the doc already has a policy', async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection('users').doc('uidA').set({ orgIds: [ORG_ID], updatedAt: null, policy: { version: '2026-10-27', acceptedAt: new Date() } });
+  });
+  const me = testEnv.authenticatedContext('uidA').firestore();
+  // exactly what ensureUserIndex()/bootstrapOrg()/claimInvite() in 4.1 send
+  await assertSucceeds(me.collection('users').doc('uidA').set({ orgIds: firebase.firestore.FieldValue.arrayUnion('OTHER-ORG01'), updatedAt: now() }, { merge: true }));
+  await assertSucceeds(me.collection('users').doc('uidA').update({ updatedAt: now() }));
+  // and the old shape checks still hold
+  await assertFails(me.collection('users').doc('uidA').set({ extra: 1 }, { merge: true }));
+  await assertFails(me.collection('users').doc('uidA').set({ orgIds: Array.from({ length: 51 }, (_, i) => 'o' + i) }, { merge: true }));
+  await assertFails(me.collection('users').doc('uidA').set({ orgIds: 'not-a-list' }, { merge: true }));
+});
+
+test('policy: only {version, acceptedAt = server time}, only by that uid', async () => {
+  const me = testEnv.authenticatedContext('uidA').firestore();
+  const other = testEnv.authenticatedContext('uidB').firestore();
+  const users = me.collection('users').doc('uidA');
+  await assertFails(other.collection('users').doc('uidA').set(policy(), { merge: true }));                       // someone else's doc
+  await assertFails(testEnv.unauthenticatedContext().firestore().collection('users').doc('uidA').set(policy()));
+  await assertFails(users.set({ policy: { version: '2026-10-27', acceptedAt: new Date(2020, 0, 1) } }));        // a made-up time
+  await assertFails(users.set({ policy: { version: '2026-10-27' } }));                                          // no time
+  await assertFails(users.set({ policy: { version: '2026-10-27', acceptedAt: now(), by: 'x' } }));             // extra field
+  await assertFails(users.set({ policy: { version: 20261027, acceptedAt: now() } }));                           // not a string
+  await assertFails(users.set({ policy: { version: '', acceptedAt: now() } }));
+  await assertFails(users.set({ policy: { version: 'x'.repeat(33), acceptedAt: now() } }));
+  await assertFails(users.set({ policy: true }));
+  // once there, it can't be rewritten with a back-dated time either
+  await assertSucceeds(users.set(policy()));
+  await assertFails(users.set({ policy: { version: '2026-10-27', acceptedAt: new Date(2020, 0, 1) } }, { merge: true }));
+  await assertFails(users.update({ 'policy.version': 'forged' }));
+});
+
 const DAY = 86400000;
 function inviteDoc(overrides = {}) {
   return {

@@ -88,6 +88,12 @@ async function signIn(page) {
     window.__hifzTestGoogle = { sub: 'g-store-' + email, email, email_verified: true, name };
   }, [EMAIL, TEACHER]);
   await page.locator('#signinBtn').click();
+  // 4.2: the Terms of use and Privacy policy, once per account
+  await page.waitForFunction(() => ['asking', 'ok', 'deferred'].includes(window.__hifzPolicy), null, { timeout: 30000 });
+  if (await page.evaluate(() => window.__hifzPolicy) === 'asking') {
+    await page.locator('#policy .ptoggle').click();
+    await page.locator('#policyAccept').click();
+  }
 }
 
 // Returns false when this account already has the class (a later device in

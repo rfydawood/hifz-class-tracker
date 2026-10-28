@@ -18,10 +18,23 @@ export async function useGoogleAccount(page, email) {
   emailByPage.set(page, email);
   await page.evaluate((t) => { window.__hifzTestGoogle = t; }, googleToken(email));
 }
-export async function signInOnGate(page, email) {
+export async function signInOnGate(page, email, { acceptPolicy = true } = {}) {
   await page.locator('#signin.show').waitFor({ timeout: 20000 });
   await useGoogleAccount(page, email);
   await page.locator('#signinBtn').click();
+  if (acceptPolicy) await acceptPolicyIfAsked(page);
+}
+// 4.2: after signing in, an account that hasn't accepted the current Terms of
+// use and Privacy policy is asked to (index.html ensurePolicy()). Accepts
+// through the real screen, so the acceptance is on the account (users/{uid})
+// and any later device or reload signed in as it isn't asked again.
+export async function acceptPolicyIfAsked(page) {
+  await page.waitForFunction(() => ['asking', 'ok', 'deferred'].includes(window.__hifzPolicy), null, { timeout: 20000 });
+  if (await page.evaluate(() => window.__hifzPolicy) !== 'asking') return false;
+  await page.locator('#policy .ptoggle').click();
+  await page.locator('#policyAccept').click();
+  await page.waitForFunction(() => window.__hifzPolicy === 'ok');
+  return true;
 }
 export function emailOf(page) { return emailByPage.get(page); }
 
@@ -235,7 +248,9 @@ export async function createAnonymousClass(page, teacher, students) {
     catch (e) { for (const [r, d] of docs) await r.set(d); }
     // straight into localStorage too: the native mock's Preferences don't
     // survive the reload below, and Store.hydrate() falls back to localStorage
-    const keep = { 'session.orgId': code, 'session.classId': 'default',
+    // and, like a device whose teacher already accepted the terms (4.2), this
+    // device's note of it - an anonymous user has no users doc to keep it on
+    const keep = { 'session.orgId': code, 'session.classId': 'default', [POLICY_KEY]: JSON.stringify({ [fbUid]: POLICY_VERSION }),
       'hifz.guest.profile': JSON.stringify({ teacher, setup: true, students: students.map((n, i) => ({ id: 's' + i, name: n, active: true })) }) };
     for (const [k, v] of Object.entries(keep)) { Store.set(k, v); localStorage.setItem(k, v); }
     return code;
