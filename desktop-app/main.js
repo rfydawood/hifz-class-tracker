@@ -47,7 +47,7 @@ function start() {
     minWidth: 360,
     minHeight: 480,
     backgroundColor: '#E3EAEC',
-    title: 'Hifz Class Tracker',
+    title: 'BreakLog',
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -137,9 +137,9 @@ ipcMain.handle('google-sign-in', (event) => {
 
 function donePage(ok) {
   const msg = ok
-    ? 'You are signed in. You can close this tab and go back to the Hifz Class Tracker app.'
-    : 'Sign-in did not finish. Go back to the Hifz Class Tracker app and try again.';
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hifz Class Tracker</title>
+    ? 'You are signed in. You can close this tab and go back to the BreakLog app.'
+    : 'Sign-in did not finish. Go back to the BreakLog app and try again.';
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>BreakLog</title>
 <style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#E3EAEC;color:#1F2E36;font:16px/1.5 system-ui,"Segoe UI",sans-serif}
 .card{background:#fff;border-radius:16px;padding:32px 28px;max-width:380px;margin:16px;text-align:center;box-shadow:0 4px 20px rgba(31,46,54,.12)}</style>
 </head><body><div class="card"><h1 style="font-size:20px;margin:0 0 8px">${ok ? 'Signed in' : 'Not signed in'}</h1><p style="margin:0">${msg}</p></div></body></html>`;

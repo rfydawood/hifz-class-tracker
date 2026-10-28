@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in - Hifz Class Tracker</title>
+<title>Sign in - BreakLog</title>
 <link rel="icon" href="favicon.png">
 <meta name="robots" content="noindex">
 <style>
@@ -25,7 +25,7 @@
 <div class="card">
   <img src="icons/icon-192.png" alt="">
   <h1>Sign in to the desktop app</h1>
-  <p id="msg">Sign in with Google to open your classes in the Hifz Class Tracker desktop app.</p>
+  <p id="msg">Sign in with Google to open your classes in the BreakLog desktop app.</p>
   <button id="btn" onclick="go()">Sign in with Google</button>
   <div class="err" id="err"></div>
 </div>
@@ -44,7 +44,7 @@ const q=new URLSearchParams(location.search.length>1?location.search:location.ha
 const port=q.get('port'), state=q.get('state');
 const ok=/^\d{2,5}$/.test(port||'')&&/^[0-9a-f]{32,}$/.test(state||'');
 if(!ok){
-  document.getElementById('msg').textContent='Open this page from the Hifz Class Tracker desktop app (Sign in with Google).';
+  document.getElementById('msg').textContent='Open this page from the BreakLog desktop app (Sign in with Google).';
   document.getElementById('btn').style.display='none';
 }
 // A separate, memory-only Firebase app: signing in here must never touch a

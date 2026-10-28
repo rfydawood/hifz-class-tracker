@@ -1,6 +1,6 @@
 {
-  "name": "Hifz Class Tracker",
-  "short_name": "Hifz Tracker",
+  "name": "BreakLog",
+  "short_name": "BreakLog",
   "description": "Classroom attendance and break tracker for hifz teachers. All data stays on this device.",
   "start_url": "./index.html",
   "scope": "./",

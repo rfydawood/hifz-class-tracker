@@ -14,9 +14,9 @@ manifest, native app label) is changed separately - do that before the first
 store upload so the listing and the installed app match.
 
 - Contact email: rfy.dawood@gmail.com
-- Website / marketing URL: https://rfydawood.github.io/hifz-class-tracker/
-- Support URL: https://rfydawood.github.io/hifz-class-tracker/support.html
-- Privacy policy URL: https://rfydawood.github.io/hifz-class-tracker/privacy.html
+- Website / marketing URL: https://rfydawood.github.io/breaklog/
+- Support URL: https://rfydawood.github.io/breaklog/support.html
+- Privacy policy URL: https://rfydawood.github.io/breaklog/privacy.html
 - Account deletion URL (Play "Data deletion"): https://rfydawood.github.io/hifz-class-tracker/delete-account.html
 
 ---
@@ -25,8 +25,8 @@ store upload so the listing and the installed app match.
 
 - Category: **Education**
 - Contact email: rfy.dawood@gmail.com
-- Website: https://rfydawood.github.io/hifz-class-tracker/
-- Privacy policy: https://rfydawood.github.io/hifz-class-tracker/privacy.html
+- Website: https://rfydawood.github.io/breaklog/
+- Privacy policy: https://rfydawood.github.io/breaklog/privacy.html
 - Contains ads: **No**. In-app purchases: **No**. Price: **Free**.
 - Target audience: **18 and over** (the app is used by teachers; see the Play guide).
 
@@ -114,9 +114,9 @@ Password: [REVIEWER PASSWORD]
 ## Apple App Store
 
 - Primary category: **Education**. Secondary category: **Productivity**.
-- Support URL: https://rfydawood.github.io/hifz-class-tracker/support.html
-- Marketing URL: https://rfydawood.github.io/hifz-class-tracker/
-- Privacy policy URL: https://rfydawood.github.io/hifz-class-tracker/privacy.html
+- Support URL: https://rfydawood.github.io/breaklog/support.html
+- Marketing URL: https://rfydawood.github.io/breaklog/
+- Privacy policy URL: https://rfydawood.github.io/breaklog/privacy.html
 - Copyright: **2026 Rafaye Dawood**
 - Price: **Free**. No in-app purchases.
 
