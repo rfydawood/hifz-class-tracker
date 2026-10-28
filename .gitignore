@@ -7,3 +7,12 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+
+# Signing keys, their passwords and local signing config - never commit.
+*.keystore
+*.jks
+*KEEP_SAFE*
+keystore.properties
+upload_certificate.pem
+# Play Store bundles built by scripts/build-aab.mjs
+*.aab

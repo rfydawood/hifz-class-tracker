@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "verify": "node scripts/build.mjs --verify",
+    "build:aab": "node scripts/build-aab.mjs",
     "test:rules": "firebase emulators:exec --only firestore \"node --test tests/rules.test.mjs\"",
     "test:e2e": "firebase emulators:exec --only firestore,auth \"playwright test\""
   },
