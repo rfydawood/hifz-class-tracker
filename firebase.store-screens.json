@@ -1,0 +1,10 @@
+{
+  "firestore": { "rules": "firestore.rules" },
+  "emulators": {
+    "firestore": { "port": 8187, "websocketPort": 9188 },
+    "auth": { "port": 9187 },
+    "ui": { "enabled": false },
+    "hub": { "port": 4487 },
+    "logging": { "port": 4587 }
+  }
+}
