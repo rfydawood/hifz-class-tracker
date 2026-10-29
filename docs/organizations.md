@@ -145,6 +145,15 @@ index.html.
   and the break-type colours.
 - Dark mode ("Night study") is a per-tablet switch (Light / Dark /
   Automatic) any teacher can use, not an organization setting.
+- Built for one tablet in 4.3 (2026-10-29): Settings -> Appearance has the
+  11 themes, a custom colour, Light / Dark / Automatic and the background
+  (plain, soft tint, 15 patterns, own photo), all saved on the tablet only
+  (Store `ui.appearance`, `ui.bgPhoto`). When organizations come, an
+  organization's default theme would slot in as `ORG_APPEARANCE` in
+  index.html's `appearanceNow()` - under each tablet's own choice, read from
+  the org doc - with no change to how the tablet stores its own. Not built:
+  no org setting, no logo, nothing written to Firestore. The free colour
+  picker became 12 fixed swatches, with amber, orange and red left out.
 
 ### Landing page
 - Today the website opens straight on "Sign in to your class"; nothing
