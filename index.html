@@ -16,13 +16,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#1F2E36; --leaf:#0F7B7B; --leaf-soft:#DCEDED;
-  --gold:#D39A22; --gold-soft:#FBF0D8; --ember:#C0503A; --ember-soft:#F8E5E0;
-  --paper:#F2F5F6; --card:#FFFFFF; --line:#D6DFE2; --mute:#5B6B73;
+  /* Colour tokens (4.3). These are Classic in light mode - today's colours -
+     and paintTheme() (the <head> script) overwrites them for the chosen theme
+     before the page is drawn. --ink is text only now; the header (and the
+     dark buttons) have their own --head/--btn, so a theme can colour one
+     without the other. Amber (out), red (past the limit) and the break
+     colours keep their meaning in every theme. */
+  --ink:#1F2E36; --leaf:#0F7B7B; --leaf-ink:#0F7B7B; --leaf-soft:#DCEDED; --soft-ink:#0F7B7B; --leaf-line:#BBD9D9;
+  --gold:#D39A22; --gold-soft:#FBF0D8; --gold-ink:#6B4B0C; --gold-line:#E5C57E;
+  --ember:#C0503A; --ember-soft:#F8E5E0; --ember-ink:#C0503A; --ember-line:#E4B4A6; --warn-ink:#B42828;
+  --warn:#C0503A; --on-gold:#1F2E36;
+  --paper:#F2F5F6; --card:#FFFFFF; --line:#D6DFE2; --line2:#C6D2D6; --line3:#B9C6CB; --rule:#E4EBED; --mute:#5B6B73;
+  --head:#1F2E36; --headink:#EEF3F4; --headmute:#A6BFC7; --headdim:#BDCED4; --btn:#1F2E36;
+  --pres:#E7F1F1; --presb:#CFE2E2; --prest:#0C5C5C; --open-bg:#F6FBFB; --tint:rgba(15,123,123,.1);
+  --abs-bg:#EDF1F2; --abs-line:#C6D2D6; --abs-ink:#7D8D95; --strike:#B6C4C9; --tag:#E2E8EA; --tagink:#6B7A81;
+  --chip:#E7EDEF; --chipink:#4A5B63; --sel:#EEF4F5; --outer:#E3EAEC; --pat:#1F2E36; --patop:.1;
   font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:#E3EAEC;color:var(--ink);-webkit-tap-highlight-color:transparent}
+html,body{background:var(--outer);color:var(--ink);-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 input,select{font:inherit;color:inherit}
@@ -41,29 +53,29 @@ input,select{font:inherit;color:inherit}
    visibility, not display, so the layout still exists for fitGrid() to
    measure on that first render. */
 .app.booting>*{visibility:hidden}
-.top{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(14px,3.6vh,22px) clamp(9px,1.6vw,18px);background:var(--ink);color:#EEF3F4}
+.top{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.6vw,16px);padding:clamp(14px,3.6vh,22px) clamp(9px,1.6vw,18px);background:var(--head);color:var(--headink)}
 .top-left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;min-height:0}
 .top h1{font-size:clamp(18px,2.9vw,23px);font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
 .top-row2{display:flex;align-items:center;gap:6px;min-width:0}
-.top .sub{flex:1 1 auto;min-width:0;font-size:clamp(10px,1.4vw,13px);color:#A6BFC7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .sub{flex:1 1 auto;min-width:0;font-size:clamp(10px,1.4vw,13px);color:var(--headmute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top-right{flex:none;display:flex;align-items:center;gap:10px}
 .when{display:flex;flex-direction:column;align-items:flex-end;gap:1px;line-height:1}
 .top .clock{font-size:clamp(24px,7.5vw,34px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
-.top .date{font-size:clamp(12px,3.4vw,16px);font-weight:700;white-space:nowrap;color:#A6BFC7;line-height:1.2}
+.top .date{font-size:clamp(12px,3.4vw,16px);font-weight:700;white-space:nowrap;color:var(--headmute);line-height:1.2}
 .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);white-space:nowrap;flex:none}
 .pill b{font-size:13px}
-.pill.out{background:var(--gold);color:var(--ink)}
-.pill.absent{background:rgba(255,255,255,.08);color:#BDCED4}
+.pill.out{background:var(--gold);color:var(--on-gold)}
+.pill.absent{background:rgba(255,255,255,.08);color:var(--headdim)}
 .start-btn{background:var(--leaf);color:#fff;padding:8px 13px;border-radius:11px;font-weight:800;font-size:14px;white-space:nowrap;flex:none}
-.start-btn.end{background:var(--ember)}
-.start-btn.lunch{background:var(--gold);color:var(--ink)}
+.start-btn.end{background:var(--warn)}
+.start-btn.lunch{background:var(--gold);color:var(--on-gold)}
 .menu-btn{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.12);display:grid;place-items:center;flex:none}
-.menu-btn svg{width:20px;height:20px;stroke:#EEF3F4;stroke-width:2.2;fill:none;stroke-linecap:round}
+.menu-btn svg{width:20px;height:20px;stroke:var(--headink);stroke-width:2.2;fill:none;stroke-linecap:round}
 
-.banner{display:flex;align-items:center;gap:14px;padding:12px 22px;background:var(--gold-soft);border-bottom:1px solid #E5C57E;font-weight:700;font-size:15px}
-.banner.leaf{background:var(--leaf-soft);border-color:#BBD9D9}
-.banner.paper{background:#fff;border-color:var(--line);color:var(--mute);font-weight:600}
-.banner .act{margin-left:auto;background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px}
+.banner{display:flex;align-items:center;gap:14px;padding:12px 22px;background:var(--gold-soft);border-bottom:1px solid var(--gold-line);font-weight:700;font-size:15px}
+.banner.leaf{background:var(--leaf-soft);border-color:var(--leaf-line)}
+.banner.paper{background:var(--card);border-color:var(--line);color:var(--mute);font-weight:600}
+.banner .act{margin-left:auto;background:var(--btn);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px}
 
 .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr clamp(212px,24%,320px);gap:10px;padding:10px 12px 12px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
@@ -89,29 +101,29 @@ input,select{font:inherit;color:inherit}
 .grid.dense .tile.present .state{display:none}
 .tile .name{flex:none}
 .grid.dense .tile .tag{margin-bottom:1px}
-.tile.present{background:#E7F1F1;border-color:#CFE2E2}
-.tile.present .state{color:#0C5C5C}
-.tile.deact{background:#EDF1F2;color:#7D8D95;border-style:dashed;border-color:#C6D2D6}
+.tile.present{background:var(--pres);border-color:var(--presb)}
+.tile.present .state{color:var(--prest)}
+.tile.deact{background:var(--abs-bg);color:var(--abs-ink);border-style:dashed;border-color:var(--abs-line)}
 /* Left early reads as "was here, has gone" - muted like a no-show, but no
    strike-through, because the day still counts as attended. */
-.tile.gone{background:#EDF1F2;color:#5B6B73;border-color:#C6D2D6}
-.tile.gone .state{color:#5B6B73;font-weight:700}
-.tile.gone .tag{background:#E2E8EA;color:#6B7A81}
-.tile.deact .name{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#B6C4C9}
-.tile.deact .state{color:#7D8D95}
+.tile.gone{background:var(--abs-bg);color:var(--mute);border-color:var(--abs-line)}
+.tile.gone .state{color:var(--mute);font-weight:700}
+.tile.gone .tag{background:var(--tag);color:var(--tagink)}
+.tile.deact .name{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--strike)}
+.tile.deact .state{color:var(--abs-ink)}
 .tile.out{background:var(--gold-soft);border-color:var(--gold)}
-.tile.out .state{color:#6B4B0C;font-weight:800;font-size:var(--sub,13px)}
+.tile.out .state{color:var(--gold-ink);font-weight:800;font-size:var(--sub,13px)}
 .tile.out.long{background:var(--ember-soft);border-color:var(--ember)}
-.tile.out.long .state{color:var(--ember)}
-.tile .tag{align-self:flex-start;order:-1;margin-bottom:2px;font-size:var(--tag,10px);font-weight:700;padding:2px 6px;border-radius:6px;background:var(--gold-soft);color:#6B4B0C}
-.tile .tag.flag{background:var(--ember-soft);color:var(--ember)}
-.tile.deact .tag{background:#E2E8EA;color:#6B7A81}
+.tile.out.long .state{color:var(--ember-ink)}
+.tile .tag{align-self:flex-start;order:-1;margin-bottom:2px;font-size:var(--tag,10px);font-weight:700;padding:2px 6px;border-radius:6px;background:var(--gold-soft);color:var(--gold-ink)}
+.tile .tag.flag{background:var(--ember-soft);color:var(--ember-ink)}
+.tile.deact .tag{background:var(--tag);color:var(--tagink)}
 .tile:disabled{opacity:.6;cursor:default}
 @media (prefers-reduced-motion:reduce){.tile,.sheet{transition:none;animation:none}}
 
 .out-list{flex:1;overflow:auto;padding:12px}
-.out-item{display:grid;grid-template-columns:1fr auto;column-gap:8px;row-gap:6px;align-items:center;padding:clamp(5px,1vh,9px) 10px;border-radius:12px;background:var(--gold-soft);border:1px solid #E5C57E;margin-bottom:8px}
-.out-item.long{background:var(--ember-soft);border-color:#E4B4A6}
+.out-item{display:grid;grid-template-columns:1fr auto;column-gap:8px;row-gap:6px;align-items:center;padding:clamp(5px,1vh,9px) 10px;border-radius:12px;background:var(--gold-soft);border:1px solid var(--gold-line);margin-bottom:8px}
+.out-item.long{background:var(--ember-soft);border-color:var(--ember-line)}
 #outList.compact .out-item{row-gap:0;padding:5px 8px;margin-bottom:5px}
 #outList.compact .out-item .who span{display:none}
 #outList.compact .out-item .back{grid-column:2;grid-row:2;padding:4px 9px;font-size:12px}
@@ -119,8 +131,8 @@ input,select{font:inherit;color:inherit}
 .out-item .who b{display:block;font-size:clamp(13px,1.7vw,16px);font-weight:800;line-height:1.15}
 .out-item .who span{display:block;font-size:11px;line-height:1.3;color:var(--mute)}
 .out-item .t{grid-column:2;grid-row:1;justify-self:end;font-size:clamp(16px,2.2vw,21px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.out-item.long .t{color:var(--ember)}
-.out-item .back{grid-column:1/-1;grid-row:2;text-align:center;background:var(--ink);color:#fff;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13px;white-space:nowrap}
+.out-item.long .t{color:var(--ember-ink)}
+.out-item .back{grid-column:1/-1;grid-row:2;text-align:center;background:var(--btn);color:#fff;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13px;white-space:nowrap}
 .empty{padding:26px 18px;text-align:center;color:var(--mute);font-size:14px;line-height:1.5}
 .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
 
@@ -129,7 +141,7 @@ input,select{font:inherit;color:inherit}
 .reason{border:2px solid var(--line);border-radius:18px;padding:20px 12px;font-size:19px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:9px;background:var(--card)}
 .reason .cap{font-size:12px;font-weight:700;color:var(--mute)}
 .reason.capped{border-color:var(--ember);background:var(--ember-soft)}
-.reason.capped .cap{color:var(--ember)}
+.reason.capped .cap{color:var(--ember-ink)}
 .stepper{display:flex;align-items:stretch;justify-content:center;gap:14px}
 .step-btn{width:68px;height:68px;border-radius:18px;border:2px solid var(--line);background:var(--card);font-size:34px;font-weight:800;color:var(--ink);display:grid;place-items:center;flex:none;line-height:1}
 .step-btn:active{border-color:var(--gold);background:var(--gold-soft)}
@@ -163,9 +175,9 @@ input,select{font:inherit;color:inherit}
 .actions{display:flex;gap:12px;margin-top:18px}
 .btn{flex:1;border-radius:14px;padding:16px;font-size:17px;font-weight:800;text-align:center}
 .btn.primary{background:var(--leaf);color:#fff}
-.btn.dark{background:var(--ink);color:#fff}
+.btn.dark{background:var(--btn);color:#fff}
 .btn.ghost{background:var(--paper);border:1px solid var(--line)}
-.btn.warn{background:var(--ember);color:#fff}
+.btn.warn{background:var(--warn);color:#fff}
 .note{margin-top:14px}
 .note input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--paper)}
 .rowlist{display:flex;flex-direction:column;gap:8px}
@@ -179,22 +191,22 @@ input,select{font:inherit;color:inherit}
 .row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
 .row b{flex:1;font-size:16px}
 .row .time{color:var(--mute);font-size:13px;min-width:130px;text-align:right}
-.seg{display:inline-flex;background:var(--card);border:1px solid #C6D2D6;border-radius:10px;overflow:hidden}
-.seg button{padding:7px 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid #E4EBED}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+.seg button{padding:7px 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid var(--rule)}
 .seg button:last-child{border-right:0}
-.seg button.on{background:var(--ink);color:#fff}
-.seg button.on.absent{background:var(--ember)}
-.seg button.on.tardy{background:var(--gold);color:var(--ink)}
+.seg button.on{background:var(--btn);color:#fff}
+.seg button.on.absent{background:var(--warn)}
+.seg button.on.tardy{background:var(--gold);color:var(--on-gold)}
 .seg button.on.left{background:#5B6B73;color:#fff}
 .summary{display:flex;gap:10px;margin-top:14px}
 .summary div{flex:1;border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;display:flex;justify-content:space-between}
 .summary div b{font-size:18px}
-.summary .p{background:var(--leaf-soft);color:#0C5C5C}
-.summary .t{background:var(--gold-soft);color:#6B4B0C}
-.summary .a{background:var(--ember-soft);color:var(--ember)}
-.summary .g{background:#E7EDEF;color:#4A5B63}
+.summary .p{background:var(--leaf-soft);color:var(--prest)}
+.summary .t{background:var(--gold-soft);color:var(--gold-ink)}
+.summary .a{background:var(--ember-soft);color:var(--ember-ink)}
+.summary .g{background:var(--chip);color:var(--chipink)}
 
-.toast{position:absolute;left:50%;bottom:calc(68px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap;pointer-events:none}
+.toast{position:absolute;left:50%;bottom:calc(68px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--btn);color:#fff;padding:12px 16px 12px 18px;border-radius:12px;display:none;align-items:center;gap:14px;font-weight:600;font-size:15px;z-index:30;box-shadow:0 8px 30px rgba(31,46,54,.25);white-space:nowrap;pointer-events:none}
 /* A full roster reaches the bottom of the screen, so the toast always sits
    over a student's tile. It stays where it is - that's where the eye goes -
    but it must not eat the tap meant for the name underneath it. Only Undo
@@ -212,10 +224,10 @@ input,select{font:inherit;color:inherit}
 .drawer h4:first-child{margin-top:0}
 .dbtn{display:block;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);font-weight:700;font-size:15px;margin-bottom:8px;background:var(--card)}
 .dbtn small{display:block;font-weight:500;color:var(--mute);font-size:13px;margin-top:2px}
-.dbtn.gold{background:var(--gold-soft);border-color:#E5C57E}
-.dbtn.ember{background:var(--ember-soft);border-color:#E4B4A6;color:var(--ember)}
+.dbtn.gold{background:var(--gold-soft);border-color:var(--gold-line)}
+.dbtn.ember{background:var(--ember-soft);border-color:var(--ember-line);color:var(--ember-ink)}
 .dbtn.leaf{background:var(--leaf);color:#fff;border-color:var(--leaf)}
-.dbtn.leaf small{color:#CFE3F0}
+.dbtn.leaf small{color:rgba(255,255,255,.82)}
 .field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:700}
 .field small{display:block;font-weight:500;color:var(--mute);font-size:12px;margin-top:2px}
 .field select,.field input{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--paper);font-size:14px;width:96px}
@@ -223,14 +235,14 @@ input,select{font:inherit;color:inherit}
 .rrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
 .rrow b{flex:1}
 .rrow small{font-weight:500;color:var(--mute);font-size:12px}
-.rrow button{font-size:13px;font-weight:700;color:var(--ember);padding:4px 6px}
-.rrow button.back{color:var(--leaf)}
+.rrow button{font-size:13px;font-weight:700;color:var(--ember-ink);padding:4px 6px}
+.rrow button.back{color:var(--leaf-ink)}
 .two{display:flex;gap:6px}
 .two select,.two input{max-width:104px}
-.row .time.flag{color:var(--ember);font-weight:800}
+.row .time.flag{color:var(--ember-ink);font-weight:800}
 .radd{display:flex;gap:8px;margin-top:12px}
 .radd input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper);font-size:14px}
-.radd button{background:var(--ink);color:#fff;border-radius:10px;padding:10px 15px;font-weight:700;font-size:14px}
+.radd button{background:var(--btn);color:#fff;border-radius:10px;padding:10px 15px;font-weight:700;font-size:14px}
 .setup{position:fixed;inset:0;background:var(--paper);display:none;place-items:center;z-index:80;padding:24px;overflow:auto}
 .setup.show{display:grid}
 .setup-card{background:var(--card);border:1px solid var(--line);border-radius:20px;max-width:580px;width:100%;padding:30px}
@@ -242,13 +254,13 @@ input,select{font:inherit;color:inherit}
 .roster-list{margin:12px 0;border:1px solid var(--line);border-radius:12px;max-height:280px;overflow-y:auto;background:var(--paper)}
 .roster-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px}
 .roster-item:last-child{border-bottom:none}
-.roster-item button{color:var(--ember);font-weight:700;font-size:13px;padding:4px 8px}
+.roster-item button{color:var(--ember-ink);font-weight:700;font-size:13px;padding:4px 8px}
 .roster-add{display:flex;gap:8px}
 .roster-add input{flex:1;min-width:0}
 .setup-actions{display:flex;align-items:center;gap:12px}
 .setup-actions span{color:var(--mute);font-size:14px;font-weight:700}
 .setup-actions .btn{margin-left:auto}
-.err{color:var(--ember);font-weight:700;font-size:14px;margin-top:12px;min-height:18px}
+.err{color:var(--ember-ink);font-weight:700;font-size:14px;margin-top:12px;min-height:18px}
 /* Terms of use and Privacy policy (ensurePolicy): above every other screen.
    While boot is still finding out, the card waits hidden (.checking) so the
    class never flashes up behind it. */
@@ -256,14 +268,14 @@ input,select{font:inherit;color:inherit}
 .setup.policy.checking .setup-card{visibility:hidden}
 .policy .setup-card{max-width:560px;padding:26px 28px}
 .policy .setup-card .lede{margin-bottom:16px}
-.pchanges{background:var(--gold-soft);border:1px solid #EBD3A1;border-radius:12px;padding:12px 16px;margin:0 0 16px}
-.pchanges h4{font-size:12px;letter-spacing:.09em;font-weight:800;color:#8A6412}
+.pchanges{background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:12px;padding:12px 16px;margin:0 0 16px}
+.pchanges h4{font-size:12px;letter-spacing:.09em;font-weight:800;color:var(--gold-ink)}
 .pchanges ul{margin:6px 0 0 18px;font-size:14px;line-height:1.5;font-weight:600}
 .plinks{display:flex;flex-wrap:wrap;gap:10px}
-.plinks a{flex:1 1 180px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;font-weight:800;font-size:15px;color:var(--leaf);text-decoration:none;background:var(--card)}
+.plinks a{flex:1 1 180px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;font-weight:800;font-size:15px;color:var(--leaf-ink);text-decoration:none;background:var(--card)}
 .plinks a svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .setup-card label.ptoggle{display:flex;align-items:center;gap:14px;margin:16px 0 18px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--paper);font-weight:700;font-size:15px;line-height:1.35;cursor:pointer}
-.setup-card .ptoggle input{appearance:none;-webkit-appearance:none;flex:none;display:block;width:50px;height:30px;margin:0;padding:0;border:0;border-radius:15px;background:#B5C3C8;position:relative;cursor:pointer;transition:background .15s}
+.setup-card .ptoggle input{appearance:none;-webkit-appearance:none;flex:none;display:block;width:50px;height:30px;margin:0;padding:0;border:0;border-radius:15px;background:var(--line3);position:relative;cursor:pointer;transition:background .15s}
 .setup-card .ptoggle input::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(31,46,54,.3);transition:transform .15s}
 .setup-card .ptoggle input:checked{background:var(--leaf)}
 .setup-card .ptoggle input:checked::after{transform:translateX(20px)}
@@ -370,17 +382,17 @@ input,select{font:inherit;color:inherit}
 .vsec .field input{width:142px;max-width:none;padding:7px 8px}
 .vsec .field select{width:100px}
 .vsec .ver{display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:16px;text-align:center}
-.tabbar{flex:none;position:relative;z-index:5;background:#fff;border-top:1px solid #D6DFE2;height:calc(54px + env(safe-area-inset-bottom));overflow:hidden;transition:height .22s ease,border-color .22s ease}
+.tabbar{flex:none;position:relative;z-index:5;background:var(--card);border-top:1px solid var(--line);height:calc(54px + env(safe-area-inset-bottom));overflow:hidden;transition:height .22s ease,border-color .22s ease}
 .tabs{display:flex;align-items:stretch;height:54px;padding:0 4px;transition:transform .22s ease}
-.tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#5B6B73;font-size:11px;font-weight:700;text-align:center;line-height:1.1}
+.tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--mute);font-size:11px;font-weight:700;text-align:center;line-height:1.1}
 .tab .ic{position:relative;width:56px;height:28px;border-radius:999px;display:grid;place-items:center}
 .tab svg{width:21px;height:21px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.tab.on{color:#0F7B7B}
-.tab.on .ic{background:#DCEDED}
-.badge{position:absolute;top:-2px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--ink);font-size:11px;font-weight:800;line-height:18px;text-align:center;display:none;box-shadow:0 0 0 2px #fff}
+.tab.on{color:var(--leaf-ink)}
+.tab.on .ic{background:var(--leaf-soft)}
+.badge{position:absolute;top:-2px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--on-gold);font-size:11px;font-weight:800;line-height:18px;text-align:center;display:none;box-shadow:0 0 0 2px var(--card)}
 .badge.show{display:block}
-.badge.over{background:#C0503A;color:#fff}
-.tabhide{flex:none;width:40px;display:grid;place-items:center;color:#5B6B73}
+.badge.over{background:var(--warn);color:#fff}
+.tabhide{flex:none;width:40px;display:grid;place-items:center;color:var(--mute)}
 /* Teacher mode (4.1): the PIN pad. */
 .pinpad{max-width:330px;margin:0 auto}
 .pindots{display:flex;justify-content:center;gap:18px;margin:2px 0 16px}
@@ -390,14 +402,14 @@ input,select{font:inherit;color:inherit}
 .pinkey{height:58px;border-radius:14px;background:var(--paper);border:1px solid var(--line);font-size:24px;font-weight:800;display:grid;place-items:center;text-align:center}
 .pinkey:active{border-color:var(--gold);background:var(--gold-soft)}
 .pinkey svg{width:24px;height:24px;stroke:var(--ink);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.pinmsg{min-height:18px;text-align:center;font-size:13px;font-weight:700;color:var(--ember);margin-top:10px}
-.pinforgot{display:block;margin:4px auto 0;font-size:13px;font-weight:700;color:var(--leaf);text-decoration:underline;text-align:center}
+.pinmsg{min-height:18px;text-align:center;font-size:13px;font-weight:700;color:var(--ember-ink);margin-top:10px}
+.pinforgot{display:block;margin:4px auto 0;font-size:13px;font-weight:700;color:var(--leaf-ink);text-decoration:underline;text-align:center}
 .minlocked{text-align:center;margin-top:8px;font-size:13px;font-weight:700;color:var(--mute)}
 @media (max-height:540px){.pinkey{height:48px}.pindots{margin-bottom:10px}}
 .tabhide svg,.tabhandle svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .app.tabs-hidden .tabbar{height:0;border-top-color:transparent}
 .app.tabs-hidden .tabs{transform:translateY(100%)}
-.tabhandle{position:absolute;right:10px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:15;width:46px;height:26px;border-radius:13px;background:#fff;border:1px solid #D6DFE2;box-shadow:0 2px 8px rgba(31,46,54,.18);display:none;place-items:center;color:#0F7B7B}
+.tabhandle{position:absolute;right:10px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:15;width:46px;height:26px;border-radius:13px;background:var(--card);border:1px solid var(--line);box-shadow:0 2px 8px rgba(31,46,54,.18);display:none;place-items:center;color:var(--leaf-ink)}
 .app.tabs-hidden.handle-on .tabhandle{display:grid}
 #barProbe{position:absolute;left:0;top:0;width:1px;height:calc(54px + env(safe-area-inset-bottom));visibility:hidden;pointer-events:none}
 .app.tabs-hidden .toast{bottom:calc(40px + env(safe-area-inset-bottom))}
@@ -409,11 +421,11 @@ input,select{font:inherit;color:inherit}
 .rs .rn{grid-area:num;color:var(--mute);font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
 .rs .nm{grid-area:name;font-size:16px;font-weight:800;min-width:0;overflow-wrap:anywhere}
 .rs .wk{grid-area:wk;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;font-weight:600;color:var(--mute);justify-content:flex-end}
-.rs .wk .fl{color:#B42828;font-weight:800}
-.rs .rm{grid-area:rm;font-size:13px;font-weight:700;color:var(--ember);padding:6px 8px;border-radius:8px}
-.rs .rm.back{color:var(--leaf)}
-.rs.gone{background:#EDF1F2;cursor:default}
-.rs.gone .nm{color:#7D8D95}
+.rs .wk .fl{color:var(--warn-ink);font-weight:800}
+.rs .rm{grid-area:rm;font-size:13px;font-weight:700;color:var(--ember-ink);padding:6px 8px;border-radius:8px}
+.rs .rm.back{color:var(--leaf-ink)}
+.rs.gone{background:var(--abs-bg);cursor:default}
+.rs.gone .nm{color:var(--abs-ink)}
 .rnote{color:var(--mute);font-size:13px;margin:-4px 0 10px}
 @media (max-width:700px){
   .rs{grid-template-columns:26px minmax(0,1fr) auto;grid-template-areas:"num name rm" "num wk wk"}
@@ -422,18 +434,18 @@ input,select{font:inherit;color:inherit}
 
 /* Reports tab */
 .rtop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
-.rtop select{border:1px solid #C6D2D6;border-radius:10px;padding:6px 10px;background:var(--card);font-size:14px;font-weight:700;color:var(--ink);max-width:100%;min-width:0}
+.rtop select{border:1px solid var(--line2);border-radius:10px;padding:6px 10px;background:var(--card);font-size:14px;font-weight:700;color:var(--ink);max-width:100%;min-width:0}
 .rtop .seg button{padding:6px 11px}
 .rtop .seg button.on{background:var(--leaf);color:#fff}
 .rdates{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.rdate{padding:6px 12px;border-radius:999px;border:1px solid #C6D2D6;background:var(--card);font-size:13px;font-weight:700;color:var(--mute)}
-.rdate.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.rdate{padding:6px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--card);font-size:13px;font-weight:700;color:var(--mute)}
+.rdate.on{background:var(--btn);border-color:var(--btn);color:#fff}
 .rline{margin:9px 0 10px;font-size:13px;font-weight:600;color:var(--mute);line-height:1.4}
 .rline b{color:var(--ink)}
 .cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 11px;min-width:0}
 .card h5{font-size:12px;font-weight:800;color:var(--mute);line-height:1.2}
-.card h5.warn{color:#B42828}
+.card h5.warn{color:var(--warn-ink)}
 .card>b{display:block;font-size:clamp(17px,2.4vw,22px);font-weight:800;letter-spacing:-.02em;margin:3px 0 2px;line-height:1.15}
 .card small{display:block;font-size:11.5px;font-weight:600;color:var(--mute);line-height:1.35}
 .charts{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:8px;margin-top:8px}
@@ -441,31 +453,31 @@ input,select{font:inherit;color:inherit}
 .chead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:6px}
 .chead h4{font-size:14px;font-weight:800;margin-right:auto}
 .chead .seg button{padding:4px 9px;font-size:12px}
-.chead .seg button.on{background:var(--ink);color:#fff}
+.chead .seg button.on{background:var(--btn);color:#fff}
 .vs{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--mute)}
-.vs i{width:30px;height:18px;border-radius:9px;background:#C6D2D6;position:relative;transition:background .15s}
+.vs i{width:30px;height:18px;border-radius:9px;background:var(--line2);position:relative;transition:background .15s}
 .vs i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
 .vs.on i{background:var(--leaf)}
 .vs.on i::after{left:14px}
 .chart{width:100%;min-width:0;overflow:hidden}
 .chart svg{display:block}
-.chart .ax{font-size:10.5px;fill:#5B6B73;font-weight:600}
-.chart .lb{font-size:10.5px;fill:#1F2E36;font-weight:700}
-.chart .avg{font-size:10.5px;fill:#1F2E36;font-weight:800}
+.chart .ax{font-size:10.5px;fill:var(--mute);font-weight:600}
+.chart .lb{font-size:10.5px;fill:var(--ink);font-weight:700}
+.chart .avg{font-size:10.5px;fill:var(--ink);font-weight:800}
 .chart .hit{cursor:pointer}
 .ckey{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11.5px;font-weight:700;color:var(--mute)}
 .ckey span{display:inline-flex;align-items:center;gap:5px}
 .ckey i,.dleg i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
-.ckey .tk{width:14px;height:3px;border-radius:2px;background:#1F2E36}
-.ckey .dash{width:14px;height:0;border-top:2px dashed #1F2E36;border-radius:0}
+.ckey .tk{width:14px;height:3px;border-radius:2px;background:var(--ink)}
+.ckey .dash{width:14px;height:0;border-top:2px dashed var(--ink);border-radius:0}
 .cnote{font-size:11.5px;color:var(--mute);margin-top:4px;line-height:1.4}
 .bdown{margin-top:8px;padding:9px 11px;border-radius:12px;background:var(--paper);border:1px solid var(--line);font-size:13px;line-height:1.45}
 .bdown b{font-size:14px}
-.bdown .open{display:inline-block;margin-top:6px;background:var(--ink);color:#fff;border-radius:9px;padding:6px 12px;font-weight:700;font-size:13px}
+.bdown .open{display:inline-block;margin-top:6px;background:var(--btn);color:#fff;border-radius:9px;padding:6px 12px;font-weight:700;font-size:13px}
 .donut{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .donut svg{flex:none;width:120px;height:120px}
-.donut .dn{font-size:22px;font-weight:800;fill:#1F2E36}
-.donut .dnu{font-size:10px;font-weight:700;fill:#5B6B73}
+.donut .dn{font-size:22px;font-weight:800;fill:var(--ink)}
+.donut .dnu{font-size:10px;font-weight:700;fill:var(--mute)}
 .dleg{flex:1;min-width:150px;display:flex;flex-direction:column;gap:5px}
 .dleg div{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:7px;align-items:center;font-size:12.5px;font-weight:700}
 .dleg small{grid-column:2;font-weight:600;color:var(--mute);font-size:11.5px}
@@ -481,14 +493,14 @@ input,select{font:inherit;color:inherit}
 
 /* ===== 4.0: Profile, My classes, Add a class, Schedule ===== */
 /* the open class's name wraps rather than being cut short - it's how the teacher knows which class this is */
-.cpill{display:inline-block;max-width:100%;overflow-wrap:anywhere;line-height:1.3;padding:4px 11px;border-radius:999px;background:#DCEDED;color:#0F7B7B;font-size:12.5px;font-weight:800;margin-right:auto}
+.cpill{display:inline-block;max-width:100%;overflow-wrap:anywhere;line-height:1.3;padding:4px 11px;border-radius:999px;background:var(--leaf-soft);color:var(--soft-ink);font-size:12.5px;font-weight:800;margin-right:auto}
 .vhead h2+.cpill{margin-left:-2px}
 .vhead:has(.cpill) h2{margin-right:0}
-.ini{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#0F7B7B;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.02em;line-height:1}
+.ini{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--leaf);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.02em;line-height:1}
 .ini.big{width:58px;height:58px;font-size:21px;flex:none}
 .tab.tabprof{flex:0 0 auto;min-width:64px}
 .tab.tabprof .ic{width:44px}
-.tab.tabprof.on .ini{box-shadow:0 0 0 2px #DCEDED,0 0 0 4px #0F7B7B}
+.tab.tabprof.on .ini{box-shadow:0 0 0 2px var(--leaf-soft),0 0 0 4px var(--leaf)}
 .vsec.wide{max-width:1100px}
 .pgrid{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:14px;align-items:start}
 .pcard,.pclasses{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
@@ -497,7 +509,7 @@ input,select{font:inherit;color:inherit}
 .pid{min-width:0;display:flex;flex-direction:column;gap:2px}
 .pid b{font-size:18px;font-weight:800;overflow-wrap:anywhere}
 .pid small{font-size:12.5px;color:var(--mute);font-weight:600;overflow-wrap:anywhere}
-.pid small.ok{color:#0F7B7B;font-weight:700}
+.pid small.ok{color:var(--leaf-ink);font-weight:700}
 .pbtns{display:flex;flex-wrap:wrap;gap:8px}
 .pbtns .btn{flex:1 1 auto;padding:9px 12px;font-size:14px;border-radius:11px}
 .pcard .ver{display:block;color:var(--mute);font-size:11px;line-height:1.5;margin-top:12px;text-align:center}
@@ -505,19 +517,19 @@ input,select{font:inherit;color:inherit}
 .pclasses .rnote{margin:4px 0 12px}
 .clist{display:flex;flex-direction:column;gap:8px}
 .ccard{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--card);display:flex;flex-direction:column;gap:4px;min-width:0}
-.ccard.open{border-color:#0F7B7B;box-shadow:inset 0 0 0 1px #0F7B7B;background:#F6FBFB}
-.ccard.gone{background:#EDF1F2}
+.ccard.open{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf);background:var(--open-bg)}
+.ccard.gone{background:var(--abs-bg)}
 .ccard .ctop{display:flex;align-items:center;gap:8px}
 .ccard .ctop b{flex:1;min-width:0;font-size:16px;font-weight:800;overflow-wrap:anywhere}
 .ccard small{font-size:12.5px;color:var(--mute);font-weight:600}
 .cmore{width:34px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--paper);font-size:18px;font-weight:800;line-height:1;text-align:center;flex:none}
 .cfoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cchips{display:flex;flex-wrap:wrap;gap:5px;margin-right:auto}
-.chip2{display:inline-block;padding:3px 9px;border-radius:999px;background:#E7EDEF;color:#4A5B63;font-size:11.5px;font-weight:800}
-.chip2.open{background:#DCEDED;color:#0F7B7B}
-.chip2.run{background:var(--gold-soft);color:#6B4B0C}
+.chip2{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--chipink);font-size:11.5px;font-weight:800}
+.chip2.open{background:var(--leaf-soft);color:var(--soft-ink)}
+.chip2.run{background:var(--gold-soft);color:var(--gold-ink)}
 .copen{flex:none;padding:7px 16px;font-size:14px;border-radius:10px}
-.addcls{display:block;width:100%;margin-top:10px;padding:12px;border-radius:14px;border:2px dashed #B9C6CB;background:transparent;font-weight:800;font-size:15px;color:#0F7B7B;text-align:center}
+.addcls{display:block;width:100%;margin-top:10px;padding:12px;border-radius:14px;border:2px dashed var(--line3);background:transparent;font-weight:800;font-size:15px;color:var(--leaf-ink);text-align:center}
 .showarch{display:block;margin:12px 0 6px;font-size:13px;font-weight:700;color:var(--mute);text-decoration:underline}
 .swnote{margin-top:10px;font-size:14px;color:var(--mute);line-height:1.45}
 @media (max-width:700px){ .pgrid{grid-template-columns:minmax(0,1fr)} }
@@ -530,8 +542,8 @@ input,select{font:inherit;color:inherit}
 .addclass .setup-card label{margin-bottom:10px}
 .aclabel{font-weight:800;font-size:14px;margin:10px 0 6px}
 .daychips{display:flex;flex-wrap:wrap;gap:6px}
-.dchip{min-width:46px;padding:7px 9px;border-radius:999px;border:1px solid #C6D2D6;background:var(--card);font-size:13px;font-weight:800;color:var(--mute);text-align:center}
-.dchip.on{background:#0F7B7B;border-color:#0F7B7B;color:#fff}
+.dchip{min-width:46px;padding:7px 9px;border-radius:999px;border:1px solid var(--line2);background:var(--card);font-size:13px;font-weight:800;color:var(--mute);text-align:center}
+.dchip.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
 .actimes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .actimes input,.brow2 input,.dpick{border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:var(--paper);font-size:14px;font-weight:600;font-family:inherit;color:inherit;min-width:0}
 .actimes span,.btimes span{color:var(--mute);font-weight:700;font-size:13px}
@@ -542,8 +554,8 @@ input,select{font:inherit;color:inherit}
 .addclass .setup-card .brow2 .bname{flex:1 1 140px;width:auto}
 .btimes{display:flex;align-items:center;gap:6px}
 .btimes input{width:118px}
-.brow2 .rmv{font-size:13px;font-weight:700;color:var(--ember);padding:6px 6px}
-.addbrk{display:inline-block;margin-top:8px;padding:7px 12px;border-radius:10px;border:1px dashed #B9C6CB;font-size:13.5px;font-weight:800;color:#0F7B7B;background:transparent}
+.brow2 .rmv{font-size:13px;font-weight:700;color:var(--ember-ink);padding:6px 6px}
+.addbrk{display:inline-block;margin-top:8px;padding:7px 12px;border-radius:10px;border:1px dashed var(--line3);font-size:13.5px;font-weight:800;color:var(--leaf-ink);background:transparent}
 .addclass .hint{font-weight:600;color:var(--mute);font-size:13px;margin-top:10px}
 .addclass .err{min-height:0;margin-top:8px}
 /* Back / Next / Create stay in reach while a long step scrolls on a short screen */
@@ -554,20 +566,20 @@ input,select{font:inherit;color:inherit}
 .addclass select{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--paper);font-size:14px;font-weight:700}
 .acseg{display:flex;width:100%}
 .acseg button{flex:1;text-align:center;padding:8px 10px}
-.acseg button.on{background:#0F7B7B;color:#fff}
+.acseg button.on{background:var(--leaf);color:#fff}
 .acnum{font-weight:800;font-size:14px;color:var(--ink)}
 .radio{display:flex !important;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px !important;font-weight:800;font-size:15px;cursor:pointer}
-.radio input{width:auto !important;display:inline-block !important;margin-top:3px !important;accent-color:#0F7B7B}
+.radio input{width:auto !important;display:inline-block !important;margin-top:3px !important;accent-color:var(--leaf)}
 .radio small{display:block;font-weight:600;color:var(--mute);font-size:12.5px;margin-top:2px}
-.acsum{margin-top:10px;padding:9px 11px;border-radius:11px;background:var(--leaf-soft);color:#0C5C5C;font-size:13.5px;font-weight:700;line-height:1.45}
+.acsum{margin-top:10px;padding:9px 11px;border-radius:11px;background:var(--leaf-soft);color:var(--prest);font-size:13.5px;font-weight:700;line-height:1.45}
 /* Settings -> Schedule */
 .srow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .srow .sinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .srow b{font-size:14px;font-weight:800}
 .srow small{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.4;overflow-wrap:anywhere}
-.srow small.grey{color:#7D8D95}
-.stag{flex:none;padding:3px 9px;border-radius:999px;background:var(--gold-soft);color:#6B4B0C;font-size:11.5px;font-weight:800}
-.stag.once{background:#DCEDED;color:#0F7B7B}
+.srow small.grey{color:var(--abs-ink)}
+.stag{flex:none;padding:3px 9px;border-radius:999px;background:var(--gold-soft);color:var(--gold-ink);font-size:11.5px;font-weight:800}
+.stag.once{background:var(--leaf-soft);color:var(--soft-ink)}
 .sedit{flex:none;padding:7px 13px;font-size:13px;border-radius:10px}
 .sched .actimes input{width:124px}
 .sched .dpick{width:180px}
@@ -597,27 +609,200 @@ input,select{font:inherit;color:inherit}
 .lstep b{min-width:76px;text-align:center;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
 .field.lim{flex-wrap:wrap;row-gap:8px}
 /* Delete forever */
-.dcheck{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid #E4B4A6;background:var(--ember-soft);border-radius:12px;font-weight:700;font-size:15px;cursor:pointer}
+.dcheck{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid var(--ember-line);background:var(--ember-soft);border-radius:12px;font-weight:700;font-size:15px;cursor:pointer}
 .dcheck input{width:20px;height:20px;margin-top:1px;accent-color:var(--ember);flex:none}
 .btn.warn:disabled{opacity:.45;cursor:not-allowed}
 .ccard .cbtns{display:flex;gap:6px;flex:none}
-.ccard .cdel{color:var(--ember);border-color:#E4B4A6}
+.ccard .cdel{color:var(--ember-ink);border-color:var(--ember-line)}
 /* Delete my account */
-.pdanger{margin-top:14px;border:1px solid #E4B4A6;background:var(--ember-soft);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pdanger{margin-top:14px;border:1px solid var(--ember-line);background:var(--ember-soft);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .pdanger div{flex:1 1 220px;min-width:0}
-.pdanger b{display:block;font-weight:800;color:var(--ember)}
+.pdanger b{display:block;font-weight:800;color:var(--ember-ink)}
 .pdanger small{display:block;color:var(--mute);font-size:12.5px;font-weight:600;margin-top:2px}
-.pdanger .pdel{flex:none;padding:9px 16px;font-size:14px;border-radius:11px;color:var(--ember);border-color:#E4B4A6;background:var(--card)}
+.pdanger .pdel{flex:none;padding:9px 16px;font-size:14px;border-radius:11px;color:var(--ember-ink);border-color:var(--ember-line);background:var(--card)}
 .dlist{margin:0 0 12px 20px;font-size:14.5px;line-height:1.5}
 .dlist li{margin:4px 0}
 .dtype{display:block;margin-top:12px;font-weight:700;font-size:14px}
-.dtype input{display:block;width:100%;margin-top:6px;border:1px solid #E4B4A6;border-radius:12px;padding:12px 14px;font-size:16px;background:var(--paper);letter-spacing:.08em}
-.delmsg{margin-top:12px;font-size:14.5px;line-height:1.5;color:var(--ember);font-weight:700;min-height:1.5em}
+.dtype input{display:block;width:100%;margin-top:6px;border:1px solid var(--ember-line);border-radius:12px;padding:12px 14px;font-size:16px;background:var(--paper);letter-spacing:.08em}
+.delmsg{margin-top:12px;font-size:14.5px;line-height:1.5;color:var(--ember-ink);font-weight:700;min-height:1.5em}
+
+/* ===== 4.3 Appearance: what shows behind the tiles =====
+   One layer under the content of the open tab (placeBg() sizes it to the Log
+   tab's .stage or the open view), so the background only shows in the
+   margins and gaps around panels and cards - every name, number, timer and
+   chart sits on a solid card. The header, banners, tab bar, sheets and the
+   PIN pad stay plain. */
+#bgLayer{position:absolute;left:0;right:0;top:0;height:0;pointer-events:none;z-index:0;display:none;overflow:hidden;background-position:center;background-size:cover;background-repeat:no-repeat}
+#bgLayer i{position:absolute;inset:0}
+.app[data-bg="tint"] #bgLayer,.app[data-bg="pattern"] #bgLayer,.app[data-bg="photo"] #bgLayer{display:block}
+.top,#banner,.stage,.view{position:relative;z-index:1}
+.app[data-bg="tint"] #bgLayer{background-image:radial-gradient(130% 100% at 15% 0%,var(--tint),transparent 75%),linear-gradient(var(--tint),var(--tint))}
+.app[data-bg="pattern"] #bgLayer i{background:var(--pat);opacity:var(--patop)}
+.app[data-bg="photo"] #bgLayer i{background:var(--paper);opacity:var(--fade,.75)}
+/* Settings has no cards of its own, so with a background it becomes one. */
+.app[data-bg="tint"] #viewSettings .vsec,.app[data-bg="pattern"] #viewSettings .vsec,.app[data-bg="photo"] #viewSettings .vsec{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 16px 16px}
+/* Settings -> Appearance (the approved mockup) */
+.ap-sub{font-weight:600;color:var(--mute);font-size:12px;margin-left:6px}
+.ap-lab{font-size:13px;font-weight:800;color:var(--mute);margin:14px 0 7px}
+.ap-lab small{font-weight:600;font-size:12px;margin-left:6px}
+.ap-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+.ap-th{display:flex;flex-direction:column;gap:3px;padding:6px 6px 8px;border:2px solid var(--line);border-radius:13px;background:var(--card);min-width:0;text-align:left;color:var(--ink)}
+.ap-th.on{border-color:var(--leaf);box-shadow:0 0 0 3px var(--leaf-soft)}
+.ap-th b{font-size:12.5px;font-weight:800;line-height:1.2;overflow-wrap:anywhere}
+.ap-th small{font-size:10.5px;font-weight:600;color:var(--mute);line-height:1.25;overflow-wrap:anywhere}
+.ap-pv{border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.1);margin-bottom:3px}
+.ap-pv>i{display:block;height:13px}
+.ap-pv>span{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:5px}
+.ap-pv em{display:block;height:17px;border-radius:4px;border:1.5px solid}
+.ap-rb{height:41px;border-radius:8px;margin-bottom:3px;background:conic-gradient(#0F7B7B,#1A7A55,#5E7A2E,#2C5FA8,#4B4FA8,#7A4E9A,#8A3F6E,#6B4A33,#0F7B7B)}
+.ap-sw{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ap-dot{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line2);flex:none;padding:0}
+.ap-dot.on{box-shadow:0 0 0 3px var(--ink)}
+.ap-dot.no{opacity:.35;position:relative;cursor:not-allowed}
+.ap-dot.no::after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:3px;margin-top:-1.5px;background:var(--ink);transform:rotate(-45deg)}
+.ap-hint{display:block;font-size:12px;font-weight:600;color:var(--mute);line-height:1.4;margin-top:6px}
+.ap-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:4px 18px}
+.ap-row .seg{flex-wrap:wrap}
+.ap-pats{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.ap-pat{display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left}
+.ap-pat .bx{position:relative;height:54px;border-radius:9px;border:2px solid var(--line);background:var(--paper);overflow:hidden}
+.ap-pat .bx i{position:absolute;left:0;top:0;width:300%;height:300%;transform:scale(.3333);transform-origin:0 0;background:var(--pat);opacity:.5}
+.ap-pat.on .bx{border-color:var(--leaf);box-shadow:0 0 0 3px var(--leaf-soft)}
+.ap-pat span{font-size:11px;font-weight:700;color:var(--mute);line-height:1.2;overflow-wrap:anywhere}
+.ap-pat.on span{color:var(--ink)}
+.ap-photo{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.ap-thumb{width:112px;height:70px;border-radius:9px;flex:none;border:1px solid var(--line);background:var(--paper) center/cover no-repeat;position:relative;overflow:hidden}
+.ap-thumb i{position:absolute;inset:0;background:var(--paper)}
+.ap-pmid{flex:1 1 200px;min-width:0}
+.ap-pmid b{display:block;font-size:14px;font-weight:800}
+.ap-fade{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:12px;font-weight:700;color:var(--mute)}
+.ap-fade input{flex:1;min-width:0;max-width:260px;accent-color:var(--leaf)}
+.ap-pbtns{display:flex;flex-direction:column;gap:7px;flex:none}
+.ap-pbtns .btn{padding:9px 14px;font-size:14px;border-radius:11px;flex:none}
+.ap-pbtns .rm{color:var(--ember-ink);border:1px solid var(--line);background:var(--card)}
+@media (max-width:560px){ .ap-pbtns{flex-direction:row} }
 </style>
+<script>
+/* ===== Appearance (4.3): colour theme, light/dark, background =====
+   Display preferences for THIS device only (Store keys ui.appearance and
+   ui.bgPhoto, beside ui.tabsHidden) - never Firestore, never the class's data.
+   This runs in <head>, before the page is drawn, so the app never flashes the
+   old colours: it reads the saved choice straight from localStorage (on
+   Android/iOS the choice is mirrored there too, see saveAppearance()) and boot
+   applies it again once Store has hydrated.
+   A theme is three colours - header, accent, page - plus the rest derived
+   from them (lines, muted text, the calm "in class" tint), as in the approved
+   mockup; the mockup's own values are used for the 11 named themes. What never
+   changes: in class = calm, out = amber, past the limit = red, and the five
+   break colours. Later an organization may set a default appearance: it would
+   slot in as ORG_APPEARANCE in appearanceNow(), under the device's own choice. */
+const APPEAR_KEY='ui.appearance', PHOTO_KEY='ui.bgPhoto';
+const APPEAR_DEFAULT={theme:'classic',custom:'#0F7B7B',mode:'light',bg:'plain',pattern:'callig',fade:75};
+let ORG_APPEARANCE=null;                       // room for an organization's default - not built yet
+/* id, name, note, then header, header text, header muted, accent, page,
+   card, line, text, muted, in-class tile, its border, its text; dark themes
+   also carry their own amber/red/not-here colours (DARK_FIXED). */
+const THEMES=[
+  ['classic','Classic',"Today's colours",'#1F2E36','#EEF3F4','#A6BFC7','#0F7B7B','#F2F5F6','#FFFFFF','#D6DFE2','#1F2E36','#5B6B73','#E7F1F1','#CFE2E2','#0C5C5C'],
+  ['lapis','Lapis and brass','Deep blue; gold only for alerts','#142A4E','#EEF2F8','#A9B8D3','#2C5FA8','#F3F1EA','#FFFFFF','#DDD8CA','#142A4E','#5A6272','#EAF0F8','#CCD9EC','#1F4C8C'],
+  ['sand','Sand and sky','Warmer and lighter','#14405C','#EFF4F7','#A9C4D6','#1D6FA3','#F7F1E3','#FFFDF7','#E4D9C2','#14405C','#5C5342','#FCF8EE','#E9E0CE','#2E5F7D'],
+  ['garden','Garden','Soft greens, calm and quiet','#1E3B2C','#EEF4F0','#A8C2B2','#2E7D4F','#F1F4EE','#FFFFFF','#D7E0D3','#1E3B2C','#56665B','#E9F2EA','#CDE0D0','#24603D'],
+  ['night','Night study','Dark, for evening classes in dim rooms','#0B1714','#E7EEF0','#93A8A0','#34B37E','#101C18','#1B2A25','#2B3D36','#E7EEF0','#A3B3AD','#1F302A','#2E4740','#7FD3AE',1],
+  ['emerald','Emerald','Masjid green with a touch of gold','#123D2E','#F1F4F6','#ACBBB6','#1A7A55','#F1F5F1','#FFFFFF','#D4DDD8','#123D2E','#546D69','#E8F2EE','#C8DFD6','#156244'],
+  ['ottoman','Ottoman','Deep maroon and Iznik blue','#4A1C28','#F1F4F6','#C0B0B4','#1F6E8C','#F6F1EC','#FFFFFF','#E0D5D3','#4A1C28','#6D5E67','#E9F0F4','#C9DCE3','#195870'],
+  ['plum','Plum','Dark purple, soft and calm','#3A2346','#F1F4F6','#BAB2BE','#7A4E9A','#F4F1F6','#FFFFFF','#DCD6DF','#3A2346','#666174','#F2EDF5','#DFD5E7','#623E7B'],
+  ['desert','Desert','Warm sand with deep brown','#4A3424','#F1F4F6','#C0B8B2','#2F7A72','#F6EFE4','#FFFCF6','#E0D7CB','#4A3424','#6D6965','#EAF2F1','#CDDFDD','#26625B'],
+  ['midnight','Midnight','Navy, in dark mode','#0B1324','#E7EEF0','#8F969E','#5B8DEF','#0F1A2E','#16233B','#323D53','#E7EEF0','#A3B3BA','#1E3051','#2B4371','#94B5F5',1],
+  ['grey','Plain grey','Minimal, no colour','#2B2F33','#F1F4F6','#B5B6B8','#4F5A63','#F3F3F2','#FFFFFF','#D9DAD9','#2B2F33','#5F676C','#EDEEEF','#D5D7DA','#3F484F'],
+].map(a=>({id:a[0],name:a[1],note:a[2],head:a[3],headink:a[4],headmute:a[5],accent:a[6],paper:a[7],card:a[8],line:a[9],ink:a[10],mute:a[11],pres:a[12],presb:a[13],prest:a[14],dark:!!a[15]}));
+/* The custom colour swatches. Amber, orange and red are left out on purpose:
+   they mean Out and Past the limit. */
+const SWATCHES=[['Teal','#0F7B7B'],['Emerald','#1A7A55'],['Green','#2E7D4F'],['Olive','#5E7A2E'],['Turquoise','#1F6E8C'],['Blue','#2C5FA8'],['Cobalt','#1E3A8A'],['Indigo','#4B4FA8'],['Purple','#7A4E9A'],['Plum','#8A3F6E'],['Brown','#6B4A33'],['Slate','#4F5A63']];
+const KEPT_COLOURS=[['Amber','#D39A22'],['Orange','#E07B2C'],['Red','#C0503A']];
+const LIGHT_FIXED={'gold-soft':'#FBF0D8',gold:'#D39A22','gold-ink':'#6B4B0C','gold-line':'#E5C57E','ember-soft':'#F8E5E0',ember:'#C0503A','ember-ink':'#C0503A','ember-line':'#E4B4A6','warn-ink':'#B42828','abs-bg':'#EDF1F2','abs-line':'#C6D2D6','abs-ink':'#7D8D95',chip:'#E7EDEF',chipink:'#4A5B63',tag:'#E2E8EA',tagink:'#6B7A81',strike:'#B6C4C9'};
+const DARK_FIXED={'gold-soft':'#3A3020',gold:'#E0A93B','gold-ink':'#F2C877','gold-line':'#6B5524','ember-soft':'#3E2621',ember:'#E0674A','ember-ink':'#F09A86','ember-line':'#7A3E31','warn-ink':'#F09A86','abs-bg':'#16231F','abs-line':'#34473F','abs-ink':'#8A9C95',chip:'#24342F',chipink:'#B5C4BE',tag:'#22312C',tagink:'#A3B3AD',strike:'#4F635B'};
+/* colour arithmetic, just enough for the themes */
+const hexRgb=h=>{ h=String(h).replace('#',''); if(h.length===3) h=h.replace(/./g,'$&$&'); const n=parseInt(h.slice(0,6),16); return [n>>16&255,n>>8&255,n&255]; };
+const rgbHex=c=>'#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('').toUpperCase();
+const mixHex=(a,b,t)=>{ const x=hexRgb(a), y=hexRgb(b); return rgbHex(x.map((v,i)=>v+(y[i]-v)*t)); };   // t of b over a
+const lum=h=>{ const c=hexRgb(h).map(v=>{ v/=255; return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4); }); return .2126*c[0]+.7152*c[1]+.0722*c[2]; };
+const contrast=(a,b)=>{ const x=lum(a), y=lum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+const alphaHex=(h,a)=>{ const c=hexRgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
+/* Walk a colour towards white (or black) until it reads at `need`:1 against `on`. */
+function readable(c,on,need,toward){ let x=c; for(let i=0;i<20&&contrast(x,on)<need;i++) x=mixHex(x,toward,.12); return x; }
+function savedAppearance(){
+  let o=null;
+  // Store is declared further down the page; until it exists (this first
+  // paint) localStorage is read directly.
+  try{ o=JSON.parse((typeof Store!=='undefined'?Store.get(APPEAR_KEY):localStorage.getItem(APPEAR_KEY))||'null'); }catch(e){}
+  return o&&typeof o==='object'?o:{};
+}
+function appearanceNow(){ return Object.assign({},APPEAR_DEFAULT,ORG_APPEARANCE||{},savedAppearance()); }
+const themeById=id=>THEMES.find(t=>t.id===id)||THEMES[0];
+/* The light set for a custom accent, built the way the mockup's Indigo was. */
+function customLight(a){
+  const head=mixHex(a,'#000000',.53);
+  return {head,headink:'#F1F4F6',headmute:mixHex(head,'#FFFFFF',.65),accent:a,paper:mixHex('#FFFFFF',head,.05),card:'#FFFFFF',
+    line:mixHex('#FFFFFF',head,.18),ink:head,mute:mixHex(head,'#8A8F99',.55),pres:mixHex('#FFFFFF',a,.1),presb:mixHex('#FFFFFF',a,.24),prest:mixHex(a,'#000000',.2)};
+}
+const prefersDark=()=>{ try{ return matchMedia('(prefers-color-scheme: dark)').matches; }catch(e){ return false; } };
+function isDarkNow(p){ p=p||appearanceNow(); return (p.theme!=='custom'&&themeById(p.theme).dark)||p.mode==='dark'||(p.mode==='auto'&&prefersDark()); }
+/* Every colour token for a choice. Dark with a light theme borrows Night
+   study's dark surfaces and keeps the theme's own accent. */
+function themeTokens(p){
+  p=p||appearanceNow();
+  const preset=p.theme==='custom'?null:themeById(p.theme), dark=isDarkNow(p);
+  const accent=preset?preset.accent:(/^#[0-9a-f]{6}$/i.test(p.custom||'')?p.custom:APPEAR_DEFAULT.custom);
+  let b;
+  if(preset&&preset.dark) b=Object.assign({},preset);
+  else if(dark){
+    const n=themeById('night');
+    b={head:n.head,headink:n.headink,headmute:n.headmute,accent,paper:n.paper,card:n.card,line:n.line,ink:n.ink,mute:n.mute,
+       pres:mixHex(n.paper,accent,.2),presb:mixHex(n.paper,accent,.35),prest:mixHex(accent,'#FFFFFF',.35)};
+  }
+  else b=preset?Object.assign({},preset):customLight(accent);
+  const fixed=dark?DARK_FIXED:LIGHT_FIXED, classic=!dark&&preset&&preset.id==='classic';
+  const t=Object.assign({},fixed,{
+    head:b.head,headink:b.headink,headmute:b.headmute,paper:b.paper,card:b.card,line:b.line,ink:b.ink,mute:b.mute,
+    pres:b.pres,presb:b.presb,prest:readable(b.prest,b.pres,4.5,dark?'#FFFFFF':'#000000'),
+    // the accent as a fill under white text, and as text/icons on a card
+    leaf:readable(b.accent,'#FFFFFF',4.5,'#000000'),
+    'leaf-ink':readable(b.accent,b.card,4.5,dark?'#FFFFFF':'#000000'),
+    'leaf-soft':classic?'#DCEDED':mixHex(b.card,b.accent,dark?.26:.14),
+    // accent text on that soft accent (the class-name pill); Classic keeps today's
+    tint:alphaHex(b.accent,dark?.12:.10),
+    outer:classic?'#E3EAEC':mixHex(b.paper,dark?'#000000':b.head,dark?.25:.06),
+    line2:classic?'#C6D2D6':mixHex(b.line,b.ink,.1),
+    btn:dark?mixHex(b.card,'#FFFFFF',.14):b.head,
+    sel:classic?'#EEF4F5':mixHex(b.card,b.ink,.06),
+    headdim:classic?'#BDCED4':mixHex(b.headmute,b.headink,.4),
+    line3:classic?'#B9C6CB':mixHex(b.line,b.ink,.18),
+    rule:classic?'#E4EBED':mixHex(b.card,b.line,.6),
+    'open-bg':classic?'#F6FBFB':mixHex(b.card,b.accent,dark?.08:.04),
+    pat:dark?'#D9A84E':b.ink, patop:dark?'.2':'.1'
+  });
+  t['leaf-line']=classic?'#BBD9D9':mixHex(t['leaf-soft'],b.accent,.2);
+  t['soft-ink']=classic?'#0F7B7B':readable(t['leaf-ink'],t['leaf-soft'],4.5,dark?'#FFFFFF':'#000000');
+  t.dark=dark;
+  return t;
+}
+const TOKEN_NAMES=['head','headink','headmute','headdim','line3','rule','open-bg','leaf-line','tag','tagink','strike','paper','card','line','ink','mute','pres','presb','prest','leaf','leaf-ink','leaf-soft','soft-ink','tint','outer','line2','btn','sel','pat','patop','gold-soft','gold','gold-ink','gold-line','ember-soft','ember','ember-ink','ember-line','warn-ink','abs-bg','abs-line','abs-ink','chip','chipink'];
+function paintTheme(p){
+  const t=themeTokens(p), r=document.documentElement;
+  TOKEN_NAMES.forEach(k=>r.style.setProperty('--'+k,t[k]));
+  r.style.colorScheme=t.dark?'dark':'light';
+  r.dataset.mode=t.dark?'dark':'light';
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',t.head);
+  return t;
+}
+try{ paintTheme(); }catch(e){}
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(appearanceNow().mode==='auto') (window.applyAppearance||paintTheme)(); }); }catch(e){}
+</script>
 </head>
 <body>
 
 <div class="app booting" data-tab="log">
+  <div id="bgLayer" aria-hidden="true"><i></i></div>
   <header class="top">
     <div class="top-left">
       <h1 id="title">Hifz Class</h1>
@@ -694,6 +879,7 @@ input,select{font:inherit;color:inherit}
   <div class="setup addclass" id="addClass"><div class="setup-card" id="acCard"></div></div>
   <div class="tour" id="tour"><div class="tour-card" id="tourCard"></div></div>
   <input type="file" id="restoreInput" accept="application/json" style="display:none" onchange="restoreBackup(this)">
+  <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="pickPhoto(this)">
   <div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
   <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" onclick="undo()">Undo</button></div>
   <div class="scrim" id="drawerScrim" style="background:rgba(31,46,54,.25)" onclick="closeDrawer()"></div>
@@ -1894,7 +2080,7 @@ function editBreak(sid){
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--paper);border-radius:8px">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500">Elapsed</div>
-        <div id="elapsedVal" data-allow="${o.allowMs||0}" style="font-size:18px;font-weight:600;color:${o.allowMs&&elapsed>o.allowMs?'var(--ember)':'var(--leaf)'}">${fmtDur(elapsed)}</div>
+        <div id="elapsedVal" data-allow="${o.allowMs||0}" style="font-size:18px;font-weight:600;color:${o.allowMs&&elapsed>o.allowMs?'var(--ember-ink)':'var(--leaf-ink)'}">${fmtDur(elapsed)}</div>
       </div>
       <div style="flex:1;text-align:right">
         <div style="font-size:12px;color:var(--mute)">Allowed</div>
@@ -1936,7 +2122,7 @@ function recalcElapsed(){
   if(!t) return box.textContent='—';
   const ms=t.end-t.start, allow=+box.dataset.allow||0, future=futureTimeProblem(t);
   box.textContent = future ? future.replace("can't be",'is').replace(/\.$/,'') : ms<0 ? 'return is before the start' : fmtDur(ms);
-  box.style.color = (future||ms<0||(allow&&ms>allow)) ? 'var(--ember)' : 'var(--leaf)';
+  box.style.color = (future||ms<0||(allow&&ms>allow)) ? 'var(--ember-ink)' : 'var(--leaf-ink)';
 }
 function futureTimeProblem(t){
   const now=Date.now();
@@ -1992,7 +2178,7 @@ function editLoggedBreak(sid,id){
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px;background:var(--paper);border-radius:8px">
       <div style="flex:1"><div style="font-size:13px;font-weight:500">Length</div>
-        <div id="elapsedVal" data-allow="${b.allowMs||0}" style="font-size:18px;font-weight:600;color:${b.allowMs&&b.dur>b.allowMs?'var(--ember)':'var(--leaf)'}">${fmtDur(b.dur)}</div></div>
+        <div id="elapsedVal" data-allow="${b.allowMs||0}" style="font-size:18px;font-weight:600;color:${b.allowMs&&b.dur>b.allowMs?'var(--ember-ink)':'var(--leaf-ink)'}">${fmtDur(b.dur)}</div></div>
       <div style="flex:1;text-align:right"><div style="font-size:12px;color:var(--mute)">Allowed</div>
         <div style="font-size:15px;font-weight:600">${b.allowMs?fmtDur(b.allowMs):'unlimited'}</div></div>
     </div>
@@ -2707,17 +2893,17 @@ function drawChart1(R,Pv){
   const step=Math.max(1,niceStep(max)), top=Math.ceil(max/step-1e-9)*step, y=v=>T+ph-(v/top)*ph;
   const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   let g='';
-  for(let v=0;v<=top+1e-9;v+=step) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="${v?'#E4EBED':'#B9C6CB'}"/><text class="ax" x="${L-6}" y="${y(v)+3.5}" text-anchor="end">${Math.round(v)}</text>`;
+  for(let v=0;v<=top+1e-9;v+=step) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(${v?'--rule':'--line3'})"/><text class="ax" x="${L-6}" y="${y(v)+3.5}" text-anchor="end">${Math.round(v)}</text>`;
   const bw=Math.max(4,Math.min(24,slot*.6));
   items.forEach((it,i)=>{
     const cx=L+slot*(i+.5), x=cx-bw/2;
-    if(rpt.sel===it.id) g+=`<rect x="${cx-slot/2+1}" y="${T-4}" width="${slot-2}" height="${ph+4}" rx="6" fill="#EEF4F5"/>`;
+    if(rpt.sel===it.id) g+=`<rect x="${cx-slot/2+1}" y="${T-4}" width="${slot-2}" height="${ph+4}" rx="6" style="fill:var(--sel)"/>`;
     let base=y(0), first=true;
     OUT_TYPES.forEach(k=>{ const v=it.segs[k]||0; if(v<=0) return;
       const h=v/top*ph, hh=h-(first?0:2);
       if(hh>0.5) g+=`<rect x="${x.toFixed(1)}" y="${(base-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${TYPE_COLOR[k]}"/>`;
       base-=h; first=false; });
-    if(vs&&it.prev!=null) g+=`<line x1="${(cx-bw/2-5).toFixed(1)}" x2="${(cx+bw/2+5).toFixed(1)}" y1="${y(it.prev)}" y2="${y(it.prev)}" stroke="#1F2E36" stroke-width="3" stroke-linecap="round"/>`;
+    if(vs&&it.prev!=null) g+=`<line x1="${(cx-bw/2-5).toFixed(1)}" x2="${(cx+bw/2+5).toFixed(1)}" y1="${y(it.prev)}" y2="${y(it.prev)}" style="stroke:var(--ink)" stroke-width="3" stroke-linecap="round"/>`;
     const maxCh=rot?10:Math.max(3,Math.floor(slot/6.6)), txt=it.label.length>maxCh?it.label.slice(0,maxCh-1)+'…':it.label;
     g+=rot?`<text class="lb" text-anchor="end" transform="translate(${(cx+3).toFixed(1)},${T+ph+9}) rotate(-60)">${esc(txt)}</text>`
           :`<text class="lb" x="${cx.toFixed(1)}" y="${T+ph+15}" text-anchor="middle">${esc(txt)}</text>`;
@@ -2725,8 +2911,8 @@ function drawChart1(R,Pv){
   });
   if(items.length){
     const ya=y(avgVal), lbl=`${sid?'their':'class'} average ${fmtMin(avgVal)} min`;
-    g+=`<line x1="${L}" x2="${W-Rm}" y1="${ya}" y2="${ya}" stroke="#1F2E36" stroke-width="1.5" stroke-dasharray="5 4" pointer-events="none"/>`;
-    g+=`<text class="avg" x="${W-Rm-2}" y="${Math.max(11,ya-5)}" text-anchor="end" paint-order="stroke" stroke="#fff" stroke-width="4" stroke-linejoin="round" pointer-events="none">${lbl}</text>`;
+    g+=`<line x1="${L}" x2="${W-Rm}" y1="${ya}" y2="${ya}" style="stroke:var(--ink)" stroke-width="1.5" stroke-dasharray="5 4" pointer-events="none"/>`;
+    g+=`<text class="avg" x="${W-Rm-2}" y="${Math.max(11,ya-5)}" text-anchor="end" paint-order="stroke" style="stroke:var(--card)" stroke-width="4" stroke-linejoin="round" pointer-events="none">${lbl}</text>`;
   }
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Minutes out chart">${g}</svg>`;
   const it=items.find(i=>i.id===rpt.sel);
@@ -2758,7 +2944,7 @@ function donutHTML(R){
     const len=v/tot*C, gap=len>6?1.5:0;
     arcs+=`<circle cx="60" cy="60" r="42" fill="none" stroke="${TYPE_COLOR[k]}" stroke-width="18" stroke-dasharray="${(len-gap).toFixed(2)} ${(C-len+gap).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"/>`;
     off+=len; });
-  if(!tot) arcs=`<circle cx="60" cy="60" r="42" fill="none" stroke="#E4EBED" stroke-width="18"/>`;
+  if(!tot) arcs=`<circle cx="60" cy="60" r="42" fill="none" style="stroke:var(--rule)" stroke-width="18"/>`;
   const leg=OUT_TYPES.filter(k=>R.type[k].trips).map(k=>{ const q=R.type[k];
     return `<div data-type="${k}"><i style="background:${TYPE_COLOR[k]}"></i>${typeLabel(k)}<small>${fmtMin(q.ms/60000/div)} min${aday} · ${tot?Math.round(q.ms/tot*100):0}% · ${plural(q.trips/div,'trip')}</small></div>`; }).join('')
     +(as.trips?`<div data-type="assigned"><i style="background:${TYPE_COLOR.assigned}"></i>${typeLabel('assigned')}<small>${fmtMin(as.ms/60000/div)} min${aday} · ${plural(as.trips/div,'trip')}</small></div>`:'');
@@ -3590,7 +3776,7 @@ function showTab(t){
   if(t==='roster') drawRoster();
   if(t==='settings') drawSettings();
   if(t==='profile') drawProfile();
-  updateLogBadge();
+  updateLogBadge(); placeBg();
 }
 /* Coming back, the bar grows from nothing to its full height, and the grid
    shrinks with it. The tiles were sized for the bigger grid, so for the length
@@ -3610,6 +3796,7 @@ function setTabsHidden(hide){
     if(finish.done) return; finish.done=true; bar.removeEventListener('transitionend',onEnd); clearTimeout(t);
     if(hide) app.classList.add('handle-on');
     fitHeader.key=null; fitHeader(); fitGrid(); if(TAB==='reports') paintReports();
+    placeBg();
   };
   const onEnd=e=>{ if(e.target===bar&&e.propertyName==='height') finish(); };
   bar.addEventListener('transitionend',onEnd);
@@ -3645,10 +3832,131 @@ function keepClearOfHandle(){
 /* A tab redrawn by a sync event must not throw away what the teacher is in the middle of typing. */
 function editingIn(id){ const a=document.activeElement; return !!(a&&$(id)&&$(id).contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
 
+/* ===== Settings -> Appearance (4.3) =====
+   The themes, the colour maths and paintTheme() are in the <head> script so
+   the first paint is already in the right colours. Here: the background
+   behind the tiles (plain, soft tint, one of 15 patterns, or the teacher's
+   own photo), and the Settings section that picks all of it. Everything is
+   this device's only: Store keys ui.appearance and ui.bgPhoto, both in the
+   boot hydrate list; nothing is written to Firestore. The patterns are drawn
+   right here as SVG (no downloads, so they work offline), in one colour that
+   follows the theme - faint ink on light themes, gold on dark ones. The two
+   calligraphy designs are brush-like shapes only, no letters or words. */
+const PATTERNS={
+  callig:{name:'Calligraphy strokes',w:300,h:300,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'><g fill='#000' stroke='#000' stroke-width='2' stroke-linejoin='round'><path d='M26.5 190.4c.5-1.1 1.2-3.6 2.4-5.9c1.3-2.2 3.2-5.4 5.1-7.6c1.9-2.2 4.2-4.1 6.4-5.5c2.3-1.4 5.1-2.4 7.1-2.9c2-.5 2.9-.5 4.7-.3c1.9 .2 4.5 .7 6.4 1.7c1.9 1 3.7 2.6 5.1 4.4c1.4 1.8 2.5 4 3.2 6.4c.7 2.4 .8 5.7 .8 8c0 2.3 .2 2.7-.9 5.7c-1.1 3-5 11-5.7 12.5c-.7 1.5 1.4-2 1.4-3.6c0-1.6-.2-4.1-1.2-6.2c-1-2.1-2.6-4.5-4.6-6.4c-1.9-1.9-4.9-3.8-7.1-5c-2.2-1.2-3.8-1.8-6.2-2.2c-2.4-.4-5.7-.7-8.1-.3c-2.4 .4-4.8 1.6-6.3 2.5c-1.5 .9-2.1 2.3-2.6 3.2c-.5 1-.5 2.3-.5 2.5c0 .3 .1 .2 .6-1zM130.4 20.4c.1-.7 0-2.2-.3-3c-.3-.8-.2-1.5-1.3-2c-1.1-.5-2.7-1.3-5.4-1c-2.7 .3-7.2 1.6-10.9 3c-3.6 1.4-6.6 2.9-11 5.3c-4.4 2.4-9.6 5.3-15.2 8.9c-5.6 3.6-12.6 8.4-18.2 12.5c-5.6 4.1-11.4 8.7-15.5 12.3c-4.1 3.6-8 7.8-9.3 9.5c-1.3 1.7 .6 .8 1.4 .8c.9 0 1 .2 3.7-.9c2.7-1.1 1.6 .2 12.3-5.8c10.7-6 40.6-23.9 52.1-30.3c11.5-6.4 14.1-6.6 17-8.2c2.9-1.5 .6-.4 .6-1.1zM131.3-22.4c1 .3 3.8 1.5 5.2 2.6c1.4 1.1 2.6 2.5 3.4 4c.8 1.5 1.2 3.2 1.2 4.9c0 1.7-.6 3.7-1.1 5.1c-.5 1.4-.8 2.1-1.9 3.4c-1.1 1.3-2.3 2.9-4.4 4.3c-2.1 1.4-4.8 3.1-8 3.9c-3.2 .8-7.8 1.4-11.4 1.1c-3.6-.3-8.3-2.6-10.1-2.9c-1.8-.3-1.1-.2-.6 1c.5 1.2 1.8 4.4 3.4 6.3c1.6 1.9 4.4 4.1 6.4 5.1c2 1 3.8 1.2 5.6 1.1c1.8-.1 3.7-.6 5.4-1.5c1.7-.8 3.4-2.1 4.8-3.6c1.4-1.5 2.7-3.4 3.6-5.5c.9-2 1.6-4.4 2-6.8c.4-2.4 .5-4.9 .3-7.4c-.2-2.5-.8-5-1.5-7.4c-.7-2.3-2.5-5.4-2.9-6.7c-.4-1.3-.4-1.3 .6-1zM131.3 277.6c1 .3 3.8 1.5 5.2 2.6c1.4 1.1 2.6 2.5 3.4 4c.8 1.5 1.2 3.2 1.2 4.9c0 1.7-.6 3.7-1.1 5.1c-.5 1.4-.8 2.1-1.9 3.4c-1.1 1.3-2.3 2.9-4.4 4.3c-2.1 1.4-4.8 3.1-8 3.9c-3.2 .8-7.8 1.4-11.4 1.1c-3.6-.3-8.3-2.6-10.1-2.9c-1.8-.3-1.1-.2-.6 1c.5 1.2 1.8 4.4 3.4 6.3c1.6 1.9 4.4 4.1 6.4 5.1c2 1 3.8 1.2 5.6 1.1c1.8-.1 3.7-.6 5.4-1.5c1.7-.8 3.4-2.1 4.8-3.6c1.4-1.5 2.7-3.4 3.6-5.5c.9-2.1 1.6-4.4 2-6.8c.4-2.4 .5-4.9 .3-7.4c-.2-2.5-.8-5-1.5-7.4c-.7-2.3-2.5-5.4-2.9-6.7c-.4-1.3-.4-1.3 .6-1zM225.3 30.1c1.2-1 4.3-3.6 6.6-5.1c2.3-1.5 4.2-2.8 7.3-3.8c3.1-1 8.2-1.9 11.3-2.2c3.1-.2 5 .2 7.3 .7c2.3 .5 4.2 .9 6.7 2.4c2.5 1.5 5.9 3.9 8.1 6.5c2.2 2.6 3.9 6.4 5 9.1c1.1 2.7 1.2 4.7 1.4 7.1c.2 2.4 .4 4.4-.3 7.5c-.7 3.1-2.3 8.1-3.7 11.1c-1.3 3-2.7 4.7-4.4 6.8c-1.7 2.1-2.9 3.7-5.7 6c-2.8 2.3-10.1 6.9-11 7.9c-.9 1 4-.8 5.7-1.6c1.8-.8 3.4-1.8 4.8-3c1.4-1.2 2.8-2.7 3.9-4.3c1.1-1.6 2-2.9 2.6-5.4c.6-2.5 1.4-6.2 1.3-9.4c-.1-3.2-.7-6.6-1.9-9.8c-1.2-3.2-3-6.4-5.1-9.2c-2.1-2.8-4.8-5.3-7.6-7.4c-2.8-2-6.5-3.8-9.1-4.9c-2.6-1.1-4.4-1.2-6.5-1.5c-2.1-.3-4.3-.4-6.3-.2c-2 .2-4 .6-5.8 1.2c-1.8 .6-4.4 2.3-5.2 2.5c-.8 .3-.6 0 .6-1zM62.1-96.4c2.4-5.1-.4 3.9-1.5 7.3c-1 3.4 1.9-1.6-4.8 13c-6.6 14.6-28 58.8-35.1 74.5c-7.1 15.7-5.9 16.1-7.3 19.5c-1.4 3.4-.9 1.4-1.1 .8c-.2-.6-.6-1.8 0-4.2c.6-2.4-1.8 2.2 3.8-10c5.6-12.1 22.3-46.1 30-62.9c7.7-16.8 13.6-32.9 16-38zM62.1 203.6c2.4-5.1-.4 3.9-1.5 7.3c-1 3.4 1.9-1.6-4.8 13c-6.6 14.6-28 58.8-35.1 74.5c-7.1 15.7-5.9 16.1-7.3 19.5c-1.4 3.4-.9 1.4-1.1 .8c-.2-.6-.6-1.8 0-4.2c.6-2.4-1.8 2.2 3.8-10c5.6-12.1 22.3-46.1 30-62.9c7.7-16.8 13.6-32.9 16-38zM172.6 157c-.7-.9-3.6-2.8-4.9-4.3c-1.3-1.5-1.3-1.1-3.2-4.8c-1.8-3.7-5.2-9.8-7.9-17.4c-2.7-7.6-6-19.2-8.2-28.3c-2.2-9.1-3.6-17.6-4.8-26.5c-1.2-8.8-2.1-18.9-2.4-26.6c-.3-7.7 .2-14.8 .4-19.5c.3-4.7 .4-5.4 1.1-8.8c.7-3.4 1.9-8.5 2.9-11.4c1-2.9 1.7-4.3 2.8-6.1c1.1-1.8 4-5.6 3.6-4.9c-.4 .8-4.4 6.3-6.2 9.4c-1.8 3.1-2.8 4.3-4.7 9.4c-1.9 5.1-4.8 12.7-6.5 20.9c-1.6 8.2-3 18.9-3.4 28.4c-.4 9.5 .6 21.1 1.2 28.6c.7 7.5 1.6 11 2.7 16.1c1.1 5.1 1.8 9 3.9 14.7c2.1 5.7 6.3 15.1 8.9 19.7c2.6 4.6 4.7 6.2 6.6 8.1c1.9 1.9 2.6 2.6 4.7 3.5c2.1 .9 5.5 1.8 7.6 1.9c2.1 .2 4.2-.6 5.2-1c1-.3 1.3-.2 .6-1.1zM172.6 457c-.7-.9-3.6-2.8-4.9-4.3c-1.3-1.5-1.3-1.1-3.2-4.8c-1.8-3.7-5.2-9.8-7.9-17.4c-2.7-7.6-6-19.2-8.2-28.3c-2.2-9.1-3.6-17.7-4.8-26.5c-1.2-8.8-2.1-18.9-2.4-26.6c-.3-7.7 .2-14.8 .4-19.5c.3-4.7 .4-5.4 1.1-8.8c.7-3.4 1.9-8.5 2.9-11.4c1-2.9 1.7-4.3 2.8-6.1c1.1-1.8 4-5.6 3.6-4.9c-.4 .8-4.4 6.3-6.2 9.4c-1.8 3.1-2.8 4.4-4.7 9.4c-1.9 5.1-4.8 12.7-6.5 20.9c-1.6 8.2-3 18.9-3.4 28.4c-.4 9.5 .6 21.2 1.2 28.6c.7 7.5 1.6 11 2.7 16.1c1.1 5.1 1.8 9 3.9 14.7c2.1 5.7 6.3 15.1 8.9 19.7c2.6 4.6 4.7 6.2 6.6 8.1c1.9 1.9 2.6 2.6 4.7 3.5c2.1 .9 5.5 1.8 7.6 1.9c2.1 .2 4.2-.6 5.2-1c1-.3 1.3-.2 .6-1.1zM147 11.2c.9-1.8 3.8-5.9 5-10c1.2-4.1 1.9 1.5 2.3-14.5c.4-15.9-.2-64.1 .2-81.2c.4-17.1 1.2-15 2.1-21.2c.9-6.2 4.4-18 3.5-15.9c-.9 2.1-6.9 20.3-9.1 28.7c-2.2 8.4-3.1 15.4-4.1 21.6c-1 6.2-1.3 7.5-1.8 15.5c-.5 8.1-1.4 20.2-1.1 32.8c.3 12.6 2.6 35.3 3 42.8c.4 7.6-.6 2.3-.6 2.5c0 .2-.3 .8 .6-1.1zM147 311.2c.9-1.9 3.8-5.9 5-10c1.2-4.1 1.9 1.5 2.3-14.5c.4-15.9-.2-64.1 .2-81.2c.4-17.1 1.2-15 2.1-21.2c.9-6.2 4.4-18 3.5-15.9c-.9 2.1-6.9 20.3-9.1 28.7c-2.2 8.4-3.1 15.4-4.1 21.6c-1 6.2-1.3 7.5-1.8 15.5c-.5 8.1-1.4 20.2-1.1 32.8c.3 12.6 2.6 35.3 3 42.8c.4 7.6-.6 2.3-.6 2.5c0 .2-.3 .8 .6-1.1zM98.9 257.8c.2-2.2 .4-9.1 .7-12.1c.3-3 .9-4 1.4-5.9c.6-1.9 .6-2.9 1.9-5.6c1.3-2.7 3.5-7.2 5.7-10.4c2.2-3.1 4.8-6 7.6-8.5c2.8-2.4 6.8-4.8 9.2-6.2c2.4-1.4 2.5-1.4 5-2.1c2.6-.7 7.7-1.8 10.3-2.1c2.6-.3 3.5 0 5.2 .1c1.7 .2 2.7 0 5.1 .8c2.4 .8 7.1 2.7 9.4 3.8c2.3 1.1 2.3 1.2 4.2 2.9c1.9 1.7 5.1 4.7 7.1 7.5c2 2.8 3.6 6.1 4.8 9.5c1.2 3.4 1.8 8.1 2.2 10.8c.4 2.8 .4 2.8 .1 5.7c-.3 2.9-.9 7.7-2 11.5c-1.1 3.8-2.7 7.4-4.8 11.1c-2.1 3.7-7.2 10.2-7.7 11c-.4 .8 3.7-4 5-6.3c1.3-2.3 2.3-5 2.8-7.7c.5-2.7 .7-5.8 .4-8.7c-.3-2.9-1-6.1-2.1-9c-1.1-2.9-2.7-5.8-4.6-8.4c-1.9-2.6-4.9-5.6-6.7-7.4c-1.8-1.7-1.8-1.8-4-3.1c-2.2-1.3-5.8-3.5-9-4.7c-3.1-1.2-6.6-2-9.9-2.4c-3.3-.4-6.7-.5-9.9-.2c-3.2 .4-6.5 1.2-9.4 2.3c-2.9 1.1-5.8 2.6-8.2 4.4c-2.4 1.8-4.7 4-6.4 6.3c-1.7 2.3-3.1 4.9-4 7.5c-.9 2.6-1.4 5.5-1.4 8.3c0 2.8 1.1 7.1 1.4 8.3c.3 1.2 .4 1.2 .6-1zM-1.8-53.9c1.2-4.6 3.2 9.1 3.9 13.2c.7 4.1 .7 6.9 .1 11.6c-.6 4.7-2 11.2-3.5 16.8c-1.5 5.6-5.1 17.1-5.7 17c-.6-.1 1.3-7.8 2.2-17.6c.9-9.8 1.9-36.4 3-41zM-1.8 246.1c1.2-4.6 3.2 9.1 3.9 13.2c.7 4.1 .7 6.9 .1 11.6c-.6 4.7-2 11.2-3.5 16.8c-1.5 5.6-5.1 17.1-5.7 17c-.6-.1 1.3-7.8 2.2-17.6c.9-9.8 1.9-36.4 3-41zM298.2-53.9c1.2-4.6 3.2 9.1 3.9 13.2c.7 4.1 .7 6.9 .1 11.6c-.6 4.7-2 11.2-3.5 16.8c-1.5 5.6-5.1 17.1-5.7 17c-.6-.1 1.3-7.8 2.2-17.6c.9-9.8 1.8-36.4 3-41zM298.2 246.1c1.2-4.6 3.2 9.1 3.9 13.2c.7 4.1 .7 6.9 .1 11.6c-.6 4.7-2 11.2-3.5 16.8c-1.5 5.6-5.1 17.1-5.7 17c-.6-.1 1.3-7.8 2.2-17.6c.9-9.8 1.8-36.4 3-41zM52.9 15.4c1.6-.3 6.3-1 9-.7c2.7 .3 5.3 1.6 7 2.7c1.8 1.1 2.7 2.1 3.5 3.9c.9 1.8 1.7 4.5 1.6 6.9c0 2.5-.7 5.3-1.9 7.8c-1.2 2.6-3 5.2-5.2 7.5c-2.2 2.3-5 4.5-7.8 6.2c-2.8 1.7-7.6 3.3-9.2 4.2c-1.6 .9-1.5 .5-.6 1c.9 .5 3.9 1.9 5.7 1.9c1.8 0 3.8-.8 5.2-1.7c1.4-.8 2.2-2 3-3.4c.8-1.4 1.3-3 1.7-4.8c.4-1.7 .6-3.7 .5-5.7c-.1-2-.4-4.1-.9-6.1c-.5-2-1.1-3.8-2.2-6c-1.1-2.2-2.8-5.1-4.5-7.2c-1.7-2.1-4.7-4.3-5.5-5.4c-.8-1.1-1-.8 .6-1.1zM24.5 134.2c.7 0 1.7 1 3.4 1.2c1.7 .2 4.6 .3 6.7-.1c2.1-.4 4.2-1.3 6.1-2.3c1.9-1 3.7-2.3 5.3-3.8c1.6-1.5 2.9-2.8 4.5-5c1.6-2.2 3.7-5.5 5-8c1.3-2.5 2.2-5.1 2.7-7c.5-1.9 .4-3.4 .1-4.2c-.2-.7-1.1-.4-1.6-.3c-.5 .1-.3-.1-1.2 .9c-.9 1-3.7 4.2-4.1 4.9c-.4 .8 1.2-1 1.5-.4c.3 .6 .8 1.1 .2 3.8c-.6 2.7-2.4 9.1-3.7 12.5c-1.3 3.4-2.7 5.6-4.3 7.9c-1.6 2.3-3.8 4.6-5.4 5.9c-1.6 1.3-2.7 1.6-4.1 1.8c-1.4 .2-2.5 .6-4.5-.5c-1.9-1.1-6.1-5-7.2-6.2c-1.1-1.2-.1-1.1 .6-1.1zM83.8 124.1c.6 0 1.6 .8 3.2 .9c1.6 .1 4.2 .1 6.2-.4c2-.4 3.9-1.3 5.7-2.3c1.8-1 3.4-2.4 4.9-3.8c1.5-1.4 2.7-2.6 4.2-4.6c1.5-2 3.5-5.1 4.7-7.4c1.2-2.3 2.1-4.7 2.5-6.3c.4-1.6 .4-3.1-.1-3.5c-.5-.4-1.7 .2-2.9 1.2c-1.2 1.1-3.7 4.3-4.2 5.1c-.5 .8 1.1-.6 1.4-.3c.3 .3 .6 .3 .4 1.9c-.2 1.7-.7 5-1.7 8c-1 3-3 7.2-4.5 9.9c-1.5 2.7-3 4.7-4.7 6.2c-1.7 1.5-3.8 2.6-5.4 3c-1.6 .4-2.3 .5-4-.6c-1.7-1.1-5.3-4.8-6.3-6c-.9-1.2 0-1 .6-1zM53.2 69.1c-.9-1-4-3.6-5.8-4.8c-1.8-1.2-2.1-1.5-4.9-2.5c-2.8-1-7.5-2.6-11.8-3.4c-4.3-.8-8.4-1.3-13.8-1.5c-5.4-.1-11.7-.1-18.4 .6c-6.7 .7-15.5 2.2-21.7 3.6c-6.2 1.4-11 3.1-15.5 5c-4.5 1.9-8.7 4.5-11.2 6.2c-2.5 1.7-3 2.9-4 4.2c-1 1.4-12.6 4.7-2.2 3.9c10.4-.8 50-6.9 64.5-8.7c14.5-1.7 15.3-1.5 22.7-1.8c7.4-.3 17.8 .3 21.5 .2c3.7-.1 1.5 0 .6-1zM353.2 69.1c-.9-1-4-3.6-5.8-4.8c-1.8-1.2-2.1-1.5-4.9-2.5c-2.8-1-7.5-2.6-11.8-3.4c-4.3-.8-8.4-1.3-13.8-1.5c-5.4-.1-11.7-.1-18.4 .6c-6.7 .7-15.5 2.2-21.7 3.6c-6.2 1.4-11 3.1-15.5 5c-4.4 1.9-8.7 4.5-11.2 6.2c-2.5 1.7-3 2.9-4 4.2c-1 1.4-12.6 4.7-2.2 3.9c10.4-.8 50-6.9 64.5-8.7c14.5-1.7 15.3-1.5 22.7-1.8c7.4-.3 17.8 .3 21.5 .2c3.7-.1 1.5 0 .6-1zM-35.5 186.9c1.3-1.3 4.6-5 7.1-7c2.5-2 4.6-3.7 8.1-5.1c3.5-1.4 9.9-2.7 12.7-3.3c2.8-.5 2.2-.3 4.2 0c2 .3 5.4 .9 7.8 1.8c2.4 .9 4.7 2.2 6.6 3.8c2 1.6 3.7 3.6 5.1 5.7c1.4 2.1 2.5 4.5 3.2 7c.7 2.5 1.1 5.2 1.1 7.9c0 2.7-.4 5.5-1.2 8.2c-.7 2.7-1.9 5.5-3.3 8c-1.4 2.6-3.3 5.1-5.3 7.3c-2 2.2-4.3 4.3-6.8 6.1c-2.5 1.8-4.5 3.3-8.1 4.7c-3.5 1.4-10.9 2.9-13.2 3.7c-2.3 .8-2.1 .6-.6 1.1c1.5 .5 6.7 2.2 9.8 2.1c3.1-.1 6.4-1.1 9-2.8c2.6-1.6 4.9-4.3 6.5-7.1c1.6-2.8 2.6-6.4 2.9-9.9c.3-3.5-.1-7.5-1.2-11.1c-1.1-3.6-3-7.4-5.3-10.5c-2.3-3.1-5.3-6-8.4-8.2c-3.1-2.2-6.8-3.9-10.2-4.9c-3.4-1-7.6-1-10.3-.9c-2.7 .1-4.2 .7-6 1.4c-1.8 .7-4.1 2.7-4.8 3c-.7 .3-.7 .3 .6-1zM264.5 186.9c1.3-1.3 4.6-5 7.1-7c2.5-2 4.6-3.7 8.1-5.1c3.5-1.4 9.9-2.7 12.7-3.3c2.8-.5 2.2-.3 4.2 0c2 .3 5.4 .9 7.8 1.8c2.4 .9 4.7 2.2 6.6 3.8c2 1.6 3.7 3.6 5.1 5.7c1.4 2.1 2.5 4.5 3.2 7c.7 2.5 1.1 5.2 1.1 7.9c0 2.7-.4 5.5-1.2 8.2c-.7 2.7-1.9 5.5-3.3 8c-1.4 2.6-3.3 5.1-5.3 7.3c-2 2.2-4.3 4.3-6.8 6.1c-2.5 1.8-4.5 3.3-8.1 4.7c-3.5 1.4-10.9 2.9-13.2 3.7c-2.3 .8-2.1 .6-.6 1.1c1.5 .5 6.7 2.2 9.8 2.1c3.1-.1 6.4-1.1 9-2.8c2.6-1.6 4.9-4.3 6.5-7.1c1.6-2.8 2.6-6.4 2.9-9.9c.3-3.5-.1-7.5-1.2-11.1c-1.1-3.6-3-7.4-5.3-10.5c-2.3-3.1-5.3-6-8.4-8.2c-3.1-2.2-6.8-3.9-10.2-4.9c-3.4-1-7.6-1-10.3-.9c-2.7 .1-4.2 .7-6 1.4c-1.8 .7-4.1 2.7-4.8 3c-.7 .3-.7 .3 .6-1zM262.7-61.2c1.1-1.9-3.1 7.3-4.1 11.2c-1 3.9-1.7 7.6-2.1 12c-.4 4.5-.5 8.2-.2 14.7c.3 6.6 1.7 20.3 1.9 24.6c.2 4.3 .8 2.8-.6 1.1c-1.4-1.7-6-8.2-7.6-11.2c-1.6-3-1.5-4.4-1.8-6.9c-.3-2.4-.7-4 0-7.8c.7-3.8 1.6-8.9 4-15.2c2.4-6.3 9.4-20.6 10.5-22.5zM262.7 238.8c1.1-1.9-3.1 7.3-4.1 11.2c-1 3.9-1.7 7.6-2.1 12c-.4 4.5-.5 8.2-.2 14.7c.3 6.6 1.7 20.3 1.9 24.6c.2 4.3 .8 2.8-.6 1.1c-1.4-1.7-6-8.2-7.6-11.2c-1.6-3-1.5-4.4-1.8-6.9c-.3-2.4-.7-4 0-7.8c.7-3.8 1.6-8.9 4-15.2c2.4-6.3 9.4-20.6 10.5-22.5zM20.5 62.1c-1.8-.7-8.4-2.8-11.6-3.4c-3.2-.6-5.6-.4-7.7-.3c-2.1 .1-2.5 0-4.7 .8c-2.2 .8-5.5 1.8-8.3 3.9c-2.8 2.2-6.1 5.8-8.4 9c-2.3 3.2-3.6 5.8-5.3 10.2c-1.7 4.4-3.5 9.4-4.9 16c-1.4 6.6-2.6 14.9-3.4 23.5c-.8 8.6-.6 26.8-1.5 28.3c-.9 1.5-3.1-13.5-3.7-19.3c-.6-5.8-.4-10.4 .1-15.3c.5-4.9 1.6-9.8 3.1-14.3c1.6-4.5 4-9 6.2-12.6c2.2-3.6 4-5.9 7.2-8.8c3.2-2.9 8.1-6.4 12.1-8.7c4-2.3 7-3.6 12-4.9c5-1.3 15.1-2.4 18.2-3.1c3.1-.7 2.4-.3 .6-1zM320.5 62.1c-1.8-.7-8.4-2.8-11.6-3.4c-3.2-.6-5.6-.4-7.7-.3c-2.1 .1-2.5 0-4.7 .8c-2.2 .8-5.5 1.8-8.3 3.9c-2.8 2.2-6.1 5.8-8.4 9c-2.3 3.2-3.6 5.8-5.3 10.2c-1.7 4.4-3.5 9.4-4.9 16c-1.4 6.6-2.6 14.9-3.4 23.5c-.8 8.6-.6 26.8-1.5 28.3c-.9 1.5-3.1-13.5-3.7-19.3c-.6-5.8-.4-10.4 .1-15.3c.5-4.9 1.6-9.8 3.1-14.3c1.6-4.5 4-9 6.2-12.6c2.2-3.6 4-5.9 7.2-8.8c3.2-2.9 8.1-6.4 12.1-8.7c4-2.3 7-3.6 12-4.9c5-1.3 15.1-2.4 18.2-3.1c3.1-.7 2.4-.3 .6-1zM262.6 183.7c.3 1.1-3.1 13.4-4.3 19.7c-1.2 6.3-1.9 10-2.7 18c-.8 8-1.9 22-2 30.1c-.1 8.1 .8 13.7 1.5 18.4c.7 4.7 1.8 7.3 2.8 9.9c1 2.6 2.9 4.7 3.3 5.8c.5 1.1 .3 .8-.6 1c-.9 .2-2.7 .7-4.6 .3c-1.9-.4-5.1-1.2-7-2.8c-1.9-1.6-3.3-4.3-4.4-6.6c-1-2.3-1.5-3.4-1.9-7c-.4-3.6-.8-9.2-.6-14.5c.3-5.3 .9-10.6 2.1-17.1c1.2-6.5 3.1-14.6 5.2-21.7c2.1-7 5-15 7.2-20.6c2.2-5.6 5.7-14 6-12.9zM134.3 42.2c-.6-1.6-3.5-6.1-4.5-8.9c-1-2.7-1.4-5.1-1.6-7.6c-.2-2.5-.1-5.2 .2-7.6c.4-2.4 1-4.9 1.9-7c.9-2.1 2.2-4 3.6-5.6c1.4-1.6 3.2-2.9 4.9-3.8c1.8-.9 3.7-1.3 5.6-1.4c1.9-.1 3.6 0 5.7 1c2.1 1.1 5.2 3.7 6.8 5.3c1.6 1.6 2.3 3.3 2.6 4.1c.3 .8 1 1.1-.6 1c-1.6-.1-5.4-1.8-8.9-1.8c-3.5 0-8.4 .3-12.1 1.6c-3.7 1.3-7.7 3.9-10.2 6c-2.5 2.2-3.9 4.5-4.9 6.9c-1 2.4-1.2 5.4-1.1 7.5c.1 2.1 .6 3.5 1.9 5.1c1.3 1.7 4.3 3.8 6 4.8c1.7 1 3.3 1.3 4.1 1.4c.8 .1 1.3 .7 .6-1zM285.6 158c-5.8-2-24.6-8.2-35.7-11.3c-11.1-3.1-20.4-4.4-30.8-7.1c-10.4-2.7-26.1-7.6-31.5-8.9c-5.3-1.3-5.6-3.4-.6 1c5.1 4.4 24.4 20.3 30.9 25.4c6.5 5.1 6 4 8 5.1c2.1 1.1 1.7 1.3 4.3 1.6c2.6 .3 2.4 1.2 11.5 .4c9.1-.8 36-4.2 43.3-5.2c7.3-1 6.5 1.1 .6-1zM110.3 49.6c-.3-1.1-.9-3.5-2.3-5.5c-1.4-1.9-4.2-4.6-6.2-6.2c-2-1.6-3-2.1-5.7-3.1c-2.7-1-6.7-2.3-10.5-3.1c-3.8-.8-8.1-1.4-12.5-1.8c-4.4-.4-3.3-.6-13.9-.7c-10.6 0-38.4 .5-49.8 .4c-11.4-.1-12.7-.2-18.4-.8c-5.7-.6-11.5-1.6-15.6-2.7c-4.1-1.1-6.8-2.6-9.1-3.8c-2.3-1.2-3.7-3.2-4.6-3.6c-.9-.4-1.2-.9-.6 1.1c.6 2 2.2 7.6 4.1 10.7c1.9 3.1 4.4 5.7 7.2 8c2.8 2.3 5.4 3.9 9.8 5.6c4.4 1.7 8.8 3.4 16.3 4.5c7.5 1.1 13.7 2.1 28.7 1.9c15-.1 49-2.5 61.5-2.8c12.5-.3 10.2 .4 13.7 .9c3.5 .5 6 1.8 7.3 2c1.3 .2 .9 .1 .6-1zM410.3 49.6c-.3-1.1-.9-3.5-2.3-5.5c-1.4-1.9-4.2-4.6-6.2-6.2c-2-1.6-3-2.1-5.7-3.1c-2.7-1-6.7-2.3-10.5-3.1c-3.8-.8-8.1-1.4-12.5-1.8c-4.4-.4-3.3-.6-13.9-.7c-10.6 0-38.4 .5-49.8 .4c-11.4-.1-12.7-.2-18.4-.8c-5.7-.6-11.5-1.6-15.6-2.7c-4.1-1.1-6.8-2.6-9.1-3.8c-2.3-1.2-3.7-3.2-4.6-3.6c-.9-.4-1.2-.9-.6 1.1c.6 2 2.2 7.6 4.1 10.7c1.9 3.1 4.4 5.7 7.2 8c2.8 2.3 5.4 3.9 9.8 5.6c4.4 1.7 8.8 3.4 16.3 4.5c7.5 1.1 13.7 2.1 28.7 1.9c15-.1 49-2.5 61.5-2.8c12.5-.3 10.2 .4 13.7 .9c3.5 .5 6 1.8 7.3 2c1.3 .2 .9 .1 .6-1zM242.1 245c.5-.9-5.7 1.2-7.1 2c-1.4 .9-3.1 0-1.1 3.1c2 3.1 10.4 11.8 13.2 15.5c2.8 3.8 3 4.6 3.6 7c.6 2.4 .6 5.3 .1 7.6c-.5 2.3-2.9 5.5-3.3 6.2c-.4 .7 1-1.4 1-2.2c0-.8 1.3 .1-1.2-2.4c-2.5-2.5-11-10-13.8-12.8c-2.8-2.8-2.1-2.5-2.9-3.8c-.7-1.3-1.4-2.7-1.6-4.1c-.2-1.4-.3-2.9 .2-4.3c.5-1.4 .6-2.3 2.7-4.3c2.2-2 9.7-6.6 10.2-7.5zM7.6 32c-1.2-1-5.5-2.8-7.9-4.9c-2.4-2.1-4.8-5.4-6.4-7.8c-1.6-2.4-2.2-3.6-3-6.4c-.8-2.8-1.5-7.6-1.7-10.5c-.1-2.9 0-4.2 .8-6.8c.8-2.6 2.2-6.4 4-8.9c1.8-2.5 4.3-4.8 6.8-6.2c2.6-1.4 6.1-2.1 8.5-2.4c2.4-.3 3.6-.1 5.9 .8c2.3 .9 6.1 3.1 8.1 4.8c2.1 1.7 3 3.4 4.2 5.4c1.2 2 2.6 5.4 3 6.7c.4 1.3 .3 1.5-.6 1.1c-.9-.4-2.4-2.4-4.8-3.5c-2.3-1.1-6-2.6-9.3-3.1c-3.3-.5-7.4-.4-10.3-.1c-2.8 .3-4.6 1-6.8 1.8c-2.2 .8-3.9 1.4-6.2 3.1c-2.2 1.7-5.6 4.8-7.3 6.9c-1.7 2.1-2.2 3.8-2.9 5.7c-.7 1.9-1.4 3.5-1.3 5.9c.1 2.4 .5 6 1.7 8.6c1.2 2.6 3.1 5.1 5.5 6.9c2.4 1.8 5.5 3.3 8.7 3.9c3.2 .7 8.8 .2 10.7 0c1.9-.2 1.8 0 .6-1zM7.6 332c-1.2-1-5.5-2.8-7.9-4.9c-2.4-2.1-4.8-5.4-6.4-7.8c-1.6-2.4-2.2-3.6-3-6.4c-.8-2.8-1.5-7.6-1.7-10.5c-.1-2.9 0-4.2 .8-6.8c.8-2.6 2.2-6.4 4-8.9c1.8-2.5 4.3-4.8 6.8-6.2c2.6-1.4 6.1-2.1 8.5-2.4c2.4-.3 3.6-.1 5.9 .8c2.3 .9 6.1 3.1 8.1 4.8c2.1 1.7 3 3.4 4.2 5.4c1.2 2 2.6 5.4 3 6.7c.4 1.3 .3 1.5-.6 1.1c-.9-.4-2.4-2.4-4.8-3.5c-2.3-1.1-6-2.6-9.3-3.1c-3.3-.5-7.4-.4-10.3-.1c-2.8 .3-4.6 1-6.8 1.8c-2.2 .8-3.9 1.4-6.2 3.1c-2.2 1.7-5.6 4.8-7.3 6.9c-1.7 2.1-2.2 3.8-2.9 5.7c-.7 1.9-1.4 3.5-1.3 5.9c.1 2.4 .5 6 1.7 8.6c1.2 2.6 3.1 5.1 5.5 6.9c2.4 1.8 5.5 3.3 8.7 3.9c3.2 .7 8.8 .2 10.7 0c1.9-.2 1.8 0 .6-1zM307.6 32c-1.2-1-5.5-2.8-7.9-4.9c-2.4-2.1-4.8-5.4-6.4-7.8c-1.6-2.4-2.2-3.6-3-6.4c-.8-2.8-1.5-7.6-1.7-10.5c-.1-2.9 0-4.2 .8-6.8c.8-2.6 2.2-6.4 4-8.9c1.8-2.5 4.3-4.8 6.8-6.2c2.6-1.4 6.1-2.1 8.5-2.4c2.4-.3 3.6-.1 5.9 .8c2.3 .9 6.1 3.1 8.1 4.8c2.1 1.7 3 3.4 4.2 5.4c1.2 2 2.6 5.4 3 6.7c.4 1.3 .3 1.5-.6 1.1c-.9-.4-2.4-2.4-4.8-3.5c-2.3-1.1-6-2.6-9.3-3.1c-3.3-.5-7.4-.4-10.3-.1c-2.9 .3-4.6 1-6.8 1.8c-2.2 .8-3.9 1.4-6.2 3.1c-2.2 1.7-5.6 4.8-7.3 6.9c-1.7 2.1-2.2 3.8-2.9 5.7c-.7 1.9-1.4 3.5-1.3 5.9c.1 2.4 .5 6 1.7 8.6c1.2 2.6 3.1 5.1 5.5 6.9c2.4 1.8 5.5 3.3 8.7 3.9c3.2 .7 8.8 .2 10.7 0c1.9-.2 1.8 0 .6-1zM307.6 332c-1.2-1-5.5-2.8-7.9-4.9c-2.4-2.1-4.8-5.4-6.4-7.8c-1.6-2.4-2.2-3.6-3-6.4c-.8-2.8-1.5-7.6-1.7-10.5c-.1-2.9 0-4.2 .8-6.8c.8-2.6 2.2-6.4 4-8.9c1.8-2.5 4.3-4.8 6.8-6.2c2.6-1.4 6.1-2.1 8.5-2.4c2.4-.3 3.6-.1 5.9 .8c2.3 .9 6.1 3.1 8.1 4.8c2.1 1.7 3 3.4 4.2 5.4c1.2 2 2.6 5.4 3 6.7c.4 1.3 .3 1.5-.6 1.1c-.9-.4-2.4-2.4-4.8-3.5c-2.3-1.1-6-2.6-9.3-3.1c-3.3-.5-7.4-.4-10.3-.1c-2.9 .3-4.6 1-6.8 1.8c-2.2 .8-3.9 1.4-6.2 3.1c-2.2 1.7-5.6 4.8-7.3 6.9c-1.7 2.1-2.2 3.8-2.9 5.7c-.7 1.9-1.4 3.5-1.3 5.9c.1 2.4 .5 6 1.7 8.6c1.2 2.6 3.1 5.1 5.5 6.9c2.4 1.8 5.5 3.3 8.7 3.9c3.2 .7 8.8 .2 10.7 0c1.9-.2 1.8 0 .6-1zM-3.3-14c.5-.8-4.5 1.3-5.5 1.8c-1 .5-2.4-.6-.7 1.4c1.7 2 8.5 8 10.9 10.7c2.4 2.7 2.9 3.4 3.7 5.3c.8 2 1.5 4 1 6.4c-.5 2.4-3.4 7.1-3.8 8.1c-.4 1 1.3-1.4 1.2-2.3c-.1-.9 .7-1.1-1.6-3.3c-2.3-2.2-9.8-7.6-12.4-10.1c-2.5-2.4-2.4-3.3-2.9-4.6c-.5-1.3-.4-2.1-.1-3.3c.3-1.1 .3-1.9 2-3.6c1.7-1.7 7.8-5.7 8.2-6.5zM-3.3 286c.5-.8-4.5 1.3-5.5 1.8c-1 .5-2.4-.6-.7 1.4c1.7 2 8.5 8 10.9 10.7c2.4 2.7 2.9 3.4 3.7 5.3c.8 2 1.5 4 1 6.4c-.5 2.4-3.4 7.1-3.8 8.1c-.4 1 1.3-1.4 1.2-2.3c-.1-.9 .7-1.1-1.6-3.3c-2.3-2.2-9.8-7.6-12.4-10.1c-2.5-2.4-2.4-3.3-2.9-4.6c-.5-1.3-.4-2.1-.1-3.3c.3-1.1 .3-1.9 2-3.6c1.7-1.7 7.8-5.7 8.2-6.5zM296.7-14c.5-.8-4.5 1.3-5.5 1.8c-1 .5-2.4-.6-.7 1.4c1.7 2 8.5 8 10.9 10.7c2.4 2.7 2.9 3.4 3.7 5.3c.8 2 1.5 4 1 6.4c-.5 2.4-3.4 7.1-3.8 8.1c-.4 1 1.3-1.4 1.2-2.3c-.1-.9 .7-1.1-1.6-3.3c-2.3-2.2-9.8-7.6-12.4-10.1c-2.5-2.4-2.4-3.3-2.9-4.6c-.5-1.3-.4-2.1-.1-3.3c.3-1.1 .3-1.9 2-3.6c1.7-1.7 7.8-5.7 8.2-6.5zM296.7 286c.5-.8-4.5 1.3-5.5 1.8c-1 .5-2.4-.6-.7 1.4c1.7 2 8.5 8 10.9 10.7c2.4 2.7 2.9 3.4 3.7 5.3c.8 2 1.5 4 1 6.4c-.5 2.4-3.4 7.1-3.8 8.1c-.4 1 1.3-1.4 1.2-2.3c-.1-.9 .7-1.1-1.6-3.3c-2.3-2.2-9.8-7.6-12.4-10.1c-2.5-2.4-2.4-3.3-2.9-4.6c-.5-1.3-.4-2.1-.1-3.3c.3-1.1 .3-1.9 2-3.6c1.7-1.7 7.8-5.7 8.2-6.5zM61.6 186.7c2.5-3.7 12.5-16.1 19.5-26.1c7-10 13.5-19.5 22.7-33.8c9.2-14.3 24.5-38.8 32.2-51.8c7.7-12.9 12-21.7 14.1-25.9c2.1-4.1-.1-1.2-1.3 1c-1.2 2.2-2.7 6.6-5.7 12.2c-3 5.6-4.8 9.3-12 21.4c-7.2 12.1-21.9 36.5-31.3 51.2c-9.4 14.7-19.5 29.1-25.2 37.1c-5.7 8-6.5 8.5-8.7 10.9c-2.2 2.5-6.8 7.5-4.3 3.8zM235 224.5c.6-1-3.6 2.4-4.2 3.2c-.6 .9-2.3 .1 .4 1.9c2.7 1.8 12.7 7 15.9 9c3.3 2 2.6 1.9 3.6 3c1 1.1 1.9 1.8 2.3 3.4c.4 1.7 .7 4.4 .2 6.5c-.5 2.1-3 5.4-3.4 6.1c-.4 .7 .9-1.2 .8-1.7c-.1-.5 1.6 0-1.3-1.4c-2.8-1.3-12.5-5.2-15.8-6.7c-3.3-1.5-2.7-1.6-3.8-2.5c-1.1-.9-2-1.9-2.6-3.1c-.6-1.1-1-2.4-1-3.8c0-1.4-.3-2.2 1.2-4.5c1.5-2.3 7.1-8.4 7.7-9.4zM218.8 6.5c-.4-1.6-2.3-4.7-2.8-8.4c-.5-3.7-.3-10.7-.1-13.7c.2-3 .3-2.4 1.1-4.5c.8-2.1 2.2-5.6 3.8-8.1c1.6-2.5 4.1-5.1 5.6-6.7c1.5-1.5 1.6-1.6 3.4-2.6c1.8-1 4.9-2.7 7.5-3.5c2.6-.7 5.4-1.1 8-1c2.6 .1 5.3 .6 7.7 1.5c2.4 .9 5.2 2.9 6.8 4c1.6 1.1 2 1.8 2.9 2.8c.9 1 1.5 1.5 2.5 3.3c1 1.8 2.7 4.2 3.3 7.7c.6 3.5 1.2 8.8 .5 13.2c-.7 4.4-3 9.5-4.9 13.1c-1.9 3.6-6.1 7.9-6.5 8.5c-.4 .6 3.2-2.9 4.3-4.7c1.1-1.8 1.9-3.8 2.3-5.9c.4-2.1 .5-4.5 .2-6.8c-.3-2.3-1-4.6-2-6.8c-1-2.2-2.4-4.4-4.1-6.3c-1.7-1.9-3.1-3.5-5.9-5.1c-2.8-1.6-7.8-3.6-11-4.4c-3.1-.8-5.3-.6-7.9-.4c-2.6 .2-5.2 .8-7.5 1.7c-2.3 .9-4.5 2.2-6.4 3.7c-1.9 1.5-3.6 3.3-4.9 5.2c-1.3 1.9-2.2 4.2-2.7 6.4c-.5 2.2-.6 4.5-.3 6.7c.3 2.2 1 4.4 2.1 6.4c1.1 2 3.6 4.9 4.4 5.7c.8 .8 1 .6 .6-1zM218.8 306.5c-.4-1.6-2.3-4.7-2.8-8.4c-.5-3.7-.3-10.7-.1-13.7c.2-3 .3-2.4 1.1-4.5c.8-2.1 2.2-5.6 3.8-8.1c1.6-2.5 4.1-5.1 5.6-6.7c1.5-1.5 1.6-1.6 3.4-2.6c1.8-1 4.9-2.7 7.5-3.5c2.6-.7 5.4-1.1 8-1c2.6 .1 5.3 .6 7.7 1.5c2.4 .9 5.2 2.9 6.8 4c1.6 1.1 2 1.8 2.9 2.8c.9 1 1.5 1.5 2.5 3.3c1 1.8 2.7 4.2 3.3 7.7c.6 3.5 1.2 8.8 .5 13.2c-.7 4.4-3 9.5-4.9 13.1c-1.9 3.6-6.1 7.9-6.5 8.5c-.4 .6 3.2-2.9 4.3-4.7c1.1-1.8 1.9-3.8 2.3-5.9c.4-2.1 .5-4.5 .2-6.8c-.3-2.3-1-4.6-2-6.8c-1-2.2-2.4-4.4-4.1-6.3c-1.7-1.9-3.1-3.5-5.9-5.1c-2.8-1.6-7.8-3.6-11-4.4c-3.1-.8-5.3-.6-7.9-.4c-2.6 .2-5.2 .8-7.5 1.7c-2.3 .9-4.5 2.2-6.4 3.7c-1.9 1.5-3.6 3.3-4.9 5.2c-1.3 1.9-2.2 4.2-2.7 6.4c-.5 2.2-.6 4.5-.3 6.7c.3 2.2 1 4.4 2.1 6.4c1.1 2 3.6 4.9 4.4 5.7c.8 .8 1 .6 .6-1zM45.6-29.1c4 3.9 12.4 14 23.5 24.3c11 10.3 33.6 29.3 42.8 37.7c9.2 8.4 9.2 9.1 12.2 12.8c3 3.7 4.2 6 5.9 9.4c1.7 3.4 3.2 7 4.5 11.2c1.3 4.2 2.4 9.6 3.2 14.2c.8 4.6 1.5 10.8 1.7 13.2c.2 2.4 .5 2.8-.6 1.1c-1.1-1.7-3.9-7.7-5.9-11c-2-3.3-.2-2.3-6.2-8.6c-6-6.3-21.6-20.5-29.8-29.3c-8.2-8.7-12.1-13.2-19.4-23.2c-7.3-10-19-28.4-24.4-36.9c-5.4-8.4-6.8-11.3-8.1-13.8c-1.2-2.5-3.4-5 .6-1.1zM45.6 270.9c4 3.9 12.4 14 23.5 24.3c11 10.3 33.6 29.3 42.8 37.7c9.2 8.4 9.2 9.1 12.2 12.8c3 3.7 4.2 6 5.9 9.4c1.7 3.4 3.2 7 4.5 11.2c1.3 4.2 2.4 9.6 3.2 14.2c.8 4.6 1.5 10.8 1.7 13.2c.2 2.4 .5 2.8-.6 1.1c-1.1-1.6-3.9-7.7-5.9-11c-2-3.3-.2-2.3-6.2-8.6c-6-6.3-21.6-20.5-29.8-29.3c-8.2-8.7-12.1-13.2-19.4-23.2c-7.3-10-19-28.4-24.4-36.9c-5.4-8.4-6.8-11.3-8.1-13.8c-1.2-2.5-3.4-5 .6-1.1zM4.6 290.7c0-.9-.2-3.2-.5-4.3c-.4-1.1 0-1.2-1.6-2.1c-1.5-.8-4.8-2.4-7.7-3c-2.9-.6-1.3-.7-10-.8c-8.7-.1-32 .2-42.4 0c-10.4-.2-12-.3-20-1.2c-7.9-.9-18.1-2-27.7-4c-9.6-2-25-7-30.1-8.2c-5.1-1.2-3.2-.6-.6 1.1c2.6 1.7 10.8 6.6 16.1 9.3c5.3 2.8 9.7 4.9 15.6 7.2c5.9 2.3 14.2 4.9 19.9 6.5c5.7 1.6 8.8 2.1 14.1 2.9c5.3 .8 12 1.5 17.5 1.8c5.6 .3 7 .8 15.8 0c8.8-.7 30.1-3.8 36.9-4.5c6.8-.7 3.3 .5 4.1 .4c.8-.1 .6-.2 .6-1.1zM304.6 290.7c0-.9-.1-3.2-.5-4.3c-.3-1.1 0-1.2-1.6-2.1c-1.5-.8-4.7-2.4-7.7-3c-2.9-.6-1.3-.7-10-.8c-8.7-.1-32 .2-42.4 0c-10.4-.2-12-.3-20-1.2c-7.9-.9-18.1-2-27.7-4c-9.6-2-25-7-30.1-8.2c-5.1-1.2-3.2-.6-.6 1.1c2.6 1.7 10.8 6.6 16.1 9.3c5.3 2.8 9.7 4.9 15.6 7.2c5.9 2.3 14.2 4.9 19.9 6.5c5.7 1.6 8.8 2.1 14.1 2.9c5.3 .8 12 1.5 17.5 1.8c5.6 .3 7 .8 15.8 0c8.8-.7 30.1-3.8 36.9-4.5c6.8-.7 3.3 .5 4.1 .4c.8-.1 .6-.2 .6-1.1zM88.2 71.6c1.8 2.4 5.4 16.4 7.2 23.3c1.9 6.9 2.9 12.2 3.9 18c1 5.8 1.6 11.1 1.9 17c.3 5.9 .2 13.1-.2 18.6c-.4 5.6-1 9.8-2 14.7c-1 4.9-2.2 10-3.9 15c-1.7 5-3.6 9.9-6.2 15.1c-2.6 5.2-8.9 15.2-9.4 16.1c-.5 .9 4.8-7.5 6.3-10.5c1.5-3 2.1-4.9 2.9-7.5c.8-2.5 1.4-4.5 2-7.8c.6-3.3 1.4-5.9 1.5-12.1c.2-6.2 .8-12-.6-24.9c-1.4-12.9-6.4-41.7-7.6-52.8c-1.2-11-.3-9.8 .4-13.5c.7-3.7 2-11.1 3.8-8.7zM-66.6 125.3c.2-1 0-2.6 .6-5.2c.6-2.6 1.8-7.2 3.2-10.5c1.4-3.3 3.8-7.1 5.2-9.4c1.4-2.2 .8-1.8 3.3-4.1c2.6-2.3 8.5-7.4 12-9.6c3.6-2.2 7-2.9 9.3-3.6c2.4-.7 2.4-.7 4.8-.8c2.4-.1 7.2 0 9.5 .2c2.4 .2 3.1 .6 4.6 1c1.5 .4 2.4 .5 4.5 1.6c2.1 1.1 5.6 3 8 5c2.4 2 4.9 5.1 6.4 7c1.5 1.9 1.8 2.7 2.5 4.2c.8 1.5 1.3 2.1 2 4.5c.7 2.4 1.9 6.5 2.2 9.8c.4 3.4 .4 6.9-.1 10.3c-.4 3.5-1.8 7.8-2.6 10.4c-.8 2.6-.7 2.5-2.1 5c-1.4 2.5-6.1 9.6-6.5 10.2c-.4 .6 3.3-4.3 4.4-6.7c1.1-2.4 2-4.9 2.4-7.6c.4-2.7 .4-5.6 .1-8.4c-.3-2.8-1-5.7-2-8.4c-1-2.7-2.5-5.5-4.2-8c-1.7-2.5-3-4.5-6-6.9c-3-2.4-8.3-5.9-11.8-7.7c-3.5-1.7-6-2.2-9-2.8c-3-.6-6.2-.8-9.2-.7c-3 .1-6.1 .7-9 1.5c-2.8 .8-5.6 2-8.1 3.4c-2.5 1.4-4.7 3.3-6.7 5.2c-1.9 2-3.7 4.2-5 6.5c-1.3 2.3-2.2 4.9-2.8 7.5c-.5 2.6-.5 6.9-.5 8.1c0 1.2 .4 0 .6-1zM233.4 125.3c.2-1 0-2.6 .6-5.2c.6-2.6 1.8-7.2 3.2-10.5c1.4-3.3 3.8-7.1 5.2-9.4c1.4-2.2 .8-1.8 3.3-4.1c2.6-2.3 8.5-7.4 12-9.6c3.6-2.2 7-2.9 9.3-3.6c2.4-.7 3.2-.6 4.8-.8c1.6-.2 2.5-.4 4.8-.2c2.4 .2 7 .9 9.3 1.4c2.3 .5 2.4 .5 4.5 1.6c2.1 1.1 5.6 3 8 5c2.4 2 4.9 5.1 6.4 7c1.5 1.9 1.8 2.7 2.5 4.2c.8 1.5 1.3 2.1 2 4.5c.7 2.4 1.9 6.5 2.2 9.8c.4 3.4 .3 6.9-.1 10.3c-.4 3.5-1.8 7.8-2.6 10.4c-.8 2.6-.7 2.5-2.1 5c-1.4 2.5-6.2 9.6-6.5 10.2c-.3 .6 3.3-4.3 4.4-6.7c1.1-2.4 2-4.9 2.4-7.6c.4-2.7 .4-5.6 .1-8.4c-.3-2.8-1-5.7-2-8.4c-1-2.7-2.5-5.5-4.2-8c-1.7-2.5-3-4.5-6-6.9c-3-2.4-8.3-5.9-11.8-7.7c-3.5-1.7-6-2.2-9-2.8c-3-.6-6.2-.8-9.2-.7c-3 .1-6.1 .7-9 1.5c-2.8 .8-5.6 2-8.1 3.4c-2.5 1.4-4.7 3.3-6.7 5.2c-1.9 2-3.7 4.2-5 6.5c-1.3 2.3-2.2 4.9-2.8 7.5c-.5 2.6-.5 6.9-.5 8.1c0 1.2 .4 0 .6-1zM71.9 32.1c-1-.4-7.6 1.3-10.7 1.3c-3.1 0-5.1-.6-7.7-1.4c-2.5-.7-4.6-1.3-7.6-3.1c-3-1.8-7.2-4.7-10.2-7.8c-2.9-3.1-5.7-7.6-7.5-10.7c-1.8-3.1-2.4-5.3-3.1-8.1c-.7-2.8-1.3-5-1.2-8.4c.1-3.4 .5-8.3 1.7-12c1.2-3.6 3.3-7.2 5.7-9.9c2.4-2.7 6.3-5 8.9-6.4c2.7-1.4 4-1.7 7-1.8c3-.1 9.4 1 11.2 1.4c1.8 .4 1.1 .6-.6 1.1c-1.7 .5-6.3 .9-9.4 1.9c-3.1 1-6.3 2.3-9.2 3.9c-2.9 1.6-5.7 3.5-8.2 5.5c-2.5 2.1-4.8 4.3-6.8 6.8c-2 2.5-3.8 5.2-5.2 8c-1.4 2.8-2.5 5-3.2 8.6c-.6 3.6-.9 9.5-.7 13.1c.3 3.6 1.1 5.6 2.2 8.2c1.1 2.6 2.6 5.1 4.3 7.2c1.7 2.2 3 3.9 6 5.7c3 1.8 8.3 4.1 11.8 5.1c3.5 1 5.9 .8 9 .7c3.1-.1 6.2-.6 9.3-1.5c3.1-.9 6.9-2.6 9.3-3.8c2.4-1.2 5.9-3.2 4.9-3.6zM71.9 332.1c-1-.4-7.6 1.3-10.7 1.3c-3.1 0-5.1-.6-7.7-1.4c-2.5-.7-4.6-1.3-7.6-3.1c-3-1.8-7.2-4.7-10.2-7.8c-2.9-3.1-5.7-7.6-7.5-10.7c-1.8-3.1-2.4-5.3-3.1-8.1c-.7-2.7-1.3-5-1.2-8.4c.1-3.4 .5-8.4 1.7-12c1.2-3.6 3.3-7.2 5.7-9.9c2.4-2.7 6.3-5 8.9-6.4c2.7-1.4 4-1.7 7-1.8c3-.1 9.4 1 11.2 1.4c1.8 .4 1.1 .6-.6 1.1c-1.7 .5-6.3 .9-9.4 1.9c-3.1 1-6.3 2.3-9.2 3.9c-2.9 1.6-5.7 3.5-8.2 5.5c-2.5 2.1-4.8 4.3-6.8 6.8c-2 2.5-3.8 5.2-5.2 8c-1.4 2.8-2.5 5-3.2 8.6c-.6 3.6-.9 9.6-.7 13.1c.3 3.6 1.1 5.6 2.2 8.2c1.1 2.6 2.6 5.1 4.3 7.2c1.7 2.2 3 3.9 6 5.7c3 1.8 8.3 4.1 11.8 5.1c3.5 1 5.9 .8 9 .7c3.1-.1 6.2-.6 9.3-1.5c3.1-.9 6.9-2.6 9.3-3.8c2.4-1.2 5.9-3.2 4.9-3.6zM183.5 187.9c-.2 0-3.4 3.4-5.4 4.7c-2 1.3-3.7 2.4-6.8 3.1c-3.1 .7-7.9 1.5-11.9 1.1c-4-.4-8.4-1.5-12.3-3.3c-3.9-1.8-7.8-4.4-11-7.4c-3.1-3-5.9-6.8-7.9-10.6c-2-3.8-3.4-8.2-3.9-12.3c-.5-4.1-.3-8.5 .7-12.3c1-3.8 2.9-7.5 5.2-10.4c2.3-2.9 5.5-5.4 8.8-6.9c3.3-1.5 9.4-2.1 11.1-2.3c1.8-.2 1.1 .3-.6 1.1c-1.6 .8-7 2.8-9.3 3.9c-2.3 1.1-2.3 1.2-4.3 2.8c-2 1.6-5.4 4.3-7.7 6.7c-2.3 2.5-4.3 5.2-6 8c-1.7 2.8-3 6-4 9c-.9 3.1-1.5 6.2-1.7 9.3c-.2 3.1-.3 5.6 .6 9.2c1 3.6 3.3 9.2 5.1 12.3c1.8 3.1 3.7 4.6 5.9 6.4c2.2 1.8 4.8 3.5 7.5 4.6c2.7 1.2 6.5 1.9 8.7 2.3c2.2 .5 2.3 .5 4.6 .4c2.3-.1 7-.7 9.3-1.2c2.3-.4 2.5-.4 4.7-1.5c2.3-1 6-2.8 8.8-4.8c2.8-1.9 5.9-4.9 7.9-6.9c2-2 4.2-4.9 3.9-5zM152.6 168c1.4 2.3 5.6 9.2 8 14.7c2.4 5.5 4.4 10.1 6.5 18.2c2.2 8.1 5.1 23 6.4 30.2c1.4 7.2 1.5 10.5 1.7 12.8c.2 2.3 1.1 3.4-.6 1.1c-1.7-2.3-6.9-9.3-9.7-14.8c-2.8-5.5-5.2-11.5-7.1-18.2c-1.9-6.7-3.2-14.8-4.2-22c-1-7.2-1.4-17.3-1.6-21c-.2-3.7-.8-3.3 .6-1zM126.6 201.5c.5-.8 1.5-5.1 3.2-8.2c1.8-3.1 4.5-7.5 7.3-10.5c2.8-3 6.1-5.5 9.4-7.3c3.3-1.8 7-3 10.5-3.4c3.5-.4 7.1-.1 10.3 .8c3.2 .9 6.3 2.6 8.8 4.8c2.5 2.2 4.7 5.2 6.2 8.3c1.5 3.2 2.3 7.5 2.7 10.6c.4 3.1 0 5.3-.4 7.9c-.4 2.6-1.1 5.3-2.1 7.9c-1 2.6-2.2 5.2-3.8 7.8c-1.6 2.7-5.3 7.3-5.8 8.1c-.4 .8 2.3-2.1 3.1-3.4c.8-1.3 1.5-2.8 1.9-4.4c.4-1.6 .6-3.4 .5-5.2c-.1-1.8-.3-3.6-.9-5.5c-.5-1.8-1.4-3.8-2.4-5.6c-1-1.8-2.4-3.6-3.8-5.2c-1.4-1.6-3-3.2-4.8-4.5c-1.7-1.3-3.2-2.4-5.7-3.5c-2.5-1.1-6.9-2.4-9.5-3c-2.6-.5-4.2-.4-6.3-.3c-2 .1-4.1 .4-6 .9c-1.9 .5-3.7 1.3-5.2 2.2c-1.5 .9-2.9 2.1-4 3.3c-1.1 1.2-2.2 2.7-2.7 3.9c-.5 1.2-.9 4.3-.5 3.5zM-17 77.4c.5 .2 1.2 1.5 2.5 2.1c1.3 .6 3.1 1.6 5.5 1.6c2.4 0 5.5-.2 8.7-1.6c3.2-1.4 7.3-4.2 10.7-7c3.4-2.8 7.7-7.7 9.7-10c2-2.2 2.6-3.8 2.2-3.5c-.4 .3-3.6 4.3-4.5 5.4c-.8 1.1-.7 .9-.6 1c.1 .1 1.1-.7 1.2-.5c.1 .2 .6-.1-.5 1.8c-1.1 2-4.3 7.1-6.4 9.9c-2.1 2.8-3.9 4.8-6.1 6.7c-2.2 2-4.6 4-6.9 5c-2.3 1-5.1 1.4-6.9 1.2c-1.8-.1-2.8-.9-4.1-2.1c-1.3-1.2-2.8-3.8-3.6-5.3c-.9-1.5-1.4-2.9-1.5-3.7c-.1-.8 .1-1.2 .6-1zM283 77.4c.5 .2 1.2 1.5 2.5 2.1c1.3 .6 3.1 1.6 5.5 1.6c2.4 0 5.5-.2 8.7-1.6c3.2-1.4 7.3-4.2 10.7-7c3.4-2.8 7.7-7.7 9.7-10c2-2.2 2.6-3.8 2.2-3.5c-.4 .3-3.6 4.3-4.5 5.4c-.8 1.1-.7 .9-.6 1c.1 .1 1.1-.7 1.2-.5c.1 .2 .6-.1-.5 1.8c-1.1 2-4.3 7.1-6.4 9.9c-2.1 2.8-3.9 4.8-6.1 6.7c-2.2 2-4.6 4-6.9 5c-2.3 1-5.1 1.4-6.9 1.2c-1.8-.1-2.8-.9-4.1-2.1c-1.3-1.2-2.7-3.8-3.6-5.3c-.9-1.5-1.4-2.9-1.5-3.7c-.1-.8 .1-1.2 .6-1zM36.8 132.1c.1 .3-3.3 6.5-4.1 9.9c-.8 3.5-1.1 6.1-.7 10.8c.4 4.7 1.3 10.2 3.2 17.3c2 7.2 6.4 18.8 8.5 25.6c2.1 6.8 3.3 10.8 3.9 15c.6 4.2 .1 7.9-.2 10.1c-.2 2.2-.4 2-1.3 3.3c-.9 1.3-3.8 3.9-4.3 4.7c-.5 .8 1.1 .6 1.3 .2c.2-.4 1.7 2.1-.3-2.8c-2-4.9-8.9-18.5-11.6-26.7c-2.7-8.2-4.1-16.3-4.9-22.4c-.8-6.1-.3-10.1 0-14.3c.3-4.2 .9-7.4 1.9-11.1c1-3.7 2.7-7.9 4.1-11.2c1.4-3.3 4.4-8.6 4.5-8.4zM198.4 42.4c1.1 .4 1.9 2.8 5.3 12.4c3.5 9.6 11.8 34 15.4 45.3c3.7 11.3 5.5 18.6 6.5 22.5c1 3.9 .8 2-.6 1c-1.4-1-5.3-4.6-7.7-7.1c-2.4-2.5-4.7-5.1-6.8-8c-2-2.8-3.9-5.9-5.5-9.1c-1.6-3.2-2.8-5.2-4.1-10.1c-1.2-4.9-2.8-13.1-3.4-19.2c-.6-6.1-.3-12.8-.2-17.4c.2-4.6 0-10.6 1.1-10.3zM165.7 27.3c.2-.4-1.6 1-3.4 1.4c-1.8 .4-4.7 .9-7.2 1c-2.5 .1-5.1-.1-7.7-.6c-2.6-.5-4.7-.8-7.8-2.3c-3.1-1.5-7.6-3.9-10.8-6.7c-3.2-2.7-6.2-6.2-8.5-9.8c-2.3-3.6-4-8.5-5.1-11.8c-1-3.3-1.1-5.5-1.2-8.2c-.1-2.7-.2-5 .6-8.1c.8-3.1 2.3-7.5 4.3-10.6c2-3.1 5.4-6 7.8-7.8c2.4-1.8 3.7-2.4 6.6-3c3-.6 9.4-.7 11.1-.6c1.8 .1 1 .3-.6 1c-1.6 .7-6.2 1.7-9.2 3c-3 1.3-6 3-8.7 4.9c-2.7 1.9-5.2 4-7.5 6.3c-2.2 2.3-4.3 4.9-6 7.5c-1.7 2.7-3.1 4.8-4.2 8.4c-1.1 3.6-2.2 9.6-2.4 13.3c-.2 3.7 .3 5.9 1 8.6c.7 2.8 1.7 5.5 3 7.9c1.3 2.4 3.1 4.7 5 6.7c1.9 2 3.5 3.6 6.6 5.2c3.1 1.6 8.7 3.5 12.2 4.2c3.5 .7 6 .5 9.1 .2c3.1-.3 6.2-1 9.2-2.1c3-1.1 6.7-3 9-4.3c2.3-1.3 4.6-3.3 4.8-3.7zM165.7 327.3c.2-.4-1.6 1-3.4 1.4c-1.8 .4-4.7 .9-7.2 1c-2.5 .1-5.1-.1-7.7-.6c-2.6-.5-4.7-.8-7.8-2.3c-3.1-1.5-7.6-3.9-10.8-6.7c-3.2-2.7-6.2-6.2-8.5-9.8c-2.3-3.6-4-8.5-5.1-11.8c-1-3.3-1.1-5.5-1.2-8.2c-.1-2.7-.2-5 .6-8.1c.8-3.1 2.3-7.5 4.3-10.6c2-3.1 5.4-6 7.8-7.8c2.4-1.8 3.7-2.4 6.6-3c3-.6 9.4-.7 11.1-.6c1.8 .1 1 .3-.6 1c-1.6 .7-6.2 1.7-9.2 3c-3 1.3-6 3-8.7 4.9c-2.7 1.9-5.2 4-7.5 6.3c-2.2 2.3-4.3 4.9-6 7.5c-1.7 2.6-3.1 4.8-4.2 8.4c-1.1 3.6-2.2 9.7-2.4 13.3c-.2 3.7 .3 5.9 1 8.6c.7 2.8 1.7 5.5 3 7.9c1.3 2.4 3.1 4.7 5 6.7c1.9 2 3.5 3.6 6.6 5.2c3.1 1.6 8.7 3.5 12.2 4.2c3.5 .7 6 .5 9.1 .2c3.1-.3 6.2-1 9.2-2.1c3-1.1 6.7-3 9-4.3c2.3-1.3 4.6-3.3 4.8-3.7zM95.9 216.1c-.8-1.8-3.7-7-5.7-9.9c-2-2.9-3.6-5.2-6.1-7.7c-2.5-2.5-5.8-5.3-8.9-7.2c-3-1.9-5.4-3.2-9.4-4.3c-4-1.1-7.1-2.3-14.6-2.4c-7.5-.1-23.2 1.7-30.2 1.9c-6.9 .2-9.5-.9-11.5-.9c-2 0-1.4-.5-.6 1.1c.8 1.6 3 6.1 5.2 8.2c2.2 2.1 4.8 3.4 7.8 4.5c3 1.1 4.7 1.6 10 2.2c5.3 .6 15.5 .8 21.9 1.5c6.4 .7 11.8 1.5 16.4 2.5c4.6 1 7 1.7 11.2 3.6c4.2 1.9 11.5 6.9 13.9 8c2.4 1.2 1.5 .7 .6-1.1zM-4.2-64c1.1-.9 4.1-3.7 6-4.7c1.9-1 3.6-1.2 5.6-1.5c2-.3 3.5-.5 6.5-.2c3 .3 7.4 .9 11.4 1.9c4 1.1 8.3 2.6 12.7 4.4c4.4 1.8 7.5 3 13.6 6.6c6.1 3.6 15.7 9.4 23.2 15.2c7.5 5.8 16.8 14.7 21.7 19.4c4.9 4.7 4.8 5 7.7 8.7c3 3.8 7.4 9.9 10 13.8c2.6 3.9 3.9 6.3 5.5 9.5c1.6 3.2 3.1 6.5 4.3 9.8c1.2 3.3 2.2 6.6 2.9 9.9c.8 3.3 1.4 8 1.6 9.8c.2 1.8 0 2.2-.6 1.1c-.6-1.1-1.7-5-2.9-7.5c-1.2-2.5-2.2-4.2-4.4-7.4c-2.2-3.1-4.8-7-8.7-11.5c-3.9-4.5-8.6-9.7-14.7-15.4c-6-5.7-14.1-12.6-21.6-18.5c-7.5-5.9-15.6-11.6-23.1-16.7c-7.5-5-14.7-9.6-22-13.6c-7.3-4-16.5-8.3-21.7-10.5c-5.2-2.2-7.4-2.3-9.7-2.6c-2.3-.3-3.3 1-3.9 1c-.5 0-.5 0 .6-1zM-4.2 236c1.1-.9 4.1-3.7 6-4.7c1.9-1 3.6-1.2 5.6-1.5c2-.3 3.5-.5 6.5-.2c3 .3 7.4 .9 11.4 1.9c4 1.1 8.3 2.6 12.7 4.4c4.4 1.8 7.5 3 13.6 6.6c6.1 3.6 15.7 9.4 23.2 15.2c7.5 5.8 16.8 14.7 21.7 19.4c4.9 4.7 4.8 5 7.7 8.7c3 3.8 7.4 9.9 10 13.8c2.6 3.9 3.9 6.3 5.5 9.5c1.6 3.2 3.1 6.5 4.3 9.8c1.2 3.3 2.2 6.6 2.9 9.9c.8 3.3 1.4 8 1.6 9.8c.2 1.8 0 2.2-.6 1.1c-.6-1.1-1.7-5-2.9-7.5c-1.2-2.5-2.2-4.2-4.4-7.4c-2.2-3.1-4.8-7-8.7-11.5c-3.9-4.5-8.6-9.8-14.7-15.4c-6-5.6-14.1-12.6-21.6-18.5c-7.5-5.9-15.6-11.6-23.1-16.7c-7.5-5-14.7-9.6-22-13.6c-7.3-4-16.5-8.3-21.7-10.5c-5.2-2.2-7.4-2.3-9.7-2.6c-2.3-.3-3.3 1-3.9 1c-.5 0-.5 0 .6-1zM295.8-64c1.1-.9 4.1-3.7 6-4.7c1.9-1 3.6-1.2 5.6-1.5c2-.3 3.5-.5 6.5-.2c3 .3 7.4 .9 11.4 1.9c4 1.1 8.3 2.6 12.7 4.4c4.4 1.8 7.5 3 13.6 6.6c6.1 3.6 15.7 9.4 23.2 15.2c7.5 5.8 16.8 14.7 21.7 19.4c4.9 4.7 4.8 5 7.7 8.7c3 3.8 7.4 9.9 10 13.8c2.6 3.9 3.9 6.3 5.5 9.5c1.6 3.2 3.1 6.5 4.3 9.8c1.2 3.3 2.2 6.6 2.9 9.9c.8 3.3 1.4 8 1.6 9.8c.2 1.8 0 2.2-.6 1.1c-.6-1.1-1.7-5-2.9-7.5c-1.2-2.5-2.2-4.2-4.4-7.4c-2.2-3.1-4.8-7-8.7-11.5c-3.9-4.5-8.6-9.7-14.7-15.4c-6-5.7-14.1-12.6-21.6-18.5c-7.4-5.9-15.6-11.6-23.1-16.7c-7.5-5-14.7-9.6-22-13.6c-7.3-4-16.5-8.3-21.7-10.5c-5.2-2.2-7.4-2.3-9.7-2.6c-2.3-.3-3.3 1-3.9 1c-.5 0-.5 0 .6-1zM295.8 236c1.1-.9 4.1-3.7 6-4.7c1.9-1 3.6-1.2 5.6-1.5c2-.3 3.5-.5 6.5-.2c3 .3 7.4 .9 11.4 1.9c4 1.1 8.3 2.6 12.7 4.4c4.4 1.8 7.5 3 13.6 6.6c6.1 3.6 15.7 9.4 23.2 15.2c7.5 5.8 16.8 14.7 21.7 19.4c4.9 4.7 4.8 5 7.7 8.7c3 3.8 7.4 9.9 10 13.8c2.6 3.9 3.9 6.3 5.5 9.5c1.6 3.2 3.1 6.5 4.3 9.8c1.2 3.3 2.2 6.6 2.9 9.9c.8 3.3 1.4 8 1.6 9.8c.2 1.8 0 2.2-.6 1.1c-.6-1.1-1.7-5-2.9-7.5c-1.2-2.5-2.2-4.2-4.4-7.4c-2.2-3.1-4.8-7-8.7-11.5c-3.9-4.5-8.6-9.8-14.7-15.4c-6-5.6-14.1-12.6-21.6-18.5c-7.4-5.9-15.6-11.6-23.1-16.7c-7.5-5-14.7-9.6-22-13.6c-7.3-4-16.5-8.3-21.7-10.5c-5.2-2.2-7.4-2.3-9.7-2.6c-2.3-.3-3.3 1-3.9 1c-.5 0-.5 0 .6-1zM287.7 264.3c-.6-.4-5.1 1.6-7.9 1.4c-2.8-.2-6.6-1.4-9.1-2.5c-2.5-1-3.7-1.8-5.8-3.8c-2.1-2-5.1-5.3-6.8-8.4c-1.7-3.1-2.9-6.8-3.3-10.3c-.4-3.4 .2-7.7 .8-10.4c.6-2.7 1.2-3.9 2.8-5.9c1.6-2 4.3-4.8 6.9-6.1c2.7-1.3 6.5-1.6 9-1.6c2.5 0 4.2 .7 6.1 1.7c1.9 1 3.9 2.4 5.6 4.1c1.7 1.7 3.9 4.7 4.5 5.9c.7 1.2 0 1.2-.6 1.1c-.6-.1-1.4-1-3.1-1.5c-1.7-.5-4.7-1.2-7.2-1.4c-2.5-.2-5.1-.1-7.7 .2c-2.6 .4-4.6 .6-7.6 1.9c-2.9 1.3-7.6 4.1-10.1 6.1c-2.5 2-3.6 3.1-5.1 5.7c-1.5 2.6-3.3 7.3-4 10.1c-.6 2.8-.3 4.7 .1 6.9c.4 2.2 1.1 4.4 2.1 6.3c1.1 1.9 3 4 4.2 5.2c1.2 1.2 .7 1.2 2.8 2c2.2 .9 6.5 2.9 10.1 3.1c3.6 .2 8.5-.9 11.7-1.9c3.2-1 5.7-2.9 7.6-4.2c1.9-1.3 4.6-3.3 4-3.7zM17.6 205.9c4.6 .5 13.9 2.6 27 4c13.2 1.4 41.1 3.1 51.9 4.4c10.9 1.4 9.7 2.2 13.2 3.7c3.5 1.5 5.7 3.1 8 5.4c2.3 2.3 4.3 5 5.9 8.4c1.6 3.4 2.8 7.2 3.7 12c.9 4.8 1.5 13.7 1.7 16.6c.2 2.9 .2 2.2-.6 1.1c-.8-1.1-2.7-5.3-4.2-7.5c-1.5-2.2-2.4-3.7-4.8-5.7c-2.4-2-6.4-4.8-9.5-6.5c-3.1-1.6-2.2-1.5-9-3.4c-6.8-1.8-23.4-5.4-31.7-7.7c-8.3-2.3-11.6-3.4-18.1-6c-6.4-2.6-14.9-6.6-20.6-9.6c-5.7-2.9-11.3-6.6-13.5-8.1c-2.1-1.5-4-1.6 .6-1.1zM259.1 135.6c0-1.5-.1-5.6-.9-8.1c-.8-2.5-2.3-4.7-4.1-6.8c-1.8-2.1-3.6-3.7-6.8-5.6c-3.2-1.9-7.2-3.9-12.5-5.7c-5.3-1.8-13.2-3.7-19.1-5c-5.9-1.2-5.3-1.3-16.5-2.5c-11.2-1.2-42.2-4-50.8-4.6c-8.5-.6-.5 .3-.5 1c.1 .7 .3 2.3 .8 3.3c.5 1.1 .9 1.9 2.2 3c1.3 1.1 3.5 2.6 5.8 3.8c2.3 1.2 3.9 2 8.2 3.2c4.3 1.3 5 1.8 17.6 4.3c12.7 2.5 46.8 8.1 58.3 10.5c11.5 2.4 8.1 2.6 10.8 3.8c2.7 1.2 4.1 2.4 5.2 3.5c1.2 1.1 1.3 2.7 1.7 3c.4 .3 .7 .4 .6-1.1zM48.7 14.6c1.6-2.8-14.7 26.1-19.9 35.9c-5.2 9.9-8.3 16.5-11.1 23.2c-2.8 6.7-4 10.4-5.7 17.1c-1.6 6.7-3.2 20.2-4.2 23c-.9 2.8-1.2-4.1-1.5-6.3c-.3-2.1-.7-3-.1-6.6c.7-3.6 1.8-9.3 4-14.9c2.2-5.6 2.7-6.9 9.1-18.8c6.4-11.9 27.8-49.8 29.4-52.6zM3.8 56.4c1.5-.5 5.6-1.7 8.2-1.9c2.6-.1 5.2 .3 7.3 1c2.1 .8 4.1 2.3 5.4 3.5c1.3 1.2 1.7 2.3 2.3 3.5c.6 1.3 1 2.6 1.1 4c.2 1.4 .3 2.6-.2 4.4c-.5 1.8-.9 4.2-2.6 6.5c-1.6 2.3-4.4 5.4-7.3 7.3c-2.9 2-7.3 3.5-9.9 4.4c-2.6 .9-3.2 .8-5.4 .9c-2.2 .1-6.2-.5-7.6-.4c-1.4 .1-1.3 0-.6 1c.7 1 3.4 4.1 4.8 5.3c1.4 1.2 2.4 1.5 3.7 1.9c1.3 .4 2.4 .8 3.9 .6c1.6-.2 3.8-.6 5.4-1.6c1.6-1 3.2-2.5 4.3-4.2c1.1-1.7 1.9-4.4 2.4-6.2c.5-1.8 .5-2.7 .4-4.7c-.1-2-.7-5.4-1.2-7.4c-.5-2-.6-2.6-1.9-4.7c-1.3-2.1-3.8-5.7-6-7.7c-2.2-2-6-3.6-7.1-4.5c-1.1-.9-.9-.5 .6-1zM303.8 56.4c1.5-.5 5.6-1.7 8.2-1.9c2.6-.1 5.2 .3 7.3 1c2.1 .8 4.1 2.3 5.4 3.5c1.3 1.2 1.7 2.3 2.3 3.5c.6 1.3 1 2.6 1.1 4c.2 1.4 .3 2.6-.2 4.4c-.5 1.8-.9 4.2-2.6 6.5c-1.6 2.3-4.4 5.4-7.3 7.3c-2.9 2-7.3 3.5-9.9 4.4c-2.5 .9-3.2 .8-5.4 .9c-2.2 .1-6.2-.5-7.6-.4c-1.4 .1-1.3 0-.6 1c.7 1 3.4 4.1 4.8 5.3c1.4 1.2 2.4 1.5 3.7 1.9c1.3 .4 2.3 .8 3.9 .6c1.6-.2 3.8-.6 5.4-1.6c1.6-1 3.2-2.5 4.3-4.2c1.1-1.7 1.9-4.4 2.4-6.2c.5-1.8 .5-2.7 .4-4.7c-.1-2-.7-5.4-1.2-7.4c-.5-2-.6-2.6-1.9-4.7c-1.3-2.1-3.8-5.7-6-7.7c-2.2-2-6-3.6-7.1-4.5c-1.1-.9-.9-.5 .6-1zM32.2 245.2c0-1.5-.2-5.3-.7-8c-.5-2.7-1.2-6.2-2.1-8.3c-.9-2.1-2.3-3.4-3.4-4.2c-1-.8-1.6-.9-2.9-.8c-1.3 .1-3.2 .6-5 1.5c-1.8 1-3.8 2.5-5.8 4.2c-2 1.7-3.6 3.3-6.2 6.2c-2.6 3-9.3 10.9-9.1 11.5c.2 .7 7.1-5.8 10.5-7.6c3.4-1.8 7.2-2.9 10-3.2c2.8-.3 4.8 .5 6.7 1.4c1.9 .9 3.5 2.5 4.7 3.9c1.2 1.4 2.2 3.8 2.7 4.4c.6 .6 .6 .5 .6-1zM332.2 245.2c0-1.5-.2-5.3-.7-8c-.5-2.7-1.2-6.2-2.1-8.3c-.9-2.1-2.3-3.4-3.4-4.2c-1-.8-1.6-.9-2.9-.8c-1.3 .1-3.2 .6-5 1.5c-1.8 1-3.8 2.5-5.8 4.2c-2 1.7-3.6 3.3-6.2 6.2c-2.5 3-9.3 10.9-9.1 11.5c.2 .7 7.1-5.8 10.5-7.6c3.4-1.8 7.2-2.9 10-3.2c2.8-.3 4.8 .5 6.7 1.4c1.9 .9 3.5 2.5 4.7 3.9c1.2 1.4 2.2 3.8 2.7 4.4c.6 .6 .6 .5 .6-1zM122.1 144.8l-.2 9.5l-8.1 4.9l.2-9.5zM299.1 95.2l-.2 10l-8.6 5.3l.2-10.1zM215.6 184.5l-.1 8.3l-7.1 4.3l.2-8.3zM107.4 10.9l-.1 7.1l-6.2 3.8l.2-7.2zM24.6 216.4l-.2 7.7l-6.5 4l.1-7.7zM53.4 17.7l-.2 10.1l-8.6 5.2l.2-10.1zM264.6 195.2l-.2 7.8l-6.6 4.1l.1-7.8zM76.4 81.4l-.2 8.6l-7.3 4.4l.2-8.5zM50.6 127.9l-.1 7.7l-6.6 4l.1-7.7zM292.4 285l-.2 8.9l-7.5 4.6l.1-8.8zM76.8 283.7l-.2 7.9l-6.7 4.1l.1-7.9zM110.5-5.9l-.1 8.2l-7 4.3l.1-8.2zM110.5 294.1l-.1 8.2l-7 4.3l.1-8.2zM145.6 145.2l-.1 7.4l-6.4 3.9l.2-7.5zM154.8-4.4l-.2 7.7l-6.5 4l.1-7.7zM154.8 295.6l-.2 7.7l-6.5 4l.1-7.7zM29.9 114.7l-.1 6.8l-5.8 3.5l.1-6.8zM10.1 85.5l-.2 7.6l-6.5 3.9l.2-7.5zM179.9 151.4l-.2 9.7l-8.3 5l.2-9.7zM201.7 207l-.1 10.3l-8.8 5.3l.2-10.3zM121.5 89.7l-.2 10.7l-9.1 5.6l.2-10.7zM48.9 210.2l-.2 9.3l-7.9 4.8l.2-9.3zM17.6 242.8l-.2 10.3l-8.8 5.3l.2-10.3zM192.6 212.6l-.2 9.9l-8.6 5.2l.2-9.9zM45.6 150.5l-.2 8.7l-7.4 4.5l.2-8.7zM254.9 233.8l-.2 10l-8.6 5.2l.2-10zM179.3 260.7l-.1 9.4l-8.1 4.9l.2-9.4zM210.9 63.9l-.1 6.7l-5.7 3.5l.1-6.7zM43 102.9l-.1 7l-6 3.7l.1-7.1zM254.8 160.6l-.2 9.2l-7.9 4.8l.2-9.3zM191.6 197.6l-.1 8.7l-7.4 4.5l.2-8.7zM5.2 231.9l-.1 9.7l-8.3 5.1l.1-9.7zM305.2 231.9l-.1 9.7l-8.3 5.1l.1-9.7zM155 153.5l-.2 9.3l-8 4.9l.2-9.4zM23.2 215.2l-.2 7.7l-6.5 4l.1-7.7z'/></g></svg>"},
+  callig2:{name:'Flowing calligraphy',w:360,h:360,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360'><g fill='#000' stroke='#000' stroke-width='2' stroke-linejoin='round'><path d='M248.6-131.9c1.8 2.6 6.9 10.3 10.4 16.3c3.5 6 7.9 14.1 10.6 19.7c2.7 5.6 3.8 7.9 5.8 13.7c2 5.8 4.8 14.9 6.3 21.1c1.5 6.2 2 10.8 2.6 16c.6 5.3 1 1.7 1.1 15.5c.1 13.8-.1 57.7-.8 67.5c-.7 9.8-2.1-4.9-3.2-8.9c-1.1-4-2-4.2-3.4-14.9c-1.4-10.7-3.3-35.4-5.1-49.1c-1.8-13.7-3.1-21.7-5.6-33.1c-2.5-11.4-6.3-24.6-9.5-35.1c-3.2-10.5-8.3-22.9-9.8-27.7c-1.5-4.8-1.2-3.6 .6-1zM248.6 228.1c1.8 2.6 6.9 10.3 10.4 16.3c3.5 6 7.9 14.1 10.6 19.7c2.7 5.6 3.8 7.9 5.8 13.7c2 5.8 4.8 14.9 6.3 21.1c1.5 6.2 2 10.8 2.6 16c.6 5.3 1 1.7 1.1 15.5c.1 13.8-.1 57.7-.8 67.5c-.7 9.8-2.1-4.9-3.2-8.9c-1.1-4-2-4.2-3.4-14.9c-1.4-10.7-3.3-35.4-5.1-49.1c-1.8-13.7-3.1-21.7-5.6-33.1c-2.5-11.4-6.3-24.6-9.5-35.1c-3.2-10.5-8.3-22.9-9.8-27.7c-1.5-4.8-1.2-3.5 .6-1zM133.9 210.2c-.1-7.7-1.4-35.7-1.5-44.9c-.1-9.2 .3-7.2 .7-10.4c.4-3.2 .2-4.5 1.8-8.9c1.6-4.4 2.1-7.6 7.7-17.4c5.6-9.8 27.8-44.4 25.9-41.2c-1.9 3.3-29.9 48.7-37.1 60.7c-7.2 12-4.5 8.2-6.1 11.6c-1.6 3.4-2.6 6-3.4 9.1c-.7 3.1-1.2 6.7-1.1 9.5c.1 2.8-.6 2 1.5 7.5c2.1 5.5 9.1 21.4 11 25.5c1.9 4.1 .8 6.6 .6-1.1zM222 11.7c-.3-2.7-1.6-11.8-2.6-15c-1-3.2-2.2-3.2-3.2-4c-1-.8-1.5-.9-2.7-.8c-1.2 .1-3 .4-4.7 1.2c-1.7 .8-3.2 1.8-5.4 3.7c-2.2 1.9-5.5 5.3-7.9 8c-2.4 2.8-7.4 8.4-6.7 8.5c.7 .1 7.4-6.1 10.7-7.9c3.4-1.8 6.8-2.6 9.4-2.8c2.6-.2 4.4 .8 6.1 1.7c1.7 1 3 2.6 4.1 4c1.1 1.4 1.8 3.9 2.3 4.5c.5 .6 .9 1.6 .6-1.1zM222 371.7c-.3-2.7-1.6-11.8-2.6-15c-1-3.2-2.2-3.2-3.2-4c-1-.8-1.5-.9-2.7-.8c-1.2 .1-3 .4-4.7 1.2c-1.7 .8-3.2 1.8-5.4 3.7c-2.2 2-5.5 5.3-7.9 8c-2.4 2.8-7.4 8.4-6.7 8.5c.7 .1 7.4-6.1 10.7-7.9c3.4-1.8 6.8-2.6 9.4-2.8c2.6-.2 4.4 .8 6.1 1.7c1.7 1 3 2.6 4.1 4c1.1 1.4 1.8 3.9 2.3 4.5c.5 .6 .9 1.6 .6-1.1zM132.9 55.2c.2-.2-1.7 3.2-2 4.1c-.3 1-.2 .9 .1 1.6c.3 .7 .5 1.7 1.9 2.5c1.4 .8 2.5 1.5 6.4 2.5c3.9 1 13.5 2.8 17.2 3.7c3.7 .9 3.5 1.2 4.9 1.9c1.4 .7 2.5 1.5 3.3 2.5c.8 1 1.2 2.6 1.4 3.6c.2 1 .3 .8-.3 2.2c-.6 1.4-3 5.4-3.5 6.4c-.5 1 .7-.4 .6-.6c-.1-.2 1.3-.3-1.2-.5c-2.5-.2-10-.1-13.8-.4c-3.8-.3-6.7-.8-9.1-1.3c-2.4-.5-3.8-1-5.4-1.8c-1.6-.8-3.2-1.8-4.3-3c-1.1-1.2-2-2.6-2.4-4.3c-.4-1.7-.6-3.5-.1-5.8c.5-2.3 1.9-5.6 3-7.8c1.1-2.2 3.1-5.3 3.3-5.5zM210.1 149.4c.2-1.1-5.6-.3-8.5-1.2c-2.9-.9-6.2-2.3-9.1-4.2c-2.9-1.8-6.1-4.7-8.3-6.9c-2.2-2.2-3.6-4.2-5-6.5c-1.4-2.3-2.5-4.3-3.4-7.1c-.8-2.7-1.7-6.5-1.7-9.4c0-2.9 .6-5.9 1.6-8.1c1-2.2 3.6-4.1 4.6-5.1c1-1 1.4-.9 1.6-.9c.2 0 1-1-.6 1c-1.6 2-6.8 7.3-9.2 11.2c-2.4 3.9-4.2 8.3-5.2 12.4c-1 4.1-.9 9.2-.8 12.1c.1 2.9 .7 3.8 1.3 5.5c.6 1.7 1.4 3.3 2.4 4.8c1 1.5 2.1 2.9 3.4 4.1c1.3 1.2 2.8 2.2 4.3 3c1.6 .9 3.2 1.6 5 2.1c1.8 .5 3.7 .7 5.6 .8c1.9 .1 3.9 0 5.9-.3c2-.3 3.5-.4 6.2-1.6c2.7-1.2 9.7-4.5 9.9-5.7zM75.4-11.8c2 2.5 8.7 11.7 11.2 15.9c2.5 4.2 2.8 6.2 3.9 9.5c1.1 3.4 2 5.5 2.5 10.6c.6 5.1 1 13.7 .8 20.1c-.2 6.4-1.1 13.3-1.8 18.1c-.6 4.8 .1 18.4-2.1 10.8c-2.1-7.5-8.3-42.1-10.8-56.1c-2.5-14-3.7-23-4.3-27.8c-.6-4.8-1.4-3.6 .6-1.1zM75.4 348.2c2 2.5 8.7 11.7 11.2 15.9c2.5 4.2 2.8 6.2 3.9 9.5c1.1 3.4 2 5.5 2.5 10.6c.6 5.1 1 13.7 .8 20.1c-.2 6.4-1.1 13.3-1.8 18.1c-.6 4.8 .1 18.4-2.1 10.8c-2.1-7.5-8.3-42.1-10.8-56.1c-2.5-14-3.7-23-4.3-27.8c-.6-4.8-1.4-3.6 .6-1.1zM44.4 171c1.4-6.9 2.5 4.1 3.4 6.5c.9 2.4 1.8 5.6 2.2 7.8c.5 2.3 .6 3.1 .5 5.7c0 2.6-.2 6.3-.8 9.7c-.6 3.4-1.7 7.1-3 10.9c-1.3 3.8-1.6 5.3-4.9 12.1c-3.3 6.8-13.9 26.8-15.1 28.7c-1.2 1.9 5.8-11.6 7.9-17.1c2.1-5.5 2.9-5.4 4.5-16.1c1.6-10.7 3.9-41.2 5.3-48.2zM158.3 161.1c.6-1.3 .5 3 .4 4.4c-.1 1.5-.4 2.9-1 4.3c-.6 1.4-1.4 2.7-2.4 3.9c-1 1.2-1.8 2.2-3.6 3.3c-1.8 1.1-4.1 2.7-7.3 3.4c-3.1 .7-7.7 1.2-11.6 .7c-3.9-.5-8.1-1.8-11.6-3.7c-3.4-1.8-6.8-4.6-9.1-7.4c-2.3-2.8-4-6.9-4.9-9.2c-.9-2.3-.7-3-.7-4.5c0-1.4 1.1-4.9 .7-4.2c-.4 .7-2.4 5.8-3.1 8.5c-.7 2.7-1 5.1-1.1 7.6c-.1 2.5 0 4.9 .4 7.2c.4 2.3 .7 4.2 1.9 6.6c1.2 2.4 3.1 5.8 5.2 8c2.1 2.2 4.9 3.9 7.6 5c2.8 1.1 5.9 1.7 8.9 1.6c3-.1 6.8-1.2 9.3-2.1c2.5-.9 3.6-1.5 5.8-3.3c2.2-1.8 5.4-4.7 7.5-7.6c2.2-2.9 4-6.3 5.4-10.1c1.5-3.7 2.7-11.1 3.3-12.4zM-2.3 178c1 1.1 3.9 5.4 5.2 7.9c1.4 2.5 2.1 3.5 2.9 6.9c.8 3.4 2.1 8 2 13.5c-.1 5.5-1.1 13.1-2.5 19.7c-1.4 6.7-4.8 22.1-5.8 20.2c-1-1.8 .1-20.1-.3-31.3c-.4-11.2-1.8-29.6-2.1-35.8c-.2-6.1-.4-2.2 .6-1.1zM357.7 178c1 1.1 3.8 5.4 5.2 7.9c1.4 2.5 2.1 3.5 2.9 6.9c.8 3.4 2.1 8 2 13.5c-.1 5.5-1.1 13.1-2.5 19.7c-1.4 6.7-4.8 22.1-5.8 20.2c-1-1.8 .1-20.1-.3-31.3c-.4-11.2-1.8-29.6-2.1-35.8c-.2-6.1-.4-2.2 .6-1.1zM211.2 242.9c-.7-.6-5.1-.3-7.4-.9c-2.2-.6-4.1-1.6-6.1-2.9c-2-1.3-4-2.9-5.8-4.7c-1.7-1.8-3.4-3.9-4.7-6.1c-1.3-2.1-2.4-4.1-3.1-6.8c-.7-2.6-1.1-6.6-.9-9.1c.2-2.5 .9-4.1 1.8-5.7c.9-1.6 2.5-3 3.6-3.9c1.1-.9 1.7-1.1 3.1-1.3c1.4-.1 6.4-1 5.4 .4c-1 1.5-8.4 5.3-11.7 8.3c-3.3 3-6.1 6.4-8.1 9.9c-1.9 3.5-3 8.2-3.6 10.9c-.6 2.7-.4 3.3 0 5.3c.4 2 1.5 5.1 2.4 6.9c.9 1.8 1.9 2.6 3.1 3.7c1.2 1.1 2.1 2 4 2.7c1.9 .8 5.2 1.6 7.4 1.8c2.2 .2 3.7-.1 5.6-.5c1.9-.4 3.9-1 5.9-1.8c2-.8 4.3-2.2 5.8-3.2c1.5-1 4-2.3 3.3-3zM118.3 18.8c1.5 .1 6.3 .7 8.4 1.3c2.1 .7 2.9 1.2 4.1 2.6c1.3 1.4 2.9 3.6 3.4 5.6c.5 2 .3 4.4-.4 6.5c-.7 2.1-2.5 4.5-3.8 6.1c-1.3 1.6-2.6 2.3-4.2 3.2c-1.5 .9-2.8 1.7-5.1 2.3c-2.3 .6-6.2 1.2-8.6 1.3c-2.4 .1-3.5 0-5.7-.6c-2.2-.6-5.7-1.9-7.6-2.8c-1.9-.9-2.6-1.5-3.9-2.7c-1.3-1.2-2.9-5.3-3.7-4.6c-.8 .7-1.2 5.5-1 8.6c.2 3.1 1.1 7 2.3 9.8c1.3 2.8 3.6 5.4 5.2 7c1.6 1.6 2.5 2.1 4.5 2.6c2 .6 5.4 .9 7.4 .7c2.1-.2 3.1-.6 4.9-1.8c1.8-1.2 4.6-3.8 6.1-5.6c1.5-1.8 2.1-3.4 2.8-5.3c.8-1.9 1.4-3.5 1.7-6.2c.3-2.7 .5-6.6 0-9.8c-.4-3.2-1.5-6.5-2.7-9.4c-1.2-2.9-4-6.3-4.7-7.8c-.7-1.5-.9-1 .6-1zM323.8-15.5c1.5 .5 5.9 2.6 8.5 4.2c2.6 1.6 5.2 3.4 7.3 5.3c2.1 1.9 4 4 5.5 6.3c1.5 2.3 2.7 4.7 3.5 7.4c.8 2.7 1.2 6.1 1.4 8.6c.2 2.5 0 3.5-.3 6.2c-.3 2.8-.8 6.5-1.7 10.3c-.9 3.8-2.1 13.3-3.5 12.3c-1.3-1-1-8.3-4.6-18.2c-3.6-9.9-14-34.3-16.7-41.4c-2.7-7.1-.9-1.5 .6-1zM323.8 344.5c1.5 .5 5.9 2.6 8.5 4.2c2.6 1.6 5.2 3.4 7.3 5.3c2.1 1.9 4 4 5.5 6.3c1.5 2.3 2.7 4.7 3.5 7.4c.8 2.7 1.2 6.1 1.4 8.6c.2 2.5 0 3.5-.3 6.2c-.3 2.8-.8 6.5-1.7 10.3c-.9 3.8-2.1 13.3-3.5 12.3c-1.3-1-1-8.3-4.6-18.2c-3.6-9.9-14-34.3-16.7-41.4c-2.7-7.1-.9-1.5 .6-1zM177 134.7c.6 0 1.5 .8 3 .9c1.5 .1 4-.1 5.8-.5c1.8-.4 3.6-1.2 5.2-2.2c1.6-1 2.5-1.1 4.6-3.6c2.1-2.5 6.3-8.6 8-11.6c1.7-2.9 1.8-4.5 2.1-6.1c.3-1.6 .2-3-.3-3.4c-.5-.4-1.7 0-2.9 1c-1.1 1-3.6 4.1-4 4.8c-.4 .7 1.3-.9 1.7-.8c.4 .1 .8 .1 .7 1.5c-.1 1.5-.3 4.4-1.1 7.2c-.8 2.8-2.2 6.6-3.8 9.4c-1.6 2.8-4.3 6-5.9 7.6c-1.6 1.6-2.4 1.5-3.6 1.8c-1.2 .3-2.1 .6-3.8-.2c-1.7-.8-5.3-3.8-6.3-4.8c-.9-1 0-1 .6-1zM-69.8 278.1c-.3-4.2-2.5-16.4-2.7-24c-.2-7.6 .5-14.8 1.7-21.6c1.2-6.8 3.2-13.3 5.5-19.4c2.3-6.1 5.3-11.9 8.5-17.3c3.2-5.4 7.5-10.9 10.9-15.2c3.4-4.2 6.2-7 9.5-10.3c3.3-3.2 4.8-5 10.1-9.2c5.3-4.2 13.9-10.8 21.6-16c7.8-5.1 27.3-17.9 24.9-14.9c-2.4 2.9-29.6 24.2-39.5 32.6c-9.9 8.4-13.7 11.7-19.8 17.6c-6.1 5.9-12.3 12.5-16.9 17.9c-4.6 5.4-8.2 11-10.7 14.7c-2.5 3.7-2.7 4.4-4.1 7.6c-1.4 3.2-3.3 7-4.5 11.6c-1.1 4.6-2.4 10.7-2.4 16.2c0 5.6 1 12 2.2 17.1c1.2 5.1 4.1 11.5 5.1 13.6c1 2.1 1 3.2 .6-1zM290.2 278.1c-.4-4.2-2.5-16.4-2.7-24c-.2-7.6 .5-14.8 1.7-21.6c1.2-6.8 3.2-13.3 5.5-19.4c2.3-6.1 5.3-11.9 8.5-17.3c3.2-5.4 7.5-10.9 10.9-15.2c3.4-4.2 6.2-7 9.5-10.3c3.3-3.2 4.8-5 10.1-9.2c5.3-4.2 13.9-10.8 21.6-16c7.8-5.1 27.3-17.9 24.9-14.9c-2.4 2.9-29.6 24.2-39.5 32.6c-9.9 8.4-13.7 11.7-19.8 17.6c-6.1 5.9-12.3 12.5-16.9 17.9c-4.6 5.4-8.2 11-10.7 14.7c-2.5 3.7-2.7 4.4-4.1 7.6c-1.4 3.2-3.4 7-4.5 11.6c-1.1 4.6-2.4 10.7-2.4 16.2c0 5.6 1 12 2.2 17.1c1.2 5.1 4.2 11.5 5.1 13.6c1 2.1 1 3.2 .6-1zM122 323.2c.4-4.5 1-17.9 1.9-26.3c.9-8.4 1.6-14.1 3.5-24.1c1.9-10 4.4-20.9 8.1-35.8c3.7-14.9 11.5-42 14.3-53.5c2.8-11.5 1.9-10.5 2.4-15.5c.5-5 .7-9.7 .4-14.5c-.3-4.7-1.4-10.2-2.3-14c-.9-3.8-1.9-6-3.3-9c-1.4-3-2.3-5.2-4.9-8.9c-2.6-3.7-6.4-8.9-10.7-13.3c-4.3-4.4-12.6-11.2-15.3-13.2c-2.6-2-1.9-1.3-.6 1c1.3 2.3 5.8 8.8 8.3 13.1c2.5 4.3 4.6 8.4 6.5 12.5c1.9 4.1 3.3 7.2 4.8 12.1c1.5 4.9 3.4 11.8 4.4 17.5c1 5.7 1.4 11.3 1.5 16.8c.1 5.5-.2 11-.7 16.5c-.5 5.5 .2 4.4-2.4 16.2c-2.6 11.8-10.2 41.7-13 54.7c-2.8 13-3 15.3-3.9 23.4c-.9 8.1-1.4 17.7-1.3 25.2c.1 7.6 1.3 16.9 1.7 20.1c.4 3.2 .2 3.6 .6-1zM76.7 301.3c-2.2 .7 9.2-8.8 15-13.7c5.8-4.8 6.7-6.5 19.6-15.4c12.9-8.9 44.5-28.7 57.9-37.9c13.4-9.2 16.6-12.1 22.6-17.3c6-5.2 9.6-9.5 13.3-13.8c3.7-4.3 6.2-7.7 9-12.1c2.8-4.3 5.5-8.9 8-14c2.5-5.1 7.7-17.5 7.1-16.5c-.6 1-7 15.7-10.5 22.5c-3.5 6.8-6.3 11.9-10.5 18.3c-4.2 6.4-9.6 14.1-14.6 20.1c-5 6-10.8 11.7-15.4 16c-4.6 4.3-7.2 6.5-11.9 10c-4.7 3.5-5.8 5.1-16.1 11.1c-10.3 6-33.2 18-45.5 25.1c-12.2 7.1-25.8 17-28 17.6zM92.4 259.3c1.7-.9 6.6-3.8 9.8-4.6c3.2-.8 6.5-.8 9.2-.3c2.7 .5 5.4 1.8 7.2 3.4c1.9 1.6 3.2 4.4 3.9 6.3c.7 1.9 .8 2.9 .4 5c-.4 2.1-1.6 5.7-2.7 7.7c-1.1 2-2.2 3.2-3.7 4.5c-1.4 1.4-3.2 2.6-5 3.6c-1.8 1-3.3 1.8-5.8 2.4c-2.5 .6-6.7 1-9.2 1.1c-2.5 .1-3.6-.1-5.8-.7c-2.1-.6-5.8-2.7-7.1-3c-1.3-.3-.8-.2-.6 1c.2 1.3 1.1 4.6 2 6.5c.9 1.9 2.1 3.7 3.3 5.1c1.3 1.4 2.3 2.5 4.2 3.3c1.9 .8 4.8 1.7 7.1 1.5c2.3-.2 4.9-1.6 6.5-2.7c1.6-1.1 2.4-2.3 3.3-3.7c.9-1.4 1.7-2.7 2.1-4.9c.5-2.2 .7-6.1 .6-8.5c-.1-2.4-.4-3.5-1.4-5.8c-1-2.3-2.6-5.6-4.4-7.8c-1.7-2.2-4.4-4.2-6.1-5.5c-1.7-1.3-2.9-1.6-4.3-2.1c-1.4-.5-3.5-.4-4.1-.7c-.6-.3-1.1-.1 .6-1.1zM306.9 209.8c1 .4 3.8 2.2 5.4 3.5c1.6 1.3 3.1 2.8 4.2 4.5c1.1 1.7 1.9 4.1 2.4 5.8c.5 1.7 .5 2.5 .4 4.5c-.1 2-.4 4.9-1.2 7.7c-.8 2.8-.8 3.8-3.4 9c-2.6 5.3-10.8 20.4-12.1 22.5c-1.3 2.1 3.4-6.8 4.4-9.8c1-3 1.2-5.2 1.5-8.4c.3-3.2 .5-4.2 .1-10.6c-.4-6.4-2-22.8-2.3-27.6c-.3-4.8-.4-1.5 .6-1.1zM34.4 33.3c.8-1.4-10.8 4.9-15.6 6.5c-4.8 1.6-9 2.5-13.1 3.2c-4 .7-5.3 .8-11.2 .9c-5.9 .1-18.1-.8-24.2-.5c-6.1 .3-8.5 1.1-12.4 2.3c-3.9 1.2-7.7 3.1-11.2 5c-3.4 1.9-4.7 2.2-9.5 6.2c-4.8 4-18 15.9-19.4 17.7c-1.4 1.8 7.3-4.9 11.2-6.6c3.9-1.7 4.7-3.1 12-3.8c7.3-.7 23.5 .4 31.8-.3c8.3-.7 13-2.6 17.8-4.1c4.8-1.4 7-2.7 10.9-4.6c3.9-1.9 7-3.3 12.5-7c5.5-3.6 19.6-13.5 20.4-14.9zM394.4 33.3c.8-1.4-10.8 4.9-15.6 6.5c-4.8 1.6-9 2.5-13.1 3.2c-4 .7-5.3 .8-11.2 .9c-5.9 .1-18.1-.8-24.2-.5c-6.1 .3-8.5 1.1-12.4 2.3c-3.9 1.2-7.7 3.1-11.2 5c-3.4 1.9-4.7 2.2-9.5 6.2c-4.8 4-18 15.9-19.4 17.7c-1.4 1.8 7.3-4.9 11.2-6.6c3.9-1.7 4.7-3.1 12-3.8c7.3-.7 23.5 .4 31.8-.3c8.3-.7 13-2.6 17.8-4.1c4.8-1.4 7-2.7 10.9-4.6c3.9-1.9 7-3.3 12.5-7c5.5-3.6 19.6-13.5 20.4-14.9zM186.8 98.4c.7-1.2-3.2-.3-5.4-1.3c-2.2-1-5.7-2.9-7.9-4.6c-2.2-1.7-3.8-3.5-5.4-5.5c-1.6-2-3-4.4-4-6.7c-1-2.3-1.9-4.5-2.3-7.2c-.3-2.7-.3-6.6 .2-9c.5-2.4 1.5-3.8 2.6-5.2c1.1-1.4 2.6-2.5 4.2-3.1c1.6-.6 3.7-.6 5.2-.4c1.5 .2 5.6-.3 3.7 1.5c-1.9 1.8-11 6.2-14.9 9.4c-3.8 3.2-6.4 7.2-8.2 9.7c-1.8 2.5-1.9 3.5-2.5 5.3c-.6 1.8-1 3.6-1.2 5.4c-.2 1.8-.1 3.6 .1 5.2c.3 1.7 .7 3.3 1.4 4.7c.7 1.4 1.6 2.8 2.6 3.9c1.1 1.2 1.9 2.1 3.7 3c1.8 .9 5 1.9 7.1 2.3c2.1 .4 3.7 .2 5.6-.1c1.9-.3 3.3-.3 5.9-1.5c2.6-1.2 8.8-4.6 9.5-5.8zM256.2 314.1c-2.1-4.7-9.9-19.5-13-27.4c-3.1-7.9-4.4-13.6-5.6-20.1c-1.2-6.5-1.5-14.3-1.7-19c-.2-4.7 .1-5.4 .6-9.3c.6-3.8 1.8-10 2.7-13.8c.9-3.8 1.4-5.3 2.8-9.1c1.5-3.8 2.6-7.6 5.9-13.9c3.3-6.3 7.7-14.8 13.8-24.1c6.1-9.3 15.1-21.5 22.8-31.8c7.7-10.3 25.2-32.5 23.6-30c-1.6 2.5-24.3 32.5-33.4 45.2c-9.1 12.7-14.8 20.6-21.3 31.1c-6.5 10.5-13.6 23.3-17.7 31.7c-4.1 8.4-5.3 14.1-6.7 18.6c-1.4 4.6-1.3 5.2-1.7 8.7c-.4 3.5-.6 9.1-.5 12.5c.1 3.4 .5 5.4 1.1 8.1c.6 2.7 1.3 5.3 2.3 7.9c1 2.6 1.7 4.6 3.5 7.9c1.8 3.3 3.9 7.1 7.5 11.7c3.7 4.6 11.9 13.6 14.4 16.1c2.5 2.5 2.7 3.7 .6-1zM91.3 250.3c-.6 3.7-16 49.1-19.2 57.1c-3.2 8-.4-5.5 .2-9.2c.6-3.7 .1-5 3.3-13c3.2-8 16.3-38.6 15.7-34.9zM106.5 180.6c.5 .2 1.1 1.7 2.3 2.4c1.3 .7 2.9 1.9 5.2 2c2.3 .2 5.2 .2 8.4-1.1c3.2-1.3 7.5-4.1 10.7-6.5c3.2-2.4 6.3-5.9 8.4-8.1c2.1-2.2 4.2-5.4 4.1-5.3c-.1 .1-4 5-4.6 5.8c-.6 .8 .7-.8 .9-.9c.2 0 .7-.2 .4 .6c-.3 .8-.7 1.9-2.1 4c-1.4 2.1-4.4 6-6.6 8.4c-2.2 2.4-4.7 4.7-6.6 6.2c-1.9 1.5-2.8 2.2-4.8 2.9c-1.9 .7-5 1.4-6.9 1.3c-1.9-.1-3-.8-4.3-2c-1.3-1.2-2.6-3.7-3.5-5.1c-.8-1.4-1.4-2.8-1.6-3.6c-.2-.8 .1-1.2 .6-1zM168.8 300.4c-.6-.7-2.3-1.3-4.2-3.2c-1.9-1.9-5.5-6.2-7.2-8.4c-1.7-2.2-1.8-2.2-3-4.8c-1.2-2.6-3.4-7.9-4.3-10.6c-.9-2.7-1-2.8-1.3-5.7c-.3-2.9-.8-7.7-.6-11.5c.2-3.8 1.3-8.5 2-11.2c.7-2.7 .6-2.8 1.9-5.2c1.3-2.4 3.5-6.6 5.7-9.4c2.2-2.8 5.6-5.6 7.6-7.3c2-1.7 2.9-1.9 4.4-2.7c1.5-.8 2.3-1.4 4.7-2c2.4-.6 6.6-1.6 9.9-1.7c3.3-.1 6.8 .4 10 1.3c3.2 .9 6.4 2.4 9.3 4.3c2.9 1.9 6.1 5.3 8 7.2c1.9 2 2 2 3.3 4.5c1.3 2.5 3.6 6.7 4.7 10.5c1.1 3.8 1.9 9.9 2.1 12.1c.3 2.2 .3 2.1-.6 1c-.8-1.1-2.6-5.3-4.5-7.8c-1.9-2.4-5-5.3-6.9-6.9c-1.8-1.6-1.9-1.7-4.2-2.9c-2.3-1.2-6.1-3.2-9.5-4.3c-3.4-1.1-8-1.7-10.7-2.1c-2.7-.4-2.7-.3-5.4-.1c-2.7 .3-8.2 1.1-10.9 1.6c-2.7 .6-2.7 .6-5.1 1.7c-2.4 1.2-6.6 3.2-9.4 5.2c-2.8 2.1-5.5 4.5-7.6 7.1c-2.1 2.6-4.1 6.4-5.2 8.6c-1.1 2.2-1.2 3-1.6 4.6c-.4 1.6-.8 2.4-.9 4.8c-.1 2.4 .2 7.2 .5 9.5c.3 2.3 .3 2.4 1.3 4.5c1 2.1 2.8 5.8 4.8 8.3c2 2.5 5.4 5.1 7.4 6.6c2 1.5 2 1.5 4.5 2.4c2.5 .9 8.6 2.8 10.4 3.1c1.8 .3 1.2-.4 .6-1.1zM28.4 283.8l-.2 12.5l-10.7 6.5l.2-12.5zM133.4 105l-.3 12.5l-10.7 6.6l.2-12.6zM42.3 21.2l-.2 8.1l-6.9 4.3l.1-8.1zM297.5 266l-.2 10l-8.5 5.1l.2-9.9zM228.4-1.2l-.1 10.9l-9.3 5.7l.1-10.9zM228.4 358.8l-.1 10.9l-9.3 5.7l.1-10.9zM163.6 178.9l-.2 9.7l-8.3 5l.2-9.6zM148 75.1l-.1 8l-6.8 4.2l.1-8zM161.1 80.4l-.2 11.2l-9.6 5.8l.2-11.1zM298.6 253l-.2 9.9l-8.5 5.2l.2-9.9zM89.5 131.1l-.2 10.1l-8.6 5.2l.2-10.1zM231 340.5l-.1 8.2l-7 4.2l.1-8.1zM177.6 168.5l-.2 11.3l-9.6 5.8l.2-11.2zM325.3 272.4l-.2 10.8l-9.2 5.6l.2-10.8zM278.3 231.4l-.2 12l-10.2 6.2l.2-12zM255.6 239.1l-.2 8.9l-7.7 4.7l.2-9zM334.7 130.8l-.2 10.7l-9.2 5.6l.2-10.7z'/></g></svg>"},
+  mandala:{name:'Mandala rosette',w:220,h:220,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'><g fill='none' stroke='#000' stroke-width='1.4'><path d='M124.1 106.9Q145.3 102.8 166.2 110.0Q145.3 117.2 124.1 113.1M140.2 110.0L154.6 110.0M124.2 112.5Q145.3 116.9 161.9 131.5Q139.9 130.1 121.8 118.3M137.9 121.6L151.2 127.1M122.2 117.7Q140.0 129.9 149.7 149.7Q129.9 140.0 117.7 122.2M131.4 131.4L141.6 141.6M118.3 121.8Q130.1 139.9 131.5 161.9Q116.9 145.3 112.5 124.2M121.6 137.9L127.1 151.2M113.1 124.1Q117.2 145.3 110.0 166.2Q102.8 145.3 106.9 124.1M110.0 140.2L110.0 154.6M107.5 124.2Q103.1 145.3 88.5 161.9Q89.9 139.9 101.7 121.8M98.4 137.9L92.9 151.2M102.3 122.2Q90.1 140.0 70.3 149.7Q80.0 129.9 97.8 117.7M88.6 131.4L78.4 141.6M98.2 118.3Q80.1 130.1 58.1 131.5Q74.7 116.9 95.8 112.5M82.1 121.6L68.8 127.1M95.9 113.1Q74.7 117.2 53.8 110.0Q74.7 102.8 95.9 106.9M79.8 110.0L65.4 110.0M95.8 107.5Q74.7 103.1 58.1 88.5Q80.1 89.9 98.2 101.7M82.1 98.4L68.8 92.9M97.8 102.3Q80.0 90.1 70.3 70.3Q90.1 80.0 102.3 97.8M88.6 88.6L78.4 78.4M101.7 98.2Q89.9 80.1 88.5 58.1Q103.1 74.7 107.5 95.8M98.4 82.1L92.9 68.8M106.9 95.9Q102.8 74.7 110.0 53.8Q117.2 74.7 113.1 95.9M110.0 79.8L110.0 65.4M112.5 95.8Q116.9 74.7 131.5 58.1Q130.1 80.1 118.3 98.2M121.6 82.1L127.1 68.8M117.7 97.8Q129.9 80.0 149.7 70.3Q140.0 90.1 122.2 102.3M131.4 88.6L141.6 78.4M121.8 101.7Q139.9 89.9 161.9 88.5Q145.3 103.1 124.2 107.5M137.9 98.4L151.2 92.9M166.5 121.0Q175.2 137.0 157.8 142.2M181.8 136.8l3 3-3 3-3-3zM142.2 157.8Q137.0 175.2 121.0 166.5M139.8 178.8l3 3-3 3-3-3zM99.0 166.5Q83.0 175.2 77.8 157.8M80.2 178.8l3 3-3 3-3-3zM62.2 142.2Q44.8 137.0 53.5 121.0M38.2 136.8l3 3-3 3-3-3zM53.5 99.0Q44.8 83.0 62.2 77.8M38.2 77.2l3 3-3 3-3-3zM77.8 62.2Q83.0 44.8 99.0 53.5M80.2 35.2l3 3-3 3-3-3zM121.0 53.5Q137.0 44.8 142.2 62.2M139.8 35.2l3 3-3 3-3-3zM157.8 77.8Q175.2 83.0 166.5 99.0M181.8 77.2l3 3-3 3-3-3z'/><circle cx='110.0' cy='110.0' r='14.4'/><circle cx='110.0' cy='110.0' r='5.8'/><circle cx='110.0' cy='110.0' r='61.9' stroke-dasharray='2 5'/><path d='M14.1-3.1Q35.3-7.2 56.2 0.0Q35.3 7.2 14.1 3.1M30.2 0.0L44.6 0.0M14.2 2.5Q35.3 6.9 51.9 21.5Q29.9 20.1 11.8 8.3M27.9 11.6L41.2 17.1M12.2 7.7Q30.0 19.9 39.7 39.7Q19.9 30.0 7.7 12.2M21.4 21.4L31.6 31.6M8.3 11.8Q20.1 29.9 21.5 51.9Q6.9 35.3 2.5 14.2M11.6 27.9L17.1 41.2M3.1 14.1Q7.2 35.3 0.0 56.2Q-7.2 35.3-3.1 14.1M0.0 30.2L0.0 44.6M-2.5 14.2Q-6.9 35.3-21.5 51.9Q-20.1 29.9-8.3 11.8M-11.6 27.9L-17.1 41.2M-7.7 12.2Q-19.9 30.0-39.7 39.7Q-30.0 19.9-12.2 7.7M-21.4 21.4L-31.6 31.6M-11.8 8.3Q-29.9 20.1-51.9 21.5Q-35.3 6.9-14.2 2.5M-27.9 11.6L-41.2 17.1M-14.1 3.1Q-35.3 7.2-56.2 0.0Q-35.3-7.2-14.1-3.1M-30.2 0.0L-44.6 0.0M-14.2-2.5Q-35.3-6.9-51.9-21.5Q-29.9-20.1-11.8-8.3M-27.9-11.6L-41.2-17.1M-12.2-7.7Q-30.0-19.9-39.7-39.7Q-19.9-30.0-7.7-12.2M-21.4-21.4L-31.6-31.6M-8.3-11.8Q-20.1-29.9-21.5-51.9Q-6.9-35.3-2.5-14.2M-11.6-27.9L-17.1-41.2M-3.1-14.1Q-7.2-35.3-0.0-56.2Q7.2-35.3 3.1-14.1M-0.0-30.2L-0.0-44.6M2.5-14.2Q6.9-35.3 21.5-51.9Q20.1-29.9 8.3-11.8M11.6-27.9L17.1-41.2M7.7-12.2Q19.9-30.0 39.7-39.7Q30.0-19.9 12.2-7.7M21.4-21.4L31.6-31.6M11.8-8.3Q29.9-20.1 51.9-21.5Q35.3-6.9 14.2-2.5M27.9-11.6L41.2-17.1M56.5 11.0Q65.2 27.0 47.8 32.2M71.8 26.8l3 3-3 3-3-3zM32.2 47.8Q27.0 65.2 11.0 56.5M29.8 68.8l3 3-3 3-3-3zM-11.0 56.5Q-27.0 65.2-32.2 47.8M-29.8 68.8l3 3-3 3-3-3zM-47.8 32.2Q-65.2 27.0-56.5 11.0M-71.8 26.8l3 3-3 3-3-3zM-56.5-11.0Q-65.2-27.0-47.8-32.2M-71.8-32.8l3 3-3 3-3-3zM-32.2-47.8Q-27.0-65.2-11.0-56.5M-29.8-74.8l3 3-3 3-3-3zM11.0-56.5Q27.0-65.2 32.2-47.8M29.8-74.8l3 3-3 3-3-3zM47.8-32.2Q65.2-27.0 56.5-11.0M71.8-32.8l3 3-3 3-3-3z'/><circle cx='0' cy='0' r='14.4'/><circle cx='0' cy='0' r='5.8'/><circle cx='0' cy='0' r='61.9' stroke-dasharray='2 5'/><path d='M234.1-3.1Q255.3-7.2 276.2 0.0Q255.3 7.2 234.1 3.1M250.2 0.0L264.6 0.0M234.2 2.5Q255.3 6.9 271.9 21.5Q249.9 20.1 231.8 8.3M247.9 11.6L261.2 17.1M232.2 7.7Q250.0 19.9 259.7 39.7Q239.9 30.0 227.7 12.2M241.4 21.4L251.6 31.6M228.3 11.8Q240.1 29.9 241.5 51.9Q226.9 35.3 222.5 14.2M231.6 27.9L237.1 41.2M223.1 14.1Q227.2 35.3 220.0 56.2Q212.8 35.3 216.9 14.1M220.0 30.2L220.0 44.6M217.5 14.2Q213.1 35.3 198.5 51.9Q199.9 29.9 211.7 11.8M208.4 27.9L202.9 41.2M212.3 12.2Q200.1 30.0 180.3 39.7Q190.0 19.9 207.8 7.7M198.6 21.4L188.4 31.6M208.2 8.3Q190.1 20.1 168.1 21.5Q184.7 6.9 205.8 2.5M192.1 11.6L178.8 17.1M205.9 3.1Q184.7 7.2 163.8 0.0Q184.7-7.2 205.9-3.1M189.8 0.0L175.4 0.0M205.8-2.5Q184.7-6.9 168.1-21.5Q190.1-20.1 208.2-8.3M192.1-11.6L178.8-17.1M207.8-7.7Q190.0-19.9 180.3-39.7Q200.1-30.0 212.3-12.2M198.6-21.4L188.4-31.6M211.7-11.8Q199.9-29.9 198.5-51.9Q213.1-35.3 217.5-14.2M208.4-27.9L202.9-41.2M216.9-14.1Q212.8-35.3 220.0-56.2Q227.2-35.3 223.1-14.1M220.0-30.2L220.0-44.6M222.5-14.2Q226.9-35.3 241.5-51.9Q240.1-29.9 228.3-11.8M231.6-27.9L237.1-41.2M227.7-12.2Q239.9-30.0 259.7-39.7Q250.0-19.9 232.2-7.7M241.4-21.4L251.6-31.6M231.8-8.3Q249.9-20.1 271.9-21.5Q255.3-6.9 234.2-2.5M247.9-11.6L261.2-17.1M276.5 11.0Q285.2 27.0 267.8 32.2M291.8 26.8l3 3-3 3-3-3zM252.2 47.8Q247.0 65.2 231.0 56.5M249.8 68.8l3 3-3 3-3-3zM209.0 56.5Q193.0 65.2 187.8 47.8M190.2 68.8l3 3-3 3-3-3zM172.2 32.2Q154.8 27.0 163.5 11.0M148.2 26.8l3 3-3 3-3-3zM163.5-11.0Q154.8-27.0 172.2-32.2M148.2-32.8l3 3-3 3-3-3zM187.8-47.8Q193.0-65.2 209.0-56.5M190.2-74.8l3 3-3 3-3-3zM231.0-56.5Q247.0-65.2 252.2-47.8M249.8-74.8l3 3-3 3-3-3zM267.8-32.2Q285.2-27.0 276.5-11.0M291.8-32.8l3 3-3 3-3-3z'/><circle cx='220' cy='0' r='14.4'/><circle cx='220' cy='0' r='5.8'/><circle cx='220' cy='0' r='61.9' stroke-dasharray='2 5'/><path d='M14.1 216.9Q35.3 212.8 56.2 220.0Q35.3 227.2 14.1 223.1M30.2 220.0L44.6 220.0M14.2 222.5Q35.3 226.9 51.9 241.5Q29.9 240.1 11.8 228.3M27.9 231.6L41.2 237.1M12.2 227.7Q30.0 239.9 39.7 259.7Q19.9 250.0 7.7 232.2M21.4 241.4L31.6 251.6M8.3 231.8Q20.1 249.9 21.5 271.9Q6.9 255.3 2.5 234.2M11.6 247.9L17.1 261.2M3.1 234.1Q7.2 255.3 0.0 276.2Q-7.2 255.3-3.1 234.1M0.0 250.2L0.0 264.6M-2.5 234.2Q-6.9 255.3-21.5 271.9Q-20.1 249.9-8.3 231.8M-11.6 247.9L-17.1 261.2M-7.7 232.2Q-19.9 250.0-39.7 259.7Q-30.0 239.9-12.2 227.7M-21.4 241.4L-31.6 251.6M-11.8 228.3Q-29.9 240.1-51.9 241.5Q-35.3 226.9-14.2 222.5M-27.9 231.6L-41.2 237.1M-14.1 223.1Q-35.3 227.2-56.2 220.0Q-35.3 212.8-14.1 216.9M-30.2 220.0L-44.6 220.0M-14.2 217.5Q-35.3 213.1-51.9 198.5Q-29.9 199.9-11.8 211.7M-27.9 208.4L-41.2 202.9M-12.2 212.3Q-30.0 200.1-39.7 180.3Q-19.9 190.0-7.7 207.8M-21.4 198.6L-31.6 188.4M-8.3 208.2Q-20.1 190.1-21.5 168.1Q-6.9 184.7-2.5 205.8M-11.6 192.1L-17.1 178.8M-3.1 205.9Q-7.2 184.7-0.0 163.8Q7.2 184.7 3.1 205.9M-0.0 189.8L-0.0 175.4M2.5 205.8Q6.9 184.7 21.5 168.1Q20.1 190.1 8.3 208.2M11.6 192.1L17.1 178.8M7.7 207.8Q19.9 190.0 39.7 180.3Q30.0 200.1 12.2 212.3M21.4 198.6L31.6 188.4M11.8 211.7Q29.9 199.9 51.9 198.5Q35.3 213.1 14.2 217.5M27.9 208.4L41.2 202.9M56.5 231.0Q65.2 247.0 47.8 252.2M71.8 246.8l3 3-3 3-3-3zM32.2 267.8Q27.0 285.2 11.0 276.5M29.8 288.8l3 3-3 3-3-3zM-11.0 276.5Q-27.0 285.2-32.2 267.8M-29.8 288.8l3 3-3 3-3-3zM-47.8 252.2Q-65.2 247.0-56.5 231.0M-71.8 246.8l3 3-3 3-3-3zM-56.5 209.0Q-65.2 193.0-47.8 187.8M-71.8 187.2l3 3-3 3-3-3zM-32.2 172.2Q-27.0 154.8-11.0 163.5M-29.8 145.2l3 3-3 3-3-3zM11.0 163.5Q27.0 154.8 32.2 172.2M29.8 145.2l3 3-3 3-3-3zM47.8 187.8Q65.2 193.0 56.5 209.0M71.8 187.2l3 3-3 3-3-3z'/><circle cx='0' cy='220' r='14.4'/><circle cx='0' cy='220' r='5.8'/><circle cx='0' cy='220' r='61.9' stroke-dasharray='2 5'/><path d='M234.1 216.9Q255.3 212.8 276.2 220.0Q255.3 227.2 234.1 223.1M250.2 220.0L264.6 220.0M234.2 222.5Q255.3 226.9 271.9 241.5Q249.9 240.1 231.8 228.3M247.9 231.6L261.2 237.1M232.2 227.7Q250.0 239.9 259.7 259.7Q239.9 250.0 227.7 232.2M241.4 241.4L251.6 251.6M228.3 231.8Q240.1 249.9 241.5 271.9Q226.9 255.3 222.5 234.2M231.6 247.9L237.1 261.2M223.1 234.1Q227.2 255.3 220.0 276.2Q212.8 255.3 216.9 234.1M220.0 250.2L220.0 264.6M217.5 234.2Q213.1 255.3 198.5 271.9Q199.9 249.9 211.7 231.8M208.4 247.9L202.9 261.2M212.3 232.2Q200.1 250.0 180.3 259.7Q190.0 239.9 207.8 227.7M198.6 241.4L188.4 251.6M208.2 228.3Q190.1 240.1 168.1 241.5Q184.7 226.9 205.8 222.5M192.1 231.6L178.8 237.1M205.9 223.1Q184.7 227.2 163.8 220.0Q184.7 212.8 205.9 216.9M189.8 220.0L175.4 220.0M205.8 217.5Q184.7 213.1 168.1 198.5Q190.1 199.9 208.2 211.7M192.1 208.4L178.8 202.9M207.8 212.3Q190.0 200.1 180.3 180.3Q200.1 190.0 212.3 207.8M198.6 198.6L188.4 188.4M211.7 208.2Q199.9 190.1 198.5 168.1Q213.1 184.7 217.5 205.8M208.4 192.1L202.9 178.8M216.9 205.9Q212.8 184.7 220.0 163.8Q227.2 184.7 223.1 205.9M220.0 189.8L220.0 175.4M222.5 205.8Q226.9 184.7 241.5 168.1Q240.1 190.1 228.3 208.2M231.6 192.1L237.1 178.8M227.7 207.8Q239.9 190.0 259.7 180.3Q250.0 200.1 232.2 212.3M241.4 198.6L251.6 188.4M231.8 211.7Q249.9 199.9 271.9 198.5Q255.3 213.1 234.2 217.5M247.9 208.4L261.2 202.9M276.5 231.0Q285.2 247.0 267.8 252.2M291.8 246.8l3 3-3 3-3-3zM252.2 267.8Q247.0 285.2 231.0 276.5M249.8 288.8l3 3-3 3-3-3zM209.0 276.5Q193.0 285.2 187.8 267.8M190.2 288.8l3 3-3 3-3-3zM172.2 252.2Q154.8 247.0 163.5 231.0M148.2 246.8l3 3-3 3-3-3zM163.5 209.0Q154.8 193.0 172.2 187.8M148.2 187.2l3 3-3 3-3-3zM187.8 172.2Q193.0 154.8 209.0 163.5M190.2 145.2l3 3-3 3-3-3zM231.0 163.5Q247.0 154.8 252.2 172.2M249.8 145.2l3 3-3 3-3-3zM267.8 187.8Q285.2 193.0 276.5 209.0M291.8 187.2l3 3-3 3-3-3z'/><circle cx='220' cy='220' r='14.4'/><circle cx='220' cy='220' r='5.8'/><circle cx='220' cy='220' r='61.9' stroke-dasharray='2 5'/></g></svg>"},
+  zellige:{name:'Zellige rosette',w:160,h:160,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'><g fill='none' stroke='#000' stroke-width='1.4' stroke-linejoin='round'><path d='M106.0 80.0L80.0 106.0L54.0 80.0L80.0 54.0zM98.4 98.4L61.6 98.4L61.6 61.6L98.4 61.6zM106.0 80.1L126.7 92.6L137.3 103.7L121.9 104.1L98.5 98.4M98.4 98.5L104.1 121.9L103.7 137.3L92.6 126.7L80.1 106.0M79.9 106.0L67.4 126.7L56.3 137.3L55.9 121.9L61.6 98.5M61.5 98.4L38.1 104.1L22.7 103.7L33.3 92.6L54.0 80.1M54.0 79.9L33.3 67.4L22.7 56.3L38.1 55.9L61.5 61.6M61.6 61.5L55.9 38.1L56.3 22.7L67.4 33.3L79.9 54.0M80.1 54.0L92.6 33.3L103.7 22.7L104.1 38.1L98.4 61.5M98.5 61.6L121.9 55.9L137.3 56.3L126.7 67.4L106.0 79.9'/><circle cx='80.0' cy='80.0' r='9.9'/><path d='M26.0 0.0L0.0 26.0L-26.0 0.0L-0.0-26.0zM18.4 18.4L-18.4 18.4L-18.4-18.4L18.4-18.4zM26.0 0.1L46.7 12.6L57.3 23.7L41.9 24.1L18.5 18.4M18.4 18.5L24.1 41.9L23.7 57.3L12.6 46.7L0.1 26.0M-0.1 26.0L-12.6 46.7L-23.7 57.3L-24.1 41.9L-18.4 18.5M-18.5 18.4L-41.9 24.1L-57.3 23.7L-46.7 12.6L-26.0 0.1M-26.0-0.1L-46.7-12.6L-57.3-23.7L-41.9-24.1L-18.5-18.4M-18.4-18.5L-24.1-41.9L-23.7-57.3L-12.6-46.7L-0.1-26.0M0.1-26.0L12.6-46.7L23.7-57.3L24.1-41.9L18.4-18.5M18.5-18.4L41.9-24.1L57.3-23.7L46.7-12.6L26.0-0.1'/><circle cx='0' cy='0' r='9.9'/><path d='M186.0 0.0L160.0 26.0L134.0 0.0L160.0-26.0zM178.4 18.4L141.6 18.4L141.6-18.4L178.4-18.4zM186.0 0.1L206.7 12.6L217.3 23.7L201.9 24.1L178.5 18.4M178.4 18.5L184.1 41.9L183.7 57.3L172.6 46.7L160.1 26.0M159.9 26.0L147.4 46.7L136.3 57.3L135.9 41.9L141.6 18.5M141.5 18.4L118.1 24.1L102.7 23.7L113.3 12.6L134.0 0.1M134.0-0.1L113.3-12.6L102.7-23.7L118.1-24.1L141.5-18.4M141.6-18.5L135.9-41.9L136.3-57.3L147.4-46.7L159.9-26.0M160.1-26.0L172.6-46.7L183.7-57.3L184.1-41.9L178.4-18.5M178.5-18.4L201.9-24.1L217.3-23.7L206.7-12.6L186.0-0.1'/><circle cx='160' cy='0' r='9.9'/><path d='M26.0 160.0L0.0 186.0L-26.0 160.0L-0.0 134.0zM18.4 178.4L-18.4 178.4L-18.4 141.6L18.4 141.6zM26.0 160.1L46.7 172.6L57.3 183.7L41.9 184.1L18.5 178.4M18.4 178.5L24.1 201.9L23.7 217.3L12.6 206.7L0.1 186.0M-0.1 186.0L-12.6 206.7L-23.7 217.3L-24.1 201.9L-18.4 178.5M-18.5 178.4L-41.9 184.1L-57.3 183.7L-46.7 172.6L-26.0 160.1M-26.0 159.9L-46.7 147.4L-57.3 136.3L-41.9 135.9L-18.5 141.6M-18.4 141.5L-24.1 118.1L-23.7 102.7L-12.6 113.3L-0.1 134.0M0.1 134.0L12.6 113.3L23.7 102.7L24.1 118.1L18.4 141.5M18.5 141.6L41.9 135.9L57.3 136.3L46.7 147.4L26.0 159.9'/><circle cx='0' cy='160' r='9.9'/><path d='M186.0 160.0L160.0 186.0L134.0 160.0L160.0 134.0zM178.4 178.4L141.6 178.4L141.6 141.6L178.4 141.6zM186.0 160.1L206.7 172.6L217.3 183.7L201.9 184.1L178.5 178.4M178.4 178.5L184.1 201.9L183.7 217.3L172.6 206.7L160.1 186.0M159.9 186.0L147.4 206.7L136.3 217.3L135.9 201.9L141.6 178.5M141.5 178.4L118.1 184.1L102.7 183.7L113.3 172.6L134.0 160.1M134.0 159.9L113.3 147.4L102.7 136.3L118.1 135.9L141.5 141.6M141.6 141.5L135.9 118.1L136.3 102.7L147.4 113.3L159.9 134.0M160.1 134.0L172.6 113.3L183.7 102.7L184.1 118.1L178.4 141.5M178.5 141.6L201.9 135.9L217.3 136.3L206.7 147.4L186.0 159.9'/><circle cx='160' cy='160' r='9.9'/></g></svg>"},
+  lanterns:{name:'Hanging lanterns',w:200,h:200,rep:'repeat-x',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g fill='none' stroke='#000' stroke-width='1.4' stroke-linejoin='round'><path d='M30 0V30'/><circle cx='30' cy='34.0' r='4.0'/><path d='M22.3 48.0Q30 32.0 37.7 48.0z'/><path d='M22.3 48.0L16.0 60.0L18.8 84.0L41.2 84.0L44.0 60.0L37.7 48.0'/><path d='M21.6 60.0H38.4M30 50.0V84.0M23.0 74.0Q30 66.0 37.0 74.0'/><path d='M18.8 84.0L30 96.0L41.2 84.0M30 96.0V102.0'/><path d='M95 0V80'/><circle cx='95' cy='85.0' r='5.0'/><path d='M85.4 102.5Q95 82.5 104.6 102.5z'/><path d='M85.4 102.5L77.5 117.5L81.0 147.5L109.0 147.5L112.5 117.5L104.6 102.5'/><path d='M84.5 117.5H105.5M95 105.0V147.5M86.2 135.0Q95 125.0 103.8 135.0'/><path d='M81.0 147.5L95 162.5L109.0 147.5M95 162.5V170.0'/><path d='M160 0V12'/><circle cx='160' cy='15.6' r='3.6'/><path d='M153.1 28.2Q160 13.8 166.9 28.2z'/><path d='M153.1 28.2L147.4 39.0L149.9 60.6L170.1 60.6L172.6 39.0L166.9 28.2'/><path d='M152.4 39.0H167.6M160 30.0V60.6M153.7 51.6Q160 44.4 166.3 51.6'/><path d='M149.9 60.6L160 71.4L170.1 60.6M160 71.4V76.8'/></g></svg>"},
+  skyline:{name:'Masjid skyline',w:260,h:140,rep:'repeat-x',pos:'bottom left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 140'><g fill='none' stroke='#000' stroke-width='1.5' stroke-linejoin='round'><path d='M38.0 140V127.0Q38.0 88.0 70 80.2Q102.0 88.0 102.0 127.0V140M70 80.2V69.8M15.0 140V133.0Q15.0 112.0 30 107.8Q45.0 112.0 45.0 133.0V140M30 107.8V102.2M95.0 140V133.0Q95.0 112.0 110 107.8Q125.0 112.0 125.0 133.0V140M110 107.8V102.2M136 140V48H144V140M134 89.4H146M136 48L140 34L144 48M140 34V28M0 140V70H8V140M-2 101.5H10M0 70L4 56L8 70M4 56V50M178.0 140V130.5Q178.0 102.0 200 96.3Q222.0 102.0 222.0 130.5V140M200 96.3V88.7M232 140V80H240V140M230 107.0H242M232 80L236 66L240 80M236 66V60M0 139.5H260'/></g></svg>"},
+  crescent:{name:'Crescents and stars',w:140,h:140,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'><g fill='#000'><path fill-rule='evenodd' d='M22 40a16 16 0 1 0 32 0a16 16 0 1 0-32 0zM30.1 36.8a13.8 13.8 0 1 0 27.5 0a13.8 13.8 0 1 0-27.5 0z'/><path d='M66.0 21.0 L67.2 24.3 L70.8 24.5 L68.0 26.6 L68.9 30.0 L66.0 28.1 L63.1 30.0 L64.0 26.6 L61.2 24.5 L64.8 24.3z'/><path fill-rule='evenodd' d='M97 104a11 11 0 1 0 22 0a11 11 0 1 0-22 0zM102.6 101.8a9.5 9.5 0 1 0 18.9 0a9.5 9.5 0 1 0-18.9 0z'/><path d='M124.0 88.5 L124.9 90.8 L127.3 90.9 L125.4 92.5 L126.1 94.8 L124.0 93.5 L121.9 94.8 L122.6 92.5 L120.7 90.9 L123.1 90.8z'/><path d='M20.0 104.0 L21.0 106.6 L23.8 106.8 L21.6 108.5 L22.4 111.2 L20.0 109.7 L17.6 111.2 L18.4 108.5 L16.2 106.8 L19.0 106.6z'/><path d='M96.0 37.4 L96.6 39.1 L98.5 39.2 L97.0 40.3 L97.5 42.1 L96.0 41.1 L94.5 42.1 L95.0 40.3 L93.5 39.2 L95.4 39.1z'/><path d='M60.0 121.4 L60.6 123.1 L62.5 123.2 L61.0 124.3 L61.5 126.1 L60.0 125.1 L58.5 126.1 L59.0 124.3 L57.5 123.2 L59.4 123.1z'/></g></svg>"},
+  mashrabiya:{name:'Mashrabiya lattice',w:40,h:40,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><g fill='none' stroke='#000' stroke-width='1.6'><rect x='0' y='0' width='40' height='40'/><circle cx='20' cy='20' r='9'/><path d='M20 0V11M20 29V40M0 20H11M29 20H40'/><circle cx='0' cy='0' r='4'/><circle cx='40' cy='0' r='4'/><circle cx='0' cy='40' r='4'/><circle cx='40' cy='40' r='4'/></g></svg>"},
+  twelve:{name:'Twelve-point rosette',w:120,h:120,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><g fill='none' stroke='#000' stroke-width='1.3' stroke-linejoin='round'><path d='M104.0 60.0 L86.4 67.1 L98.1 82.0 L79.3 79.3 L82.0 98.1 L67.1 86.4 L60.0 104.0 L52.9 86.4 L38.0 98.1 L40.7 79.3 L21.9 82.0 L33.6 67.1 L16.0 60.0 L33.6 52.9 L21.9 38.0 L40.7 40.7 L38.0 21.9 L52.9 33.6 L60.0 16.0 L67.1 33.6 L82.0 21.9 L79.3 40.7 L98.1 38.0 L86.4 52.9zM75.3 64.1 L71.2 71.2 L64.1 75.3 L55.9 75.3 L48.8 71.2 L44.7 64.1 L44.7 55.9 L48.8 48.8 L55.9 44.7 L64.1 44.7 L71.2 48.8 L75.3 55.9zM75.3 64.1L104.0 60.0M71.2 71.2L98.1 82.0M64.1 75.3L82.0 98.1M55.9 75.3L60.0 104.0M48.8 71.2L38.0 98.1M44.7 64.1L21.9 82.0M44.7 55.9L16.0 60.0M48.8 48.8L21.9 38.0M55.9 44.7L38.0 21.9M64.1 44.7L60.0 16.0M71.2 48.8L82.0 21.9M75.3 55.9L98.1 38.0M44.0 0.0 L26.4 7.1 L38.1 22.0 L19.3 19.3 L22.0 38.1 L7.1 26.4 L0.0 44.0 L-7.1 26.4 L-22.0 38.1 L-19.3 19.3 L-38.1 22.0 L-26.4 7.1 L-44.0 0.0 L-26.4-7.1 L-38.1-22.0 L-19.3-19.3 L-22.0-38.1 L-7.1-26.4 L-0.0-44.0 L7.1-26.4 L22.0-38.1 L19.3-19.3 L38.1-22.0 L26.4-7.1zM15.3 4.1 L11.2 11.2 L4.1 15.3 L-4.1 15.3 L-11.2 11.2 L-15.3 4.1 L-15.3-4.1 L-11.2-11.2 L-4.1-15.3 L4.1-15.3 L11.2-11.2 L15.3-4.1zM15.3 4.1L44.0 0.0M11.2 11.2L38.1 22.0M4.1 15.3L22.0 38.1M-4.1 15.3L0.0 44.0M-11.2 11.2L-22.0 38.1M-15.3 4.1L-38.1 22.0M-15.3-4.1L-44.0 0.0M-11.2-11.2L-38.1-22.0M-4.1-15.3L-22.0-38.1M4.1-15.3L-0.0-44.0M11.2-11.2L22.0-38.1M15.3-4.1L38.1-22.0M164.0 0.0 L146.4 7.1 L158.1 22.0 L139.3 19.3 L142.0 38.1 L127.1 26.4 L120.0 44.0 L112.9 26.4 L98.0 38.1 L100.7 19.3 L81.9 22.0 L93.6 7.1 L76.0 0.0 L93.6-7.1 L81.9-22.0 L100.7-19.3 L98.0-38.1 L112.9-26.4 L120.0-44.0 L127.1-26.4 L142.0-38.1 L139.3-19.3 L158.1-22.0 L146.4-7.1zM135.3 4.1 L131.2 11.2 L124.1 15.3 L115.9 15.3 L108.8 11.2 L104.7 4.1 L104.7-4.1 L108.8-11.2 L115.9-15.3 L124.1-15.3 L131.2-11.2 L135.3-4.1zM135.3 4.1L164.0 0.0M131.2 11.2L158.1 22.0M124.1 15.3L142.0 38.1M115.9 15.3L120.0 44.0M108.8 11.2L98.0 38.1M104.7 4.1L81.9 22.0M104.7-4.1L76.0 0.0M108.8-11.2L81.9-22.0M115.9-15.3L98.0-38.1M124.1-15.3L120.0-44.0M131.2-11.2L142.0-38.1M135.3-4.1L158.1-22.0M44.0 120.0 L26.4 127.1 L38.1 142.0 L19.3 139.3 L22.0 158.1 L7.1 146.4 L0.0 164.0 L-7.1 146.4 L-22.0 158.1 L-19.3 139.3 L-38.1 142.0 L-26.4 127.1 L-44.0 120.0 L-26.4 112.9 L-38.1 98.0 L-19.3 100.7 L-22.0 81.9 L-7.1 93.6 L-0.0 76.0 L7.1 93.6 L22.0 81.9 L19.3 100.7 L38.1 98.0 L26.4 112.9zM15.3 124.1 L11.2 131.2 L4.1 135.3 L-4.1 135.3 L-11.2 131.2 L-15.3 124.1 L-15.3 115.9 L-11.2 108.8 L-4.1 104.7 L4.1 104.7 L11.2 108.8 L15.3 115.9zM15.3 124.1L44.0 120.0M11.2 131.2L38.1 142.0M4.1 135.3L22.0 158.1M-4.1 135.3L0.0 164.0M-11.2 131.2L-22.0 158.1M-15.3 124.1L-38.1 142.0M-15.3 115.9L-44.0 120.0M-11.2 108.8L-38.1 98.0M-4.1 104.7L-22.0 81.9M4.1 104.7L-0.0 76.0M11.2 108.8L22.0 81.9M15.3 115.9L38.1 98.0M164.0 120.0 L146.4 127.1 L158.1 142.0 L139.3 139.3 L142.0 158.1 L127.1 146.4 L120.0 164.0 L112.9 146.4 L98.0 158.1 L100.7 139.3 L81.9 142.0 L93.6 127.1 L76.0 120.0 L93.6 112.9 L81.9 98.0 L100.7 100.7 L98.0 81.9 L112.9 93.6 L120.0 76.0 L127.1 93.6 L142.0 81.9 L139.3 100.7 L158.1 98.0 L146.4 112.9zM135.3 124.1 L131.2 131.2 L124.1 135.3 L115.9 135.3 L108.8 131.2 L104.7 124.1 L104.7 115.9 L108.8 108.8 L115.9 104.7 L124.1 104.7 L131.2 108.8 L135.3 115.9zM135.3 124.1L164.0 120.0M131.2 131.2L158.1 142.0M124.1 135.3L142.0 158.1M115.9 135.3L120.0 164.0M108.8 131.2L98.0 158.1M104.7 124.1L81.9 142.0M104.7 115.9L76.0 120.0M108.8 108.8L81.9 98.0M115.9 104.7L98.0 81.9M124.1 104.7L120.0 76.0M131.2 108.8L142.0 81.9M135.3 115.9L158.1 98.0'/></g></svg>"},
+  tulips:{name:'Ottoman tulips',w:120,h:140,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 140'><g fill='none' stroke='#000' stroke-width='1.4' stroke-linejoin='round'><path d='M30 90C26 70 36 60 30 50M30 50C16 46 14 24 20 12C24 22 27 26 30 14C33 26 36 22 40 12C46 24 44 46 30 50zM29 72C8 66 4 52 6 44C16 52 24 60 29 72zM31 80C50 76 54 62 52 54C42 62 36 70 31 80zM90 152.0C86.8 136.0 94.8 128.0 90 120M90 120C78.8 116.8 77.2 99.2 82.0 89.6C85.2 97.6 87.6 100.8 90 91.2C92.4 100.8 94.8 97.6 98.0 89.6C102.8 99.2 101.2 116.8 90 120zM89.2 137.6C72.4 132.8 69.2 121.6 70.8 115.2C78.8 121.6 85.2 128.0 89.2 137.6zM90.8 144.0C106.0 140.8 109.2 129.6 107.6 123.2C99.6 129.6 94.8 136.0 90.8 144.0zM90 12.0C86.8-4.0 94.8-12.0 90-20M90-20C78.8-23.2 77.2-40.8 82.0-50.400000000000006C85.2-42.400000000000006 87.6-39.2 90-48.8C92.4-39.2 94.8-42.400000000000006 98.0-50.400000000000006C102.8-40.8 101.2-23.2 90-20zM89.2-2.3999999999999986C72.4-7.199999999999999 69.2-18.4 70.8-24.8C78.8-18.4 85.2-12.0 89.2-2.3999999999999986zM90.8 4.0C106.0 0.8000000000000007 109.2-10.399999999999999 107.6-16.8C99.6-10.399999999999999 94.8-4.0 90.8 4.0z'/></g></svg>"},
+  khatam:{name:'Khatam',w:80,h:80,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><g fill='none' stroke='#000' stroke-width='1.4' stroke-linejoin='round'><path d='M40.0 10.0 L48.8 18.8 L61.2 18.8 L61.2 31.2 L70.0 40.0 L61.2 48.8 L61.2 61.2 L48.8 61.2 L40.0 70.0 L31.2 61.2 L18.8 61.2 L18.8 48.8 L10.0 40.0 L18.8 31.2 L18.8 18.8 L31.2 18.8z'/><path d='M52.9 45.4 L45.4 52.9 L34.6 52.9 L27.1 45.4 L27.1 34.6 L34.6 27.1 L45.4 27.1 L52.9 34.6z'/><path d='M40 10V0M40 70V80M10 40H0M70 40H80M61.2 18.8L80 0M18.8 18.8L0 0M61.2 61.2L80 80M18.8 61.2L0 80'/></g></svg>"},
+  starcross:{name:'Star and cross',w:60,h:60,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='#000' stroke-width='1.4' stroke-linejoin='round'><path d='M30.0 0.0 L36.1 15.2 L51.2 8.8 L44.8 23.9 L60.0 30.0 L44.8 36.1 L51.2 51.2 L36.1 44.8 L30.0 60.0 L23.9 44.8 L8.8 51.2 L15.2 36.1 L0.0 30.0 L15.2 23.9 L8.8 8.8 L23.9 15.2z'/><path d='M0.0-30.0 L6.1-14.8 L21.2-21.2 L14.8-6.1 L30.0 0.0 L14.8 6.1 L21.2 21.2 L6.1 14.8 L0.0 30.0 L-6.1 14.8 L-21.2 21.2 L-14.8 6.1 L-30.0 0.0 L-14.8-6.1 L-21.2-21.2 L-6.1-14.8z'/><path d='M60.0-30.0 L66.1-14.8 L81.2-21.2 L74.8-6.1 L90.0 0.0 L74.8 6.1 L81.2 21.2 L66.1 14.8 L60.0 30.0 L53.9 14.8 L38.8 21.2 L45.2 6.1 L30.0 0.0 L45.2-6.1 L38.8-21.2 L53.9-14.8z'/><path d='M0.0 30.0 L6.1 45.2 L21.2 38.8 L14.8 53.9 L30.0 60.0 L14.8 66.1 L21.2 81.2 L6.1 74.8 L0.0 90.0 L-6.1 74.8 L-21.2 81.2 L-14.8 66.1 L-30.0 60.0 L-14.8 53.9 L-21.2 38.8 L-6.1 45.2z'/><path d='M60.0 30.0 L66.1 45.2 L81.2 38.8 L74.8 53.9 L90.0 60.0 L74.8 66.1 L81.2 81.2 L66.1 74.8 L60.0 90.0 L53.9 74.8 L38.8 81.2 L45.2 66.1 L30.0 60.0 L45.2 53.9 L38.8 38.8 L53.9 45.2z'/></g></svg>"},
+  star:{name:'Eight-point star',w:60,h:60,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='#000' stroke-width='1.3' stroke-linejoin='round'><path d='M30 8l6.4 15.6L52 30l-15.6 6.4L30 52l-6.4-15.6L8 30l15.6-6.4z'/><rect x='17' y='17' width='26' height='26' transform='rotate(45 30 30)'/><path d='M0 0l8 8M60 0l-8 8M0 60l8-8M60 60l-8-8'/></g></svg>"},
+  trellis:{name:'Moroccan trellis',w:48,h:48,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><g fill='none' stroke='#000' stroke-width='1.3' stroke-linejoin='round'><path d='M24 0c6 8 6 8 24 12M24 0c-6 8-6 8-24 12M24 48c6-8 6-8 24-12M24 48c-6-8-6-8-24-12M0 12c8 6 8 18 0 24M48 12c-8 6-8 18 0 24'/></g></svg>"},
+  circles:{name:'Interlaced circles',w:40,h:40,rep:'repeat',pos:'top left',svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><g fill='none' stroke='#000' stroke-width='1.3' stroke-linejoin='round'><circle cx='20' cy='20' r='20'/><circle cx='0' cy='0' r='20'/><circle cx='40' cy='0' r='20'/><circle cx='0' cy='40' r='20'/><circle cx='40' cy='40' r='20'/></g></svg>"}
+};
+const patUrl=k=>`url("data:image/svg+xml,${encodeURIComponent(PATTERNS[k].svg)}")`;
+function ensurePatternStyles(){
+  if($('patStyle')) return;
+  const css=Object.entries(PATTERNS).map(([k,p])=>`.pt-${k}{-webkit-mask-image:${patUrl(k)};mask-image:${patUrl(k)};-webkit-mask-size:${p.w}px ${p.h}px;mask-size:${p.w}px ${p.h}px;-webkit-mask-repeat:${p.rep};mask-repeat:${p.rep};-webkit-mask-position:${p.pos};mask-position:${p.pos}}`).join('\n');
+  const st=document.createElement('style'); st.id='patStyle'; st.textContent=css; document.head.appendChild(st);
+}
+/* The photo is faded with a wash of the page colour over it, never less than
+   half, so names and timers stay easy to read. */
+const fadeOpacity=f=>String(Math.min(.95,Math.max(.5,(+f||APPEAR_DEFAULT.fade)/100)));
+function applyAppearance(){
+  const p=appearanceNow(); paintTheme(p);
+  const app=document.querySelector('.app'), L=$('bgLayer'); if(!app||!L) return;
+  let bg=['plain','tint','pattern','photo'].includes(p.bg)?p.bg:'plain';
+  if(bg==='pattern'&&!PATTERNS[p.pattern]) bg='plain';
+  app.dataset.bg=bg;
+  const i=L.firstElementChild; i.className=''; L.style.backgroundImage='';
+  if(bg==='pattern'){ ensurePatternStyles(); i.className='pt-'+p.pattern; }
+  if(bg==='photo'){ const ph=Store.get(PHOTO_KEY); if(ph) L.style.backgroundImage=`url("${ph}")`; L.style.setProperty('--fade',fadeOpacity(p.fade)); }
+  placeBg();
+}
+/* The layer covers exactly the open tab's own area: below the header and
+   banners on Log, the whole view elsewhere, never the tab bar. */
+function placeBg(){
+  const L=$('bgLayer'); if(!L) return;
+  const area=TAB==='log'?document.querySelector('.stage'):$('view'+TAB[0].toUpperCase()+TAB.slice(1));
+  if(!area||!area.offsetHeight) return;
+  L.style.top=area.offsetTop+'px'; L.style.height=area.offsetHeight+'px';
+}
+function saveAppearance(change){
+  const p=Object.assign({},savedAppearance(),change), json=JSON.stringify(p);
+  Store.set(APPEAR_KEY,json);
+  // the first paint reads localStorage before Store exists - keep a copy there on Android/iOS too
+  if(Store.native){ try{ localStorage.setItem(APPEAR_KEY,json); }catch(e){} }
+  applyAppearance();
+  if(TAB==='settings') drawSettings();
+}
+function previewFade(v){ const L=$('bgLayer'); if(L) L.style.setProperty('--fade',fadeOpacity(v)); const t=$('apThumbFade'); if(t) t.style.opacity=fadeOpacity(v); }
+/* Choose a photo: shrunk on the tablet to about 1280px wide (JPEG) and kept
+   in Store on this device only - never uploaded, never written to Firestore. */
+function pickPhoto(input){
+  const f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  const url=URL.createObjectURL(f), img=new Image();
+  img.onload=()=>{
+    try{
+      const w=Math.min(1280,img.naturalWidth||1280), h=Math.max(1,Math.round((img.naturalHeight||w)*w/(img.naturalWidth||w)));
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      let data=c.toDataURL('image/jpeg',.8);
+      if(data.length>1500000) data=c.toDataURL('image/jpeg',.6);
+      Store.set(PHOTO_KEY,data);
+      saveAppearance({bg:'photo'}); toast('Photo set. It stays on this tablet only.');
+    }catch(e){ toast('That photo could not be used.'); }
+    URL.revokeObjectURL(url);
+  };
+  img.onerror=()=>{ URL.revokeObjectURL(url); toast('That photo could not be opened.'); };
+  img.src=url;
+}
+function choosePhoto(){ if(asTeacher(choosePhoto)) $('photoInput').click(); }
+function removePhoto(){ Store.purge(PHOTO_KEY); saveAppearance({bg:'plain'}); toast('Photo removed'); }
+function themeCard(t,p){
+  const k=themeTokens({theme:t.id,mode:t.dark?'dark':'light'});
+  const em=(bg,b)=>`<em style="background:${bg};border-color:${b}"></em>`;
+  return `<button class="ap-th ${p.theme===t.id?'on':''}" data-theme="${t.id}" aria-pressed="${p.theme===t.id}" onclick="saveAppearance({theme:'${t.id}'})">
+    <span class="ap-pv" style="background:${k.paper}"><i style="background:${k.head}"></i><span>${em(k.pres,k.presb)}${em(k['gold-soft'],k.gold)}${em(k['ember-soft'],k.ember)}</span></span>
+    <b>${t.name}</b><small>${t.note}</small></button>`;
+}
+function appearanceSection(){
+  const p=appearanceNow(), photo=Store.get(PHOTO_KEY);
+  const seg=(key,opts)=>`<div class="seg" role="group">${opts.map(([v,l])=>`<button class="${p[key]===v?'on':''}" aria-pressed="${p[key]===v}" data-${key}="${v}" onclick="saveAppearance({${key}:'${v}'})">${l}</button>`).join('')}</div>`;
+  const fixedDark=p.theme!=='custom'&&themeById(p.theme).dark;
+  return `<h4 id="appearance">Appearance <span class="ap-sub">This tablet only</span></h4>
+   <div class="ap-lab">Colour theme</div>
+   <div class="ap-themes">${THEMES.map(t=>themeCard(t,p)).join('')}
+     <button class="ap-th ${p.theme==='custom'?'on':''}" data-theme="custom" aria-pressed="${p.theme==='custom'}" onclick="saveAppearance({theme:'custom'})"><span class="ap-rb"></span><b>Custom colour</b><small>Pick your own</small></button></div>
+   <div class="ap-lab">Custom colour <small>the app builds the header, buttons and tabs around it</small></div>
+   <div class="ap-sw">${SWATCHES.map(([n,h])=>`<button class="ap-dot ${p.theme==='custom'&&String(p.custom).toUpperCase()===h?'on':''}" style="background:${h}" title="${n}" aria-label="${n}" data-swatch="${h}" onclick="saveAppearance({theme:'custom',custom:'${h}'})"></button>`).join('')}
+     ${KEPT_COLOURS.map(([n,h])=>`<span class="ap-dot no" style="background:${h}" title="${n} - not available" aria-label="${n} - not available"></span>`).join('')}</div>
+   <small class="ap-hint">Amber, orange and red are kept for Out and Past the limit</small>
+   <div class="ap-row">
+     <div><div class="ap-lab">Light or dark</div>${seg('mode',[['light','Light'],['dark','Dark'],['auto','Automatic']])}
+       <small class="ap-hint">${fixedDark?`${themeById(p.theme).name} is always dark.`:'Automatic follows the tablet’s own setting.'}</small></div>
+     <div><div class="ap-lab">Background behind the tiles</div>${seg('bg',[['plain','Plain'],['tint','Soft tint'],['pattern','Pattern'],['photo','Custom']])}
+       <small class="ap-hint">Never behind names or timers.</small></div>
+   </div>
+   ${p.bg==='pattern'?`<div class="ap-lab">Pattern <small>15 designs · they take the theme’s colour</small></div>
+   <div class="ap-pats">${Object.entries(PATTERNS).map(([k,x])=>`<button class="ap-pat ${p.pattern===k?'on':''}" data-pattern="${k}" aria-pressed="${p.pattern===k}" onclick="saveAppearance({pattern:'${k}'})"><span class="bx"><i class="pt-${k}"></i></span><span>${x.name}</span></button>`).join('')}</div>`:''}
+   ${p.bg==='photo'?`<div class="ap-lab">Your photo</div>
+   <div class="ap-photo"><span class="ap-thumb" style="${photo?`background-image:url('${photo}')`:''}"><i id="apThumbFade" style="opacity:${photo?fadeOpacity(p.fade):0}"></i></span>
+     <div class="ap-pmid"><b>${photo?'Your photo, faded':'No photo yet'}</b><small class="ap-hint" style="margin-top:2px">Kept on this tablet only - never uploaded.</small>
+       ${photo?`<label class="ap-fade">Fade<input type="range" id="apFade" min="50" max="95" step="5" value="${Math.round(+fadeOpacity(p.fade)*100)}" oninput="previewFade(this.value)" onchange="saveAppearance({fade:+this.value})" aria-label="Fade"></label>`:''}</div>
+     <div class="ap-pbtns"><button class="btn dark" onclick="choosePhoto()">Choose a photo</button>${photo?'<button class="btn rm" onclick="removePhoto()">Remove</button>':''}</div></div>`:''}`;
+}
+
 /* ===== Settings tab ===== */
 function drawSettings(){
   const v=$('viewSettings'); if(!v) return;
   const set=state.settings, re='writeSettings();render();drawSettings()';
+  if(appearanceNow().bg==='pattern') ensurePatternStyles();
   v.innerHTML=`<div class="vsec">
    <div class="vhead"><h2>Settings</h2>${classPill()}</div>
    ${scheduleSection()}
@@ -3657,6 +3965,7 @@ function drawSettings(){
    <h4>Teacher mode</h4>
    <div class="field lim" id="autoLockField"><div>Lock again automatically<small>${hasPin()?'After this many minutes with no teacher action. Students can still start and end their breaks.':'Set a teacher PIN with the padlock first. Until then nothing is locked.'}</small></div>
      <div class="seg" role="group" aria-label="Lock again automatically">${AUTOLOCK_CHOICES.map(m=>`<button class="${autoLockMin()===m?'on':''}" aria-pressed="${autoLockMin()===m}" onclick="setAutoLock(${m})">${m?m+' min':'Off'}</button>`).join('')}</div></div>
+   ${appearanceSection()}
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
@@ -3767,7 +4076,7 @@ function render(){
   if(TAB==='roster') paintRoster();
   if(TAB==='settings'&&!editingIn('viewSettings')) drawSettings();
   if(TAB==='profile'&&!editingIn('viewProfile')) paintProfile();
-  updateLogBadge(); paintInitials();
+  updateLogBadge(); paintInitials(); placeBg();
   tick(); cacheLastClass();
 }
 /* Local-only instant-paint cache (plan 2.9) - never a source of truth, just
@@ -3926,7 +4235,7 @@ function fitHeader(){
   mb.textContent=label;
   top.classList.toggle('stacked', stack);
 }
-let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(()=>{ fitHeader(); fitGrid(); if(TAB==='reports') paintReports(); },120); });
+let fitT; addEventListener('resize',()=>{ clearTimeout(fitT); fitT=setTimeout(()=>{ fitHeader(); fitGrid(); if(TAB==='reports') paintReports(); placeBg(); },120); });
 /* Manrope arrives from Google Fonts after the first paint, and it is a little
    larger than the fallback font the screen was first fitted with: the header
    grew by a few pixels and the roster's last row no longer fitted. Fit again
@@ -3959,7 +4268,8 @@ function tick(){
   const reveal=()=>document.querySelector('.app').classList.remove('booting');
   const failsafe=setTimeout(reveal,3000);
   try{
-    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,POLICY_KEY]);
+    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,APPEAR_KEY,PHOTO_KEY,POLICY_KEY]);
+    applyAppearance();                          // this device's colours and background, now from Store (native included)
     paintLock();
     if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');
     CLASS_ID=Store.get(SESSION_CLASS_KEY)||'default';
