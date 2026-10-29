@@ -1923,13 +1923,23 @@ function editedTimes(){
 }
 /* Elapsed is what the teacher is actually deciding on, so it has to answer
    while they are still dragging the clock, not after they commit. */
+/* A time later than now is a typo, not a correction (4.3): on the tablet a
+   student out for water since 2:09 was returned "Back at 2:30" while it was
+   still 2:09, and the break was saved as 21 minutes and flagged. Said here as
+   the clock is moved, and refused on save (futureTimeProblem). */
 function recalcElapsed(){
   const box=$('elapsedVal'); if(!box) return;
   const t=editedTimes();
   if(!t) return box.textContent='—';
-  const ms=t.end-t.start, allow=+box.dataset.allow||0;
-  box.textContent = ms<0 ? 'return is before the start' : fmtDur(ms);
-  box.style.color = (ms<0||(allow&&ms>allow)) ? 'var(--ember)' : 'var(--leaf)';
+  const ms=t.end-t.start, allow=+box.dataset.allow||0, future=futureTimeProblem(t);
+  box.textContent = future ? future.replace("can't be",'is').replace(/\.$/,'') : ms<0 ? 'return is before the start' : fmtDur(ms);
+  box.style.color = (future||ms<0||(allow&&ms>allow)) ? 'var(--ember)' : 'var(--leaf)';
+}
+function futureTimeProblem(t){
+  const now=Date.now();
+  if(t.end>now) return "Back at can't be later than now.";
+  if(t.start>now) return "Left at can't be later than now.";
+  return '';
 }
 /* Android's clock picker has a CLEAR button that empties the field outright,
    and a blank time is not a correction - it is a dead end the teacher cannot
@@ -1939,6 +1949,7 @@ function saveBreakEdits(sid){
   const o=state.active[sid]; if(!o) return closeSheet();
   const t=editedTimes();
   if(!t) return toast('Please set both times.');
+  const future=futureTimeProblem(t); if(future) return toast(future);
   if(t.start>t.end) return toast('Return time cannot be before the time they left.');
   o.startAt=t.start; ret(sid,false,t.end);
 }
@@ -1991,8 +2002,8 @@ function saveLoggedBreak(sid,id){
   const b=loggedBreak(sid,id); if(!b) return openStudentBreaks(sid);
   const t=editedTimes();
   if(!t) return toast('Please set both times.');
+  const future=futureTimeProblem(t); if(future) return toast(future);
   if(t.start>t.end) return toast('Back time cannot be before the time they left.');
-  if(t.end>new Date()) return toast('Back time cannot be in the future.');
   if(+t.start===+b.startAt&&+t.end===+b.endAt) return openStudentBreaks(sid);      // nothing changed
   const was=fmtDur(b.dur);
   b._id=id; b.startAt=t.start; b.endAt=t.end; b.dur=t.end-t.start;
