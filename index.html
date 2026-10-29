@@ -2599,12 +2599,12 @@ function paintReports(){
     picker=`<select aria-label="Student" onchange="setRpt('sid',this.value)">${opts.map(([id,n])=>`<option value="${id}" ${id===sid?'selected':''}>${n}</option>`).join('')}</select>`;
   }
   const head=`<div class="vhead"><h2>Reports</h2>${classPill()}<button class="btn ghost" onclick="exportCSV()">Export CSV</button></div>
-    <div class="rtop">${seg('scope',[['class','Whole class'],['student','One student']])}${picker}${seg('mode',[['total','Total'],['avg','Daily average']])}</div>
+    <div class="rtop">${seg('scope',[['class','Class'],['student','Student']])}${picker}${seg('mode',[['total','Total'],['avg','Daily average']])}</div>
     <div class="rdates">${RANGES.map(([k,l])=>`<button class="rdate ${rpt.range===k?'on':''}" data-range="${k}" onclick="setRpt('range','${k}')">${l}</button>`).join('')}</div>`;
   if(!rptData){ v.innerHTML=head+`<div class="empty"><b>Loading…</b></div>`; v.dataset.ready=''; return; }
   const {days,prev}=rptData, rp=rptData.r;
   const R=crunch(days,sid), Pv=crunch(prev,sid);
-  const who=sid?`<b>${nameFor(sid)}</b>`:`<b>Whole class</b> · ${plural(roster().length,'student')}`;
+  const who=sid?`<b>${nameFor(sid)}</b>`:`<b>Class</b> · ${plural(roster().length,'student')}`;
   const line=`<p class="rline" id="rptLine">${who} · ${rangeText(r.start,r.end)} · ${plural(R.classDays,'class day')}</p>`;
   if(!R.classDays){
     v.innerHTML=head+line+`<div class="empty"><b>No class days in this period</b>Days fill in here as you use the tracker.</div>`;

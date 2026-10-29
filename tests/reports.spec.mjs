@@ -42,7 +42,7 @@ test('Reports add up seeded days correctly, by total and by daily average', asyn
   await reportsReady(page);
   const card = (id) => page.locator(`[data-card="${id}"]`);
 
-  await expect(page.locator('#rptLine')).toContainText('Whole class · 2 students');
+  await expect(page.locator('#rptLine')).toContainText('Class · 2 students');
   await expect(page.locator('#rptLine')).toContainText('3 class days');
   await expect(card('class').locator('b')).toHaveText('16 h 30 min');           // 320 + 320 + 350 = 990 min
   await expect(card('class')).toContainText('3 class days, lunch and snack not counted');
@@ -75,7 +75,7 @@ test('Reports add up seeded days correctly, by total and by daily average', asyn
 
   // one student: Amina (s0) - 6 + 2 + 4 = 12 min out; assigned not counted
   await page.getByRole('button', { name: 'Total' }).click();
-  await page.getByRole('button', { name: 'One student' }).click();
+  await page.getByRole('button', { name: 'Student', exact: true }).click();
   await expect(page.locator('#rptLine')).toContainText('Amina');
   await expect(card('out').locator('b')).toHaveText('12 min');
   await expect(card('breaks').locator('b')).toHaveText('4');

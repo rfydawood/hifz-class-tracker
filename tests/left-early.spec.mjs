@@ -34,7 +34,7 @@ test('a student who leaves early is not recorded as absent', async ({ page }) =>
 
   // The day does not count as an absence: she was here, then left early.
   await openTab(page, 'reports');
-  await page.getByRole('button', { name: 'One student', exact: true }).click();
+  await page.getByRole('button', { name: 'Student', exact: true }).click();
   await reportsReady(page);
   await expect(page.locator('#rptLine')).toContainText('Amina');
   await expect(page.locator('[data-card="att"]')).toContainText('100% present');
