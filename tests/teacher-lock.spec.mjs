@@ -1,6 +1,6 @@
 // Teacher mode (4.1): a padlock at the end of the tab bar. Once a PIN is set
 // on a device, students can only start and end their own breaks; the minutes,
-// fixing breaks, the teacher menu and the Roster/Settings/Profile tabs need the
+// fixing breaks, the teacher menu and the Reports/Roster/Settings/Profile tabs need the
 // PIN. Tap the padlock + PIN to unlock, one tap to lock. The PIN is this
 // device's only. See index.html teacherOn()/asTeacher()/openPin()/forgotPin().
 import { test, expect } from '@playwright/test';
@@ -51,11 +51,10 @@ test('no PIN means nothing is locked; setting one, locking and unlocking with th
   await expect(page.locator('.app')).toHaveAttribute('data-tab', 'settings');
   await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
 
-  // Locking while on Settings goes back to Log. Reports stay open.
+  // Locking while on Settings goes back to Log. (Reports need the PIN too
+  // since 4.3 - see teacher-lock-43.spec.mjs.)
   await page.locator('#lockTab').click();
   await expect(page.locator('.app')).toHaveAttribute('data-tab', 'log');
-  await openTab(page, 'reports');
-  await openTab(page, 'log');
 
   // The teacher menu and the main button wait for the PIN too.
   await page.locator('.menu-btn[aria-label="Teacher menu"]').click();

@@ -653,7 +653,7 @@ input,select{font:inherit;color:inherit}
     <button class="tab on" data-tab="log" onclick="showTab('log')" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg><b class="badge" id="logBadge"></b></span>Log</button><button class="tab" data-tab="reports" onclick="showTab('reports')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 19v-7M12 19V5M18 19v-10M3.5 19.5h17"/></svg></span>Reports</button><button class="tab" data-tab="roster" onclick="showTab('roster')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><path d="M15.5 5.1a3.1 3.1 0 0 1 0 5.8M17.6 14.6c1.8.7 3 2.4 3.4 4.9"/></svg></span>Roster</button><button class="tab" data-tab="settings" onclick="showTab('settings')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</button>
     <button class="tab tabprof" data-tab="profile" onclick="showTab('profile')"><span class="ic"><b class="ini" id="tabIni">?</b></span>Profile</button>
     <button class="tab" id="lockTab" onclick="lockTap()" aria-label="Teacher mode"><span class="ic" id="lockIc"></span><span id="lockLbl">Unlocked</span></button>
-    <button class="tabhide" aria-label="Hide the tabs" onclick="setTabsHidden(true)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="tabhide" aria-label="Hide the tabs" onclick="if(asTeacher(()=>setTabsHidden(true)))setTabsHidden(true)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
   </div></nav>
   <div id="barProbe" aria-hidden="true"></div>
   <button class="tabhandle" id="tabHandle" aria-label="Show the tabs" onclick="setTabsHidden(false)"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
@@ -1859,6 +1859,9 @@ function toast(msg,undoable){
    running. Each undo now sends the matching correction. */
 function undo(){
   const a=state.lastAction; if(!a) return;
+  // Locked (4.3): a student may undo the break they just started - nothing
+  // else (a return, an attendance mark) is theirs to undo.
+  if(a.type!=='checkout'&&!asTeacher(undo)) return;
   if(a.type==='checkout'){ const o=state.active[a.sid]; delete state.active[a.sid]; if(o) writeBreakCancel(o._id||breakDocId(a.sid,o.startAt)); }
   if(a.type==='return'){ state.breaks=state.breaks.filter(b=>b!==a.rec); state.active[a.sid]=a.prev; writeBreakStart(a.sid); }
   if(a.type==='att'){ state.attendance[a.sid]=a.prev; writeAttendance(a.sid); }
@@ -1946,6 +1949,7 @@ function futureTimeProblem(t){
    type their way out of on a tablet. Put the last good value back. */
 function keepTime(el){ if(!el.value) el.value=el.dataset.last||''; else el.dataset.last=el.value; recalcElapsed(); }
 function saveBreakEdits(sid){
+  if(!asTeacher(()=>saveBreakEdits(sid))) return;
   const o=state.active[sid]; if(!o) return closeSheet();
   const t=editedTimes();
   if(!t) return toast('Please set both times.');
@@ -1961,6 +1965,7 @@ function saveBreakEdits(sid){
    read-only in the reports. */
 const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 function openStudentBreaks(sid){
+  if(!asTeacher(()=>openStudentBreaks(sid))) return;
   closeDrawer();
   const list=state.breaks.filter(b=>b.sid===sid).sort((x,y)=>x.startAt-y.startAt);
   const o=state.active[sid];
@@ -1999,6 +2004,7 @@ function editLoggedBreak(sid,id){
    </div>`);
 }
 function saveLoggedBreak(sid,id){
+  if(!asTeacher(()=>saveLoggedBreak(sid,id))) return;
   const b=loggedBreak(sid,id); if(!b) return openStudentBreaks(sid);
   const t=editedTimes();
   if(!t) return toast('Please set both times.');
@@ -2015,6 +2021,7 @@ function saveLoggedBreak(sid,id){
   render(); openStudentBreaks(sid); toast(`${nameOf(sid)}'s break corrected to ${fmtDur(b.dur)}`);
 }
 function deleteLoggedBreak(sid,id){
+  if(!asTeacher(()=>deleteLoggedBreak(sid,id))) return;
   const b=loggedBreak(sid,id); if(!b) return openStudentBreaks(sid);
   const what=(b.label||RSN(b.reason).label).toLowerCase();
   confirmSheet(`Delete ${nameOf(sid)}'s ${what} break from ${clockStr(b.startAt)}?`,'It will be removed from today\'s record and from the reports.','Delete break',()=>{
@@ -2051,6 +2058,11 @@ function cancelBreak(sid){
 function tap(sid){
   const a=att(sid), o=state.active[sid], s=st();
   if(o) return editBreak(sid);                                   // out -> back in
+  // Locked (4.3): attendance is the teacher's - before class marking someone
+  // not here (or back), after the start marking a "Not here" student tardy,
+  // and bringing back a student who left for the day.
+  const attendanceTap=s==='preclass'||(s!=='ended'&&s!=='lunch'&&(a.status==='left'||a.status==='absent'));
+  if(attendanceTap&&!asTeacher(()=>tap(sid))) return;
   if(s==='preclass'){                                       // before start: toggle presence
     const prev={...a};
     if(a.status==='absent'){ a.status='present'; a.at=null; a.note=''; logIt(`<b>${nameOf(sid)}</b> re-activated before class`); toast(`${nameOf(sid)} marked present`,true); }
@@ -2120,12 +2132,14 @@ function mainAction(){ if(!asTeacher(mainAction)) return; const s=st(); if(canRe
    up where it left off instead: same start time, attendance untouched. */
 function canResume(){ const s=state.session; return s.status==='ended'&&!!s.startedAt&&dayId(new Date(s.startedAt))===dayId(new Date()); }
 function resumeClass(){
+  if(!asTeacher(resumeClass)) return;
   const now=new Date();
   state.session.status='live'; state.session.endedAt=null;
   logIt('Class resumed');
   writeSessionAndAttendance(true); closeSheet(); closeDrawer(); toast(`Class resumed at ${clockStr(now)}`); render();
 }
 function doStart(){
+  if(!asTeacher(doStart)) return;
   const now=new Date(); state.session={status:'live',startedAt:now,endedAt:null,lunchAt:null};
   state.students.forEach(s=>{ const a=att(s.id); if(a.status==='present'){ a.at=now; } });
   const abs=roster().filter(s=>['absent','left'].includes(att(s.id).status)).length;
@@ -2133,6 +2147,7 @@ function doStart(){
   writeSessionAndAttendance(true); closeSheet(); closeDrawer(); toast(`Class started at ${clockStr(now)}`); render();
 }
 function endClass(){
+  if(!asTeacher(endClass)) return;
   confirmSheet('End class for today?','Open breaks will be closed. Students still deactivated stay marked absent.','End class',()=>{
     Object.keys(state.active).forEach(sid=>ret(sid,true));
     state.session.status='ended'; state.session.endedAt=new Date(); logIt('Class ended');
@@ -2141,9 +2156,10 @@ function endClass(){
 }
 /* By position in today's schedule, so a name like Jumu'ah never has to be
    quoted inside an onclick. */
-function startScheduledBreak(i){ const b=scheduleFor(new Date()).breaks[i]; if(b) startPause(b.name,b.end); }
-function startDueBreak(){ const d=dueBreak(); if(d) startPause(d.kind,d.end); }
+function startScheduledBreak(i){ if(!asTeacher(()=>startScheduledBreak(i))) return; const b=scheduleFor(new Date()).breaks[i]; if(b) startPause(b.name,b.end); }
+function startDueBreak(){ if(!asTeacher(startDueBreak)) return; const d=dueBreak(); if(d) startPause(d.kind,d.end); }
 function startPause(kind,resumeAt){
+  if(!asTeacher(()=>startPause(kind,resumeAt))) return;
   confirmSheet(`Start ${esc(breakWord(kind))} for the whole class?`,'Open breaks are closed and individual timers stop. This time is not counted against anyone.',`Start ${esc(breakWord(kind))}`,()=>{
     Object.keys(state.active).forEach(sid=>ret(sid,true));
     state.session.status='lunch'; state.session.lunchAt=new Date(); state.session.pauseLabel=kind; state.session.resumeAt=resumeAt||null;
@@ -2151,6 +2167,7 @@ function startPause(kind,resumeAt){
   });
 }
 function endPause(){
+  if(!asTeacher(endPause)) return;
   const k=state.session.pauseLabel||'Break';
   state.session.status='live'; state.session.lunchAt=null; state.session.pauseLabel=null; state.session.resumeAt=null;
   logIt(`${k} ended`); writeSessionAndAttendance(); closeDrawer(); toast('Back in class'); render();
@@ -2166,6 +2183,7 @@ function endPause(){
    sits right beside "View day summary". Now it asks first, then really starts
    over: session, attendance, and every break logged today. */
 function resetDay(){
+  if(!asTeacher(resetDay)) return;
   closeDrawer();
   const ids=[...state.breaks.map(b=>b._id||breakDocId(b.sid,b.startAt)),
              ...Object.entries(state.active).map(([sid,a])=>a._id||breakDocId(sid,a.startAt))];
@@ -2288,6 +2306,7 @@ function confirmSheet(title,sub,label,fn,kind,dismissLabel){
   sheetHTML(title,sub,`<div class="actions"><button class="btn ghost" onclick="closeSheet()">${dismissLabel||'Cancel'}</button><button class="btn ${kind==='warn'?'warn':'dark'}" onclick="confirmSheet.fn()">${label}</button></div>`);
 }
 function openAttendanceReview(){
+  if(!asTeacher(openAttendanceReview)) return;
   closeDrawer();
   const list=roster(), c={present:0,tardy:0,absent:0,left:0}; list.forEach(s=>c[att(s.id).status]++);
   sheetHTML("Today's attendance",'Tardy times were recorded when you marked the student in. Change anything that needs correcting.',
@@ -2295,9 +2314,10 @@ function openAttendanceReview(){
     <div class="body"><div class="rowlist">${list.map(s=>{const a=att(s.id);return `<div class="row atrow"><b>${s.name}</b><span class="time">${a.note||(a.at?clockStr(a.at):'')}</span><div class="seg">${[['present','present'],['tardy','tardy'],['left','left early'],['absent','absent']].map(([k,lbl])=>`<button class="${a.status===k?'on '+k:''}" onclick="setStatus('${s.id}','${k}')">${lbl}</button>`).join('')}</div></div>`}).join('')}</div></div>
     <div class="actions"><button class="btn dark" onclick="closeSheet()">Done</button></div>`);
 }
-function setStatus(sid,k){ const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); writeAttendance(sid); } render(); openAttendanceReview(); }
+function setStatus(sid,k){ if(!asTeacher(()=>setStatus(sid,k))) return; const a=att(sid); if(a.status!==k){ a.status=k; a.note=`Set by teacher ${clockStr(new Date())}`; logIt(`<b>${nameOf(sid)}</b> attendance changed to ${k} by teacher`); writeAttendance(sid); } render(); openAttendanceReview(); }
 
 function openDaySummary(){
+  if(!asTeacher(openDaySummary)) return;
   closeDrawer();
   const list=state.students.filter(s=>s.active||state.breaks.some(b=>b.sid===s.id));
   const c={present:0,tardy:0,absent:0,left:0}; list.forEach(s=>c[att(s.id).status]++);
@@ -2773,6 +2793,7 @@ function dayListHTML(R){
       <span class="time">${plural(d.trips,'break')} · ${fmtMin(d.outMs/60000)} min out</span><span class="time flag">${d.flags?`⚑ ${d.flags} over limit`:''}</span></div>`).join('')}</div></div>`;
 }
 async function exportCSV(){
+  if(!asTeacher(exportCSV)) return;
   const r=rangeOf(rpt.range);
   const days=rptData?rptData.days:await loadDays(r.start,r.end).catch(()=>[]);
   const rows=[['date','student','reason','minutes','allowed_minutes','minutes_over','flagged','past_daily_limit']];
@@ -3420,12 +3441,41 @@ let TAB='log';
    break, "left for the day", the teacher menu, the main start/end button and
    the Roster, Settings and Profile tabs - waits behind a PIN once one is set.
    The padlock at the end of the tab bar is the switch: tap it and type the
-   PIN to turn teacher mode on, tap it once more to lock. Reports stay open,
-   they are read-only. The PIN belongs to this device only (Store, never
-   Firestore - each tablet has its own), and until one is set nothing is
-   locked, so a device that never sets a PIN works exactly as before. */
-const PIN_KEY='teacher.pin', UNLOCKED_KEY='teacher.unlocked';
-const LOCKED_TABS=['roster','settings','profile'];
+   PIN to turn teacher mode on, tap it once more to lock. The PIN belongs to
+   this device only (Store, never Firestore - each tablet has its own), and
+   until one is set nothing is locked, so a device that never sets a PIN works
+   exactly as before.
+   4.3 closed the gaps: Reports (and Export CSV), the day summary, attendance
+   (Attendance today, and the tile taps that mark not here / tardy / back),
+   Reset day, starting and ending snack or lunch, start/end/resume class from
+   any button, a student's list of breaks, Undo of anything but a break just
+   started, and hiding the tab bar. Students keep exactly two things: start a
+   break, and Return. Each of those functions asks for itself, so a button
+   added later in a new place is covered too.
+   Auto-lock (4.3): "Lock again automatically" in Settings - Off, 2, 5 or 10
+   minutes (5 unless changed; Store key teacher.autoLock, this device only).
+   After that long without a teacher action (anything that passed asTeacher(),
+   or a tap in a teacher-only tab or the menu) the tablet locks itself with a
+   "Locked again" toast. The clock is kept in memory: a reload starts it over. */
+const PIN_KEY='teacher.pin', UNLOCKED_KEY='teacher.unlocked', AUTOLOCK_KEY='teacher.autoLock';
+const LOCKED_TABS=['reports','roster','settings','profile'];
+const AUTOLOCK_CHOICES=[0,2,5,10], AUTOLOCK_DEFAULT=5;
+const autoLockMin=()=>{ const v=Store.get(AUTOLOCK_KEY); return v==null||v===''||!AUTOLOCK_CHOICES.includes(+v)?AUTOLOCK_DEFAULT:+v; };
+let teacherSeen=Date.now();
+function teacherTouch(){ teacherSeen=Date.now(); }
+/* Taps and typing in the teacher's own places keep teacher mode on; a student
+   starting or ending a break on the Log tab does not. */
+['pointerdown','keydown','input'].forEach(ev=>document.addEventListener(ev,e=>{
+  if(teacherOn()&&e.target&&e.target.closest&&e.target.closest('#viewReports,#viewRoster,#viewSettings,#viewProfile,#drawer,#mainBtn,.menu-btn')) teacherTouch();
+},true));
+/* From tick(), every second. */
+function autoLockCheck(){
+  const m=autoLockMin();
+  if(!m||!hasPin()||Store.get(UNLOCKED_KEY)!=='1') return;
+  if(Date.now()-teacherSeen<m*60000) return;
+  setTeacher(false); toast('Locked again');
+}
+function setAutoLock(m){ Store.set(AUTOLOCK_KEY,String(m)); teacherTouch(); drawSettings(); }
 const hasPin=()=>!!Store.get(PIN_KEY);
 const teacherOn=()=>!hasPin()||Store.get(UNLOCKED_KEY)==='1';
 async function pinHash(pin,salt){
@@ -3450,6 +3500,7 @@ function paintLock(){
 }
 function setTeacher(on){
   Store.set(UNLOCKED_KEY,on?'1':'0'); paintLock();
+  if(on) teacherTouch();
   if(!on){ closeDrawer(); closeSheet(); if(LOCKED_TABS.includes(TAB)) showTab('log'); }
 }
 function lockTap(){
@@ -3458,7 +3509,7 @@ function lockTap(){
   openPin('unlock');
 }
 /* true if teacher mode is on; otherwise asks for the PIN and runs fn once it's right. */
-function asTeacher(fn){ if(teacherOn()) return true; openPin('unlock',fn); return false; }
+function asTeacher(fn){ if(teacherOn()){ teacherTouch(); return true; } openPin('unlock',fn); return false; }
 
 let pinBuf='', pinMode='unlock', pinFirst='', pinThen=null;
 function openPin(mode,then){ pinMode=mode; pinBuf=''; pinFirst=''; pinThen=then||null; drawPin(''); }
@@ -3603,6 +3654,9 @@ function drawSettings(){
    ${scheduleSection()}
    <h4>Break limits</h4>
    ${['washroom','water','wudhu'].map(k=>`<div class="field lim"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${limitSteppers(set.limits,k,'stepSettingLimit')}</div>`).join('')}
+   <h4>Teacher mode</h4>
+   <div class="field lim" id="autoLockField"><div>Lock again automatically<small>${hasPin()?'After this many minutes with no teacher action. Students can still start and end their breaks.':'Set a teacher PIN with the padlock first. Until then nothing is locked.'}</small></div>
+     <div class="seg" role="group" aria-label="Lock again automatically">${AUTOLOCK_CHOICES.map(m=>`<button class="${autoLockMin()===m?'on':''}" aria-pressed="${autoLockMin()===m}" onclick="setAutoLock(${m})">${m?m+' min':'Off'}</button>`).join('')}</div></div>
    <h4>Start over</h4>
    <small style="display:block;color:var(--mute);font-size:12px;line-height:1.5;margin:-2px 0 10px">Reports read live from the cloud, so every device sees the same history.${Object.keys(readHistory()).length?` This device also keeps a local backup of ${Object.keys(readHistory()).length} earlier day(s) from before it synced.`:''}</small>
    <button class="dbtn" onclick="resetDay()">Reset the day<small>Deletes today's attendance and breaks - asks first</small></button>
@@ -3891,6 +3945,7 @@ function tick(){
   document.querySelectorAll('[data-t]').forEach(el=>el.textContent=fmtDur(now-(+el.dataset.t)));
   document.querySelectorAll('[data-long]').forEach(el=>{const lim=+el.dataset.lim||0; el.classList.toggle('long',lim>0&&now-(+el.dataset.long)>lim);});
   updateLogBadge();
+  autoLockCheck();
   const due=st()==='live'&&dueBreak()?dueBreak().kind:''; if(due!==render.nudge) return render();
   const d=new Date(); $('clock').textContent=clockStr(d); $('date').textContent=dateStr(d);
 }
@@ -3904,7 +3959,7 @@ function tick(){
   const reveal=()=>document.querySelector('.app').classList.remove('booting');
   const failsafe=setTimeout(reveal,3000);
   try{
-    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,POLICY_KEY]);
+    await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,POLICY_KEY]);
     paintLock();
     if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');
     CLASS_ID=Store.get(SESSION_CLASS_KEY)||'default';
