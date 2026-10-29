@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 
 LEAF = (15, 123, 123, 255)      # #0F7B7B
 INK  = (31, 46, 54, 255)        # #1F2E36
-GOLD = (211, 154, 34, 255)      # #D39A22
+GOLD = (242, 181, 58, 255)      # #F2B53A, the minute hand and centre dot
 WHITE = (255, 255, 255, 255)
 
 def rounded_square(size, color, radius_frac=0.225):
@@ -13,19 +13,33 @@ def rounded_square(size, color, radius_frac=0.225):
     return img
 
 def ring_layer(size, scale=1.0):
-    """The BreakLog mark, a white open ring with its top-right quarter missing
-    (the website's logo: a 12px ring, 3px stroke, in a 30px tile). Drawn 4x
-    and scaled down for smooth edges; returns a transparent RGBA layer."""
+    """The BreakLog mark: a white open ring with its top-right quarter missing,
+    and clock hands inside - a white hour hand and a gold minute hand, both
+    pointing toward the gap, on a gold centre dot. Drawn on a 100-unit grid
+    (ring radius 24, stroke 10), 4x up and scaled down for smooth edges;
+    returns a transparent RGBA layer."""
     ss = 4
     big = size * ss
     layer = Image.new('RGBA', (big, big), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
-    outer = big * 0.40 * scale
-    width = big * 0.10 * scale
+    u = big / 100 * scale          # one grid unit
     c = big / 2
-    box = [c - outer / 2, c - outer / 2, c + outer / 2, c + outer / 2]
+    def pt(x, y):                  # grid offset from the centre -> pixels
+        return (c + x * u, c + y * u)
+    outer = 29 * u                 # radius 24 + half the stroke
+    box = [c - outer, c - outer, c + outer, c + outer]
     # PIL angles run clockwise from 3 o'clock; the gap is 12 to 3 o'clock
-    d.arc(box, start=0, end=270, fill=WHITE, width=int(round(width)))
+    d.arc(box, start=0, end=270, fill=WHITE, width=int(round(10 * u)))
+    def hand(x, y, width, color):  # a line with round ends
+        r = width * u / 2
+        d.line([pt(0, 0), pt(x, y)], fill=color, width=int(round(width * u)))
+        ex, ey = pt(x, y)
+        d.ellipse([ex - r, ey - r, ex + r, ey + r], fill=color)
+    hand(-8, -5.5, 5.5, WHITE)     # hour hand
+    hand(11, -11, 4.5, GOLD)       # minute hand
+    cx, cy = pt(0, 0)
+    r = 4.2 * u
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=GOLD)
     return layer.resize((size, size), Image.LANCZOS)
 
 def make_icon(size, maskable=False, filename=None):
