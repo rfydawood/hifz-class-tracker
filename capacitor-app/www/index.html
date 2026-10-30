@@ -918,7 +918,7 @@ try{
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script src="account-delete.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.3",APP_BUILD="df87cc10ed",APP_BUILD_TIME="2026-10-30T06:15:08.135Z";
+/*BUILD_STAMP*/const APP_VERSION="4.3",APP_BUILD="75af79938c",APP_BUILD_TIME="2026-10-30T23:40:56.733Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -3771,7 +3771,7 @@ async function pinKey(k){
   if(pinMode==='set'){ pinFirst=pin; pinMode='set2'; pinBuf=''; return drawPin(''); }
   if(pinMode==='set2'){
     if(pin!==pinFirst){ pinMode='set'; pinBuf=''; return drawPin('Those did not match. Pick a PIN again.'); }
-    await savePin(pin); Store.set(UNLOCKED_KEY,'1'); closeSheet(); paintLock();
+    await savePin(pin); Store.set(UNLOCKED_KEY,'1'); teacherTouch(); closeSheet(); paintLock();   // start the auto-lock countdown now, or it can relock at once
     return toast('PIN set. Tap the padlock to lock.');
   }
   if(await pinMatches(pin)){
@@ -4394,7 +4394,7 @@ function tick(){
   const failsafe=setTimeout(reveal,3000);
   try{
     await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,APPEAR_KEY,PHOTO_KEY,POLICY_KEY]);
-    applyAppearance();                          // this device's colours and background, now from Store (native included)
+    try{ applyAppearance(); }catch(e){}         // this device's colours and background, now from Store (native included); never stops boot
     lockAtBoot();
     paintLock();
     if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');

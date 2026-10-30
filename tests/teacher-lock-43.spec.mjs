@@ -252,6 +252,17 @@ test('with no PIN set nothing asks and auto-lock never fires', async ({ page }) 
   await expect(page.locator('#scrim')).not.toHaveClass(/show/);
 });
 
+test('setting a PIN after a long idle spell starts the auto-lock countdown, so it does not relock at once', async ({ page }) => {
+  test.setTimeout(90000);
+  await newClass(page);
+  await page.evaluate(() => { teacherSeen = Date.now() - 3600e3; });   // an hour of student taps only
+  await setPin(page);
+  await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
+  await page.waitForTimeout(2000);                                    // past autoLockCheck's next tick
+  await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
+  expect(await page.evaluate(() => (Date.now() - teacherSeen) / 60000)).toBeLessThan(1);
+});
+
 // ----- 4.3 review: the remaining ways in, and what does and doesn't count as a teacher action -----
 
 // Locks the tablet where it stands (the ☰ menu or Settings stay open), as if
