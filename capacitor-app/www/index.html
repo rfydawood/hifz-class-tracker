@@ -894,7 +894,7 @@ try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ 
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script src="account-delete.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.3",APP_BUILD="566f1644df",APP_BUILD_TIME="2026-10-29T06:35:26.521Z";
+/*BUILD_STAMP*/const APP_VERSION="4.3",APP_BUILD="c1f3b3d543",APP_BUILD_TIME="2026-10-30T04:46:22.565Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -2102,12 +2102,13 @@ function editBreak(sid){
    teacher types a time, both are taken as the whole minutes on screen: "10:02
    to 10:08" should come out as 6:00, not 5:46 because 10:02 was secretly
    10:02:14. data-orig carries the exact time (ms); none means "now". */
+const timesTouched=()=>{ const st=$('startTime'), en=$('endTime'); return !!(st&&en)&&(st.value!==st.defaultValue||en.value!==en.defaultValue); };
 function editedTimes(){
   const st=$('startTime'), en=$('endTime');
   if(!st||!en||!st.value||!en.value) return null;
   const d=new Date(), mk=v=>{ const [h,m]=v.split(':'); return new Date(d.getFullYear(),d.getMonth(),d.getDate(),+h,+m); };
   const exact=el=>el.dataset.orig?new Date(+el.dataset.orig):new Date();
-  const touched=st.value!==st.defaultValue||en.value!==en.defaultValue;
+  const touched=timesTouched();
   return touched ? {start:mk(st.value),end:mk(en.value)} : {start:exact(st),end:exact(en)};
 }
 /* Elapsed is what the teacher is actually deciding on, so it has to answer
@@ -2134,7 +2135,10 @@ function futureTimeProblem(t){
    and a blank time is not a correction - it is a dead end the teacher cannot
    type their way out of on a tablet. Put the last good value back. */
 function keepTime(el){ if(!el.value) el.value=el.dataset.last||''; else el.dataset.last=el.value; recalcElapsed(); }
+/* Return with the times untouched is just a Return - anyone may do that, and
+   it is not a teacher action, so it doesn't keep the tablet unlocked (4.3). */
 function saveBreakEdits(sid){
+  if($('scrim').classList.contains('show')&&$('startTime')&&!timesTouched()&&state.active[sid]) return ret(sid);
   if(!asTeacher(()=>saveBreakEdits(sid))) return;
   const o=state.active[sid]; if(!o) return closeSheet();
   const t=editedTimes();
@@ -2393,6 +2397,7 @@ function sheetHTML(title,sub,body,extra){
   // this only made less likely; clip is the fix. Kept because re-running the
   // slide-in on a new sheet is still the right behaviour.
   $('scrim').classList.remove('show');
+  $('sheet').dataset.teacher=teacherOn()&&teacherGesture&&hasPin()?'1':'';     // see TEACHER_AREAS
   $('sheet').innerHTML=`<div class="sheet-head"><div><h3>${title}</h3>${sub?`<p>${sub}</p>`:''}</div>${extra||''}<button class="x" aria-label="Close" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}`;
   $('scrim').classList.add('show');
 }
@@ -3305,11 +3310,13 @@ async function writeDeleteAccount(plan){
   await HifzAccountDelete.run(fbDb,plan,fsWrite);
 }
 /* This device forgets the account: session, instant-paint caches, the legacy
-   local copies and history, the teacher PIN, Firestore's offline copy. Both
+   local copies and history, the teacher PIN and auto-lock choice, the look
+   (Appearance) and its background photo, Firestore's offline copy. Both
    Preferences and localStorage on native (Store.purge). Not ui.tabsHidden -
    that is the device's, not the account's. */
 async function forgetAccountHere(classIds,notice){
-  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,POLICY_KEY,
+  try{ if(typeof clearBgPhoto==='function') await clearBgPhoto(); }catch(e){}
+  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,APPEAR_KEY,PHOTO_KEY,POLICY_KEY,
     ...HifzAccountDelete.LOCAL_KEYS,...(classIds||[]).map(cacheKey)]);
   (await Store.keys()).forEach(k=>{ if(k&&k.indexOf(HifzAccountDelete.LOCAL_PREFIX)===0) keys.add(k); });
   await Promise.all([...keys].map(k=>Store.purge(k)));
@@ -3511,6 +3518,8 @@ function acPaint(){
   }
 }
 function acCreate(){
+  if(!asTeacher(acCreate)) return;
+  if(!ac) return;
   if(!ORG_ID||!fbDb) return toast('Adding a class needs your class to be connected first. Check the internet and try again.');
   const fs=firstClassSettings();
   const S=JSON.parse(JSON.stringify(fs));
@@ -3642,7 +3651,8 @@ let TAB='log';
    minutes (5 unless changed; Store key teacher.autoLock, this device only).
    After that long without a teacher action (anything that passed asTeacher(),
    or a tap in a teacher-only tab or the menu) the tablet locks itself with a
-   "Locked again" toast. The clock is kept in memory: a reload starts it over. */
+   "Locked again" toast. The clock is kept in memory, so opening the app fresh
+   starts locked (lockAtBoot) unless auto-lock is Off. */
 const PIN_KEY='teacher.pin', UNLOCKED_KEY='teacher.unlocked', AUTOLOCK_KEY='teacher.autoLock';
 const LOCKED_TABS=['reports','roster','settings','profile'];
 const AUTOLOCK_CHOICES=[0,2,5,10], AUTOLOCK_DEFAULT=5;
@@ -3650,9 +3660,18 @@ const autoLockMin=()=>{ const v=Store.get(AUTOLOCK_KEY); return v==null||v===''|
 let teacherSeen=Date.now();
 function teacherTouch(){ teacherSeen=Date.now(); }
 /* Taps and typing in the teacher's own places keep teacher mode on; a student
-   starting or ending a break on the Log tab does not. */
+   starting or ending a break on the Log tab does not. A pop-up sheet counts
+   as the teacher's own place only when a teacher opened it (teacherGesture:
+   the tap that opened it was in a teacher place, or it came through a passing
+   asTeacher) - so a teacher editing the schedule or the Day summary is not
+   locked mid-edit, while a student's own break sheet keeps nothing unlocked.
+   The Add a class wizard is Profile's, so it counts too. */
+let teacherGesture=false;
+const TEACHER_AREAS='#viewReports,#viewRoster,#viewSettings,#viewProfile,#drawer,#mainBtn,.menu-btn,#addClass,#sheet[data-teacher="1"]';
 ['pointerdown','keydown','input'].forEach(ev=>document.addEventListener(ev,e=>{
-  if(teacherOn()&&e.target&&e.target.closest&&e.target.closest('#viewReports,#viewRoster,#viewSettings,#viewProfile,#drawer,#mainBtn,.menu-btn')) teacherTouch();
+  const mine=!!(e.target&&e.target.closest&&e.target.closest(TEACHER_AREAS));
+  if(ev==='pointerdown') teacherGesture=mine; else if(mine) teacherGesture=true;
+  if(teacherOn()&&mine) teacherTouch();
 },true));
 /* From tick(), every second. */
 function autoLockCheck(){
@@ -3661,6 +3680,11 @@ function autoLockCheck(){
   if(Date.now()-teacherSeen<m*60000) return;
   setTeacher(false); toast('Locked again');
 }
+/* Opening the app fresh starts locked when a PIN is set and auto-lock is on:
+   the "last teacher action" clock is in memory, so a remembered unlock would
+   otherwise give a fresh few minutes on every close and reopen (4.3). With
+   auto-lock Off the teacher chose to stay unlocked, so that is kept. */
+function lockAtBoot(){ if(hasPin()&&autoLockMin()&&Store.get(UNLOCKED_KEY)==='1') Store.set(UNLOCKED_KEY,'0'); }
 function setAutoLock(m){ Store.set(AUTOLOCK_KEY,String(m)); teacherTouch(); drawSettings(); }
 const hasPin=()=>!!Store.get(PIN_KEY);
 const teacherOn=()=>!hasPin()||Store.get(UNLOCKED_KEY)==='1';
@@ -3687,7 +3711,7 @@ function paintLock(){
 function setTeacher(on){
   Store.set(UNLOCKED_KEY,on?'1':'0'); paintLock();
   if(on) teacherTouch();
-  if(!on){ closeDrawer(); closeSheet(); if(LOCKED_TABS.includes(TAB)) showTab('log'); }
+  if(!on){ closeDrawer(); closeSheet(); closeAddClass(); if(typeof endTour==='function') endTour(); if(LOCKED_TABS.includes(TAB)) showTab('log'); }
 }
 function lockTap(){
   if(!hasPin()) return openPin('set');
@@ -3695,7 +3719,7 @@ function lockTap(){
   openPin('unlock');
 }
 /* true if teacher mode is on; otherwise asks for the PIN and runs fn once it's right. */
-function asTeacher(fn){ if(teacherOn()){ teacherTouch(); return true; } openPin('unlock',fn); return false; }
+function asTeacher(fn){ if(teacherOn()){ teacherTouch(); teacherGesture=true; return true; } openPin('unlock',fn); return false; }
 
 let pinBuf='', pinMode='unlock', pinFirst='', pinThen=null;
 function openPin(mode,then){ pinMode=mode; pinBuf=''; pinFirst=''; pinThen=then||null; drawPin(''); }
@@ -4270,6 +4294,7 @@ function tick(){
   try{
     await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,APPEAR_KEY,PHOTO_KEY,POLICY_KEY]);
     applyAppearance();                          // this device's colours and background, now from Store (native included)
+    lockAtBoot();
     paintLock();
     if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');
     CLASS_ID=Store.get(SESSION_CLASS_KEY)||'default';
