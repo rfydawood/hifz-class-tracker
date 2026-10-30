@@ -772,7 +772,8 @@ function themeTokens(p){
   const {mixHex,readable,alphaHex}=Appearance;
   p=p||appearanceNow();
   const preset=p.theme==='custom'?null:themeById(p.theme), dark=isDarkNow(p);
-  const accent=preset?preset.accent:(/^#[0-9a-f]{6}$/i.test(p.custom||'')?p.custom:APPEAR_DEFAULT.custom);
+  // a custom colour must be one of the swatches - never amber, orange or red, whatever was stored
+  const accent=preset?preset.accent:(SWATCHES.find(([,h])=>h===String(p.custom||'').toUpperCase())||[,APPEAR_DEFAULT.custom])[1];
   let b;
   if(preset&&preset.dark) b=Object.assign({},preset);
   else if(dark){
