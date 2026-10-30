@@ -79,6 +79,15 @@ test('Fix for a logged break refuses a Back at later than now; a past one saves'
   await expect(page.locator('#sheet h3')).toHaveText("Fix Bilal R.'s water break");   // still open, nothing saved
   expect(await page.evaluate(() => Math.round(state.breaks[0].dur / 60000))).toBe(5);
 
+  // A Left at later than now is refused too.
+  await page.locator('#endTime').fill(hhmm(new Date(Date.now() - 22 * 60000)));
+  await page.locator('#startTime').fill(hhmm(new Date(Date.now() + 15 * 60000)));
+  await expect(page.locator('#elapsedVal')).toHaveText('Left at is later than now');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('#toastMsg')).toHaveText("Left at can't be later than now.");
+  await expect(page.locator('#sheet h3')).toHaveText("Fix Bilal R.'s water break");
+  expect(await page.evaluate(() => Math.round(state.breaks[0].dur / 60000))).toBe(5);
+
   await page.locator('#startTime').fill(hhmm(new Date(Date.now() - 30 * 60000)));
   await page.locator('#endTime').fill(hhmm(new Date(Date.now() - 22 * 60000)));
   await page.getByRole('button', { name: 'Save' }).click();

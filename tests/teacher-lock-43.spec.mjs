@@ -5,7 +5,7 @@
 // automatically", Off / 2 / 5 / 10 minutes). See index.html asTeacher(),
 // LOCKED_TABS, autoLockCheck(). Made-up names only.
 import { test, expect } from '@playwright/test';
-import { setupNewClass, skipTourIfPresent, orgId, openTab, tileFor, startClass, logBreak } from './helpers.mjs';
+import { setupNewClass, skipTourIfPresent, orgId, openTab, tileFor, startClass, logBreak, returnFromBreak, openDrawer } from './helpers.mjs';
 
 const PIN = '2468';
 const sheetTitle = (page) => page.locator('#sheet h3');
@@ -250,4 +250,262 @@ test('with no PIN set nothing asks and auto-lock never fires', async ({ page }) 
   await page.waitForTimeout(2000);
   await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
   await expect(page.locator('#scrim')).not.toHaveClass(/show/);
+});
+
+// ----- 4.3 review: the remaining ways in, and what does and doesn't count as a teacher action -----
+
+// Locks the tablet where it stands (the ☰ menu or Settings stay open), as if
+// the lock came while the teacher was there - so the buttons inside can be
+// tried locked.
+const lockInPlace = (page) => page.evaluate(() => { Store.set('teacher.unlocked', '0'); paintLock(); });
+const ago = (page, m) => page.evaluate((m) => { teacherSeen = Date.now() - m * 60000; }, m);
+const idleMin = (page) => page.evaluate(() => (Date.now() - teacherSeen) / 60000);
+const drawerBtn = (page, t) => page.locator('#drawer .dbtn', { hasText: t }).first();
+// A ☰ menu button pressed while locked; the menu is then put away so the PIN
+// pad (which a real lock never shows under the menu - locking closes it) can be used.
+const pressInMenu = (page, t) => async () => { await drawerBtn(page, t).dispatchEvent('click'); await page.evaluate(() => closeDrawer()); };
+const sessionStatus = (page) => page.evaluate(() => state.session.status);
+
+test('locked: undo of attendance, the ☰ menu\'s class buttons, Settings\' Reset day and the break editors called directly ask for the PIN', async ({ page }) => {
+  test.setTimeout(150000);
+  await newClass(page);
+  await setPin(page);
+
+  // undo() of an attendance change.
+  await tileFor(page, 'Hamza T.').click();
+  await expect(tileFor(page, 'Hamza T.')).toHaveClass(/deact/);
+  await lock(page);
+  await asksForPin(page, () => page.evaluate(() => undo()),
+    () => expect(tileFor(page, 'Hamza T.')).toHaveClass(/deact/),
+    () => expect(tileFor(page, 'Hamza T.')).not.toHaveClass(/deact/));
+
+  // Start class from the menu.
+  await openDrawer(page); await lockInPlace(page);
+  await asksForPin(page, pressInMenu(page, 'Start class'),
+    async () => expect(await sessionStatus(page)).toBe('preclass'),
+    () => expect(page.locator('#mainBtn')).toHaveText('End class'));
+
+  // A scheduled break from the menu (startScheduledBreak).
+  await openDrawer(page); await lockInPlace(page);
+  await asksForPin(page, pressInMenu(page, 'Start snack'),
+    async () => expect(await sessionStatus(page)).toBe('live'),
+    () => expect(sheetTitle(page)).toHaveText('Start snack for the whole class?'));
+  await page.locator('#sheet .x').click();
+  await page.evaluate(() => closeDrawer());
+
+  // End class from the menu.
+  await openDrawer(page); await lockInPlace(page);
+  await asksForPin(page, pressInMenu(page, 'End class'),
+    async () => expect(await sessionStatus(page)).toBe('live'),
+    () => expect(sheetTitle(page)).toHaveText('End class for today?'));
+  await page.locator('#sheet .btn.warn', { hasText: 'End class' }).click();
+  await expect(page.locator('#banner')).toContainText('Class ended');
+
+  // Resume class, from the menu and called directly.
+  await openDrawer(page); await lockInPlace(page);
+  await asksForPin(page, pressInMenu(page, 'Resume class'),
+    async () => expect(await sessionStatus(page)).toBe('ended'),
+    () => expect.poll(() => sessionStatus(page)).toBe('live'));
+  await page.evaluate(() => closeDrawer());
+  await page.locator('#mainBtn').click();
+  await page.locator('#sheet .btn.warn', { hasText: 'End class' }).click();
+  await lock(page);
+  await asksForPin(page, () => page.evaluate(() => resumeClass()),
+    async () => expect(await sessionStatus(page)).toBe('ended'),
+    () => expect.poll(() => sessionStatus(page)).toBe('live'));
+
+  // Reset the day, from Settings.
+  await openTab(page, 'settings'); await lockInPlace(page);
+  await asksForPin(page, () => page.locator('#viewSettings .dbtn', { hasText: 'Reset the day' }).click(),
+    async () => expect(await sessionStatus(page)).toBe('live'),
+    () => expect(sheetTitle(page)).toHaveText('Start today over?'));
+  await page.locator('#sheet .x').click();
+  await openTab(page, 'log');
+
+  // The break editors' saves and delete, called directly.
+  await logBreak(page, 'Bilal R.', 'Water');
+  await returnFromBreak(page, 'Bilal R.');
+  await logBreak(page, 'Yusuf K.', 'Water');
+  const ids = await page.evaluate(() => { const b = state.breaks[0]; return { sid: b.sid, id: b._id || breakDocId(b.sid, b.startAt), out: Object.keys(state.active)[0] }; });
+  await lock(page);
+  await asksForPin(page, () => page.evaluate((o) => saveBreakEdits(o.out), ids),
+    () => expect(tileFor(page, 'Yusuf K.')).toHaveClass(/out/),
+    () => expect(page.locator('#toastMsg')).toHaveText('Please set both times.'));          // ran: no editor open
+  await expect(tileFor(page, 'Yusuf K.')).toHaveClass(/out/);
+  await lock(page);
+  await asksForPin(page, () => page.evaluate((o) => saveLoggedBreak(o.sid, o.id), ids),
+    async () => expect(await page.evaluate(() => state.breaks.length)).toBe(1),
+    () => expect(page.locator('#toastMsg')).toHaveText('Please set both times.'));
+  await lock(page);
+  await asksForPin(page, () => page.evaluate((o) => deleteLoggedBreak(o.sid, o.id), ids),
+    async () => expect(await page.evaluate(() => state.breaks.length)).toBe(1),
+    () => expect(sheetTitle(page)).toContainText("Delete Bilal R.'s water break"));
+  await page.locator('#sheet .btn.warn', { hasText: 'Delete break' }).click();
+  await expect.poll(() => page.evaluate(() => state.breaks.length)).toBe(0);
+});
+
+test('auto-lock: 10 min; taps in Settings and Reports restart it; locking on Reports goes to Log; a student\'s Return does not restart it', async ({ page }) => {
+  test.setTimeout(120000);
+  await newClass(page);
+  await setPin(page);
+  const choice = (label) => page.locator('#autoLockField .seg button', { hasText: new RegExp(`^${label}$`) });
+
+  // 10 minutes.
+  await openTab(page, 'settings');
+  await choice('10 min').click();
+  await expect(choice('10 min')).toHaveClass(/on/);
+  await openTab(page, 'log');
+  await ago(page, 9.5); await page.waitForTimeout(1500);
+  await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
+  await ago(page, 10.2);
+  await expect(page.locator('#lockLbl')).toHaveText('Locked', { timeout: 3000 });
+  await page.locator('#lockTab').click(); await typePin(page);
+  await openTab(page, 'settings');
+  await choice('5 min').click();
+
+  // A tap in Settings restarts the countdown.
+  await ago(page, 4.8);
+  await page.locator('#viewSettings h4', { hasText: 'Teacher mode' }).click();
+  expect(await idleMin(page)).toBeLessThan(0.2);
+
+  // So does a tap in Reports; and locking there goes back to Log.
+  await openTab(page, 'reports');
+  await ago(page, 4.8);
+  await page.locator('#viewReports').click({ position: { x: 5, y: 5 } });
+  expect(await idleMin(page)).toBeLessThan(0.2);
+  await ago(page, 5.2);
+  await expect(page.locator('#lockLbl')).toHaveText('Locked', { timeout: 3000 });
+  await expect(page.locator('.app')).toHaveAttribute('data-tab', 'log');
+
+  // Unlocked, a student starting a break and coming back with the times
+  // untouched is not a teacher action...
+  await page.locator('#lockTab').click(); await typePin(page);
+  await startClass(page);
+  await ago(page, 3);
+  await logBreak(page, 'Bilal R.', 'Water');
+  await tileFor(page, 'Bilal R.').click();
+  await expect(page.locator('#startTime')).toBeVisible();             // unlocked: the full editor
+  await page.locator('#sheet h3').click();                             // a tap in a student's sheet
+  await page.getByRole('button', { name: 'Return Bilal R.' }).click();
+  await expect(tileFor(page, 'Bilal R.')).not.toHaveClass(/out/);
+  expect(await idleMin(page)).toBeGreaterThan(2.9);
+  await ago(page, 5.2);
+  await expect(page.locator('#lockLbl')).toHaveText('Locked', { timeout: 3000 });
+
+  // ...but correcting the times is.
+  await page.locator('#lockTab').click(); await typePin(page);
+  await logBreak(page, 'Hamza T.', 'Water');
+  await page.evaluate(async () => {
+    const id = Object.values(state.active)[0]._id;
+    await dayRef().collection('breaks').doc(id).update({ startAt: Date.now() - 10 * 60000 });
+  });
+  await expect.poll(() => page.evaluate(() => Math.round((Date.now() - Object.values(state.active)[0].startAt) / 60000)), { timeout: 15000 }).toBe(10);
+  await ago(page, 3);
+  await tileFor(page, 'Hamza T.').click();
+  const t = new Date(Date.now() - 2 * 60000);
+  await page.locator('#endTime').fill(`${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`);
+  await ago(page, 3);                                                  // the typing above was in a student's sheet
+  await page.getByRole('button', { name: 'Return Hamza T.' }).click();
+  await expect(tileFor(page, 'Hamza T.')).not.toHaveClass(/out/);
+  expect(await idleMin(page)).toBeLessThan(0.2);
+});
+
+test('auto-lock: a fresh open starts locked (unless Off); Add a class closes on lock and needs the PIN; teacher sheets count, a student\'s does not', async ({ page }) => {
+  test.setTimeout(150000);
+  await newClass(page);
+  await setPin(page);
+  await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
+
+  // Closing and reopening the app: locked, the PIN once.
+  await page.reload();
+  await page.locator('.app:not(.booting)').waitFor();
+  await expect(page.locator('#lockLbl')).toHaveText('Locked');
+  await page.locator('#lockTab').click(); await typePin(page);
+
+  // Add a class: taps inside count, locking closes it.
+  await openTab(page, 'profile');
+  await page.locator('.addcls').click();
+  await expect(page.locator('#addClass')).toHaveClass(/show/);
+  await ago(page, 4.8);
+  await page.locator('#acName').fill('Period 5');
+  expect(await idleMin(page)).toBeLessThan(0.2);
+  await ago(page, 5.2);
+  await expect(page.locator('#lockLbl')).toHaveText('Locked', { timeout: 3000 });
+  await expect(page.locator('#addClass')).not.toHaveClass(/show/);
+  await expect(page.locator('.app')).toHaveAttribute('data-tab', 'log');
+
+  // acCreate() itself needs the PIN.
+  await page.locator('#lockTab').click(); await typePin(page);
+  await openTab(page, 'profile');
+  await page.locator('.addcls').click();
+  await page.locator('#acName').fill('Period 5');
+  const classes = () => page.evaluate(() => (state.classes || []).length);
+  const before = await classes();
+  await lockInPlace(page);
+  await page.evaluate(() => acCreate());
+  await expect(sheetTitle(page)).toHaveText('Teacher mode');
+  await page.waitForTimeout(300);
+  expect(await classes()).toBe(before);
+  await page.evaluate(async (pin) => { for (const d of pin) await pinKey(d); }, PIN);      // the pad sits under the wizard here
+  await expect.poll(classes).toBe(before + 1);
+  await expect(page.locator('#addClass')).not.toHaveClass(/show/);
+  await openTab(page, 'log');
+
+  // A teacher editing the schedule (a sheet opened from Settings) is not locked mid-edit.
+  await openTab(page, 'settings');
+  await page.locator('#viewSettings .srow.usual .sedit').click();
+  await expect(sheetTitle(page)).toHaveText('Usual day');
+  await expect(page.locator('#sheet')).toHaveAttribute('data-teacher', '1');
+  await ago(page, 4.8);
+  await page.locator('#sheet input[aria-label="Class ends"]').fill('15:45');
+  expect(await idleMin(page)).toBeLessThan(0.2);
+  await page.waitForTimeout(1500);
+  await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
+  await expect(sheetTitle(page)).toHaveText('Usual day');
+  await page.locator('#sheet .x').click();
+  await openTab(page, 'log');
+
+  // The Day summary, opened from the menu, counts too.
+  await openDrawer(page);
+  await drawerBtn(page, 'Day summary').click();
+  await expect(sheetTitle(page)).toHaveText('Day summary');
+  await expect(page.locator('#sheet')).toHaveAttribute('data-teacher', '1');
+  await ago(page, 4.8);
+  await page.locator('#sheet h3').click();
+  expect(await idleMin(page)).toBeLessThan(0.2);
+  await page.locator('#sheet .x').click();
+
+  // A student's own break sheet does not.
+  await startClass(page);
+  await tileFor(page, 'Yusuf K.').click();
+  await expect(sheetTitle(page)).toHaveText('Where is Yusuf K. going?');
+  await expect(page.locator('#sheet')).not.toHaveAttribute('data-teacher', '1');
+  await ago(page, 4.8);
+  await page.locator('#rnote').click();
+  expect(await idleMin(page)).toBeGreaterThan(4.7);
+  await ago(page, 5.2);
+  await expect(page.locator('#lockLbl')).toHaveText('Locked', { timeout: 3000 });
+  await expect(page.locator('#scrim')).not.toHaveClass(/show/);
+
+  // With auto-lock Off, the teacher chose to stay unlocked: a reload keeps it.
+  await page.locator('#lockTab').click(); await typePin(page);
+  await openTab(page, 'settings');
+  await page.locator('#autoLockField .seg button', { hasText: /^Off$/ }).click();
+  await page.reload();
+  await page.locator('.app:not(.booting)').waitFor();
+  await expect(page.locator('#lockLbl')).toHaveText('Unlocked');
+});
+
+test('forgetting the account here also clears the auto-lock choice, Appearance and the background photo', async ({ page }) => {
+  await page.goto('/?emulator=1');
+  await page.waitForFunction(() => typeof Store !== 'undefined' && typeof forgetAccountHere === 'function');
+  const keys = ['teacher.pin', 'teacher.unlocked', 'teacher.autoLock', 'ui.appearance', 'ui.bgPhoto'];
+  const left = await page.evaluate(async (keys) => {
+    let cleared = 0;
+    window.clearBgPhoto = async () => { cleared++; };                     // the photo's own store (IndexedDB)
+    keys.forEach((k) => Store.set(k, k === 'ui.appearance' ? '{"theme":"plum"}' : 'x'));
+    await forgetAccountHere([]);
+    return { cleared, store: keys.filter((k) => Store.get(k) != null), local: keys.filter((k) => localStorage.getItem(k) != null) };
+  }, keys);
+  expect(left).toEqual({ cleared: 1, store: [], local: [] });
 });
