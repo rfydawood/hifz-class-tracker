@@ -684,8 +684,9 @@ input,select{font:inherit;color:inherit}
 </style>
 <script>
 /* ===== Appearance (4.3): colour theme, light/dark, background =====
-   Display preferences for THIS device only (Store keys ui.appearance and
-   ui.bgPhoto, beside ui.tabsHidden) - never Firestore, never the class's data.
+   Display preferences for THIS device only (Store key ui.appearance, beside
+   ui.tabsHidden; a custom photo in IndexedDB, see PhotoDB) - never Firestore,
+   never the class's data.
    This runs in <head>, before the page is drawn, so the app never flashes the
    old colours: it reads the saved choice straight from localStorage (on
    Android/iOS the choice is mirrored there too, see saveAppearance()) and boot
@@ -696,7 +697,7 @@ input,select{font:inherit;color:inherit}
    changes: in class = calm, out = amber, past the limit = red, and the five
    break colours. Later an organization may set a default appearance: it would
    slot in as ORG_APPEARANCE in appearanceNow(), under the device's own choice. */
-const APPEAR_KEY='ui.appearance', PHOTO_KEY='ui.bgPhoto';
+const APPEAR_KEY='ui.appearance', PHOTO_KEY='ui.bgPhoto';   // ui.bgPhoto: only read once, to move an old photo into IndexedDB
 const APPEAR_DEFAULT={theme:'classic',custom:'#0F7B7B',mode:'light',bg:'plain',pattern:'callig',fade:75};
 let ORG_APPEARANCE=null;                       // room for an organization's default - not built yet
 /* id, name, note, then header, header text, header muted, accent, page,
@@ -3837,8 +3838,8 @@ function editingIn(id){ const a=document.activeElement; return !!(a&&$(id)&&$(id
    the first paint is already in the right colours. Here: the background
    behind the tiles (plain, soft tint, one of 15 patterns, or the teacher's
    own photo), and the Settings section that picks all of it. Everything is
-   this device's only: Store keys ui.appearance and ui.bgPhoto, both in the
-   boot hydrate list; nothing is written to Firestore. The patterns are drawn
+   this device's only: Store key ui.appearance (in the boot hydrate list) and
+   the photo in IndexedDB (PhotoDB); nothing is written to Firestore. The patterns are drawn
    right here as SVG (no downloads, so they work offline), in one colour that
    follows the theme - faint ink on light themes, gold on dark ones. The two
    calligraphy designs are brush-like shapes only, no letters or words. */
@@ -3876,7 +3877,11 @@ function applyAppearance(){
   app.dataset.bg=bg;
   const i=L.firstElementChild; i.className=''; L.style.backgroundImage='';
   if(bg==='pattern'){ ensurePatternStyles(); i.className='pt-'+p.pattern; }
-  if(bg==='photo'){ const ph=Store.get(PHOTO_KEY); if(ph) L.style.backgroundImage=`url("${ph}")`; L.style.setProperty('--fade',fadeOpacity(p.fade)); }
+  if(bg==='photo'){ if(photoURL) L.style.backgroundImage=`url("${photoURL}")`; L.style.setProperty('--fade',fadeOpacity(p.fade)); }
+  // the photo comes from IndexedDB after the first paint (until then the faded page colour shows)
+  if(!photoLoad&&(bg==='photo'||Store.get(PHOTO_KEY)!=null)) afterPaint(loadBgPhoto);
+  // Android/iOS: the <head> script reads localStorage before Store exists - keep it in step with Store
+  if(Store.native){ const a=Store.get(APPEAR_KEY); try{ if(a!=null&&localStorage.getItem(APPEAR_KEY)!==a) localStorage.setItem(APPEAR_KEY,a); }catch(e){} }
   placeBg();
 }
 /* The layer covers exactly the open tab's own area: below the header and
@@ -3896,28 +3901,93 @@ function saveAppearance(change){
   if(TAB==='settings') drawSettings();
 }
 function previewFade(v){ const L=$('bgLayer'); if(L) L.style.setProperty('--fade',fadeOpacity(v)); const t=$('apThumbFade'); if(t) t.style.opacity=fadeOpacity(v); }
-/* Choose a photo: shrunk on the tablet to about 1280px wide (JPEG) and kept
-   in Store on this device only - never uploaded, never written to Firestore. */
-function pickPhoto(input){
+/* The custom photo lives in IndexedDB on this device (the website, the
+   Android/iOS WebViews and the desktop app all have it) - not in Store, where
+   a big picture could crowd the class's own data out of localStorage. Never
+   uploaded, never written to Firestore; ui.appearance keeps only a flag
+   (photo:1). 4.3's first build kept it in Store as ui.bgPhoto: that copy is
+   moved here once and removed. */
+const PhotoDB=(()=>{
+  let dbp=null;
+  const open=()=>dbp||(dbp=new Promise((res,rej)=>{
+    const r=indexedDB.open('breaklog-appearance',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('photo');
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error('blocked'));
+  }).catch(e=>{ dbp=null; throw e; }));
+  const run=(mode,fn)=>open().then(db=>new Promise((res,rej)=>{
+    const t=db.transaction('photo',mode), q=fn(t.objectStore('photo'));
+    t.oncomplete=()=>res(q.result); t.onerror=t.onabort=()=>rej(t.error||new Error('not saved'));
+  }));
+  return {get:()=>run('readonly',s=>s.get('bg')),put:v=>run('readwrite',s=>s.put(v,'bg')),del:()=>run('readwrite',s=>s.delete('bg'))};
+})();
+const PHOTO_MAX=400000;                          // characters of JPEG data URL, about 300 KB
+/* A stored photo, checked before use: a JPEG Blob, or a JPEG data URL. */
+function photoBlob(v){
+  if(v instanceof Blob) return v.type==='image/jpeg'&&v.size>0&&v.size<2500000?v:null;
+  if(typeof v!=='string'||v.length>3500000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(v)) return null;
+  try{ const s=atob(v.slice(23)), a=new Uint8Array(s.length); for(let i=0;i<s.length;i++) a[i]=s.charCodeAt(i); return new Blob([a],{type:'image/jpeg'}); }catch(e){ return null; }
+}
+let photoURL='', photoLoad=null;                 // an object URL made once per photo; the one load per page
+function showPhoto(blob){ if(photoURL) URL.revokeObjectURL(photoURL); photoURL=blob?URL.createObjectURL(blob):''; }
+function afterPaint(fn){ let done=0; const go=()=>{ if(!done){ done=1; fn(); } }; try{ requestAnimationFrame(()=>setTimeout(go,0)); }catch(e){} setTimeout(go,300); }
+function loadBgPhoto(){
+  return photoLoad||(photoLoad=(async()=>{
+    let b=null; try{ b=photoBlob(await PhotoDB.get()); }catch(e){}
+    const old=Store.get(PHOTO_KEY);
+    if(old!=null){
+      const ob=b?null:photoBlob(old);
+      if(ob){ try{ await PhotoDB.put(ob); await Store.purge(PHOTO_KEY); }catch(e){} b=ob; }   // stays in Store until IndexedDB has it
+      else await Store.purge(PHOTO_KEY);
+    }
+    if(b) showPhoto(b);
+    if(!!savedAppearance().photo!==!!b) saveAppearance({photo:b?1:0});
+    else { applyAppearance(); if(TAB==='settings'&&$('apPhoto')) drawSettings(); }
+  })());
+}
+/* Choose a photo: shrunk on the tablet to fit 1280 x 1280, a JPEG of at
+   most about 300 KB. */
+function encodePhoto(img){
+  const w=img.naturalWidth||1280, h=img.naturalHeight||w, c=document.createElement('canvas'), x=c.getContext('2d');
+  let s=Math.min(1,1280/Math.max(w,h));
+  for(let pass=0;pass<10;pass++,s*=.8){
+    c.width=Math.max(1,Math.round(w*s)); c.height=Math.max(1,Math.round(h*s));
+    x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+    for(const q of [.8,.6,.5]){
+      const d=c.toDataURL('image/jpeg',q);
+      if(!/^data:image\/jpeg;base64,./.test(d)) return null;     // "data:," - the tablet could not encode it
+      if(d.length<=PHOTO_MAX) return d;
+    }
+  }
+  return null;
+}
+async function pickPhoto(input){
   const f=input.files&&input.files[0]; input.value=''; if(!f) return;
-  const url=URL.createObjectURL(f), img=new Image();
-  img.onload=()=>{
-    try{
-      const w=Math.min(1280,img.naturalWidth||1280), h=Math.max(1,Math.round((img.naturalHeight||w)*w/(img.naturalWidth||w)));
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      let data=c.toDataURL('image/jpeg',.8);
-      if(data.length>1500000) data=c.toDataURL('image/jpeg',.6);
-      Store.set(PHOTO_KEY,data);
-      saveAppearance({bg:'photo'}); toast('Photo set. It stays on this tablet only.');
-    }catch(e){ toast('That photo could not be used.'); }
-    URL.revokeObjectURL(url);
-  };
-  img.onerror=()=>{ URL.revokeObjectURL(url); toast('That photo could not be opened.'); };
-  img.src=url;
+  const url=URL.createObjectURL(f); let data=null;
+  try{
+    const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+    data=encodePhoto(img);
+  }catch(e){ URL.revokeObjectURL(url); return toast('That photo could not be opened.'); }
+  URL.revokeObjectURL(url);
+  const blob=photoBlob(data);
+  if(!blob) return toast('That photo could not be used.');
+  // a Blob where the WebView can keep one, else the same JPEG as text
+  try{ try{ await PhotoDB.put(blob); }catch(e){ await PhotoDB.put(data); } }
+  catch(e){ return toast('That photo could not be saved'); }
+  photoLoad=Promise.resolve(); showPhoto(blob);
+  if(Store.get(PHOTO_KEY)!=null) Store.purge(PHOTO_KEY);
+  saveAppearance({bg:'photo',photo:1}); toast('Photo set. It stays on this tablet only.');
 }
 function choosePhoto(){ if(asTeacher(choosePhoto)) $('photoInput').click(); }
-function removePhoto(){ Store.purge(PHOTO_KEY); saveAppearance({bg:'plain'}); toast('Photo removed'); }
+async function removePhoto(){ await clearBgPhoto(); toast('Photo removed'); }
+/* Forget the photo on this device (Remove, and when an account is deleted or
+   signed out here - forgetAccountHere()): back to a background without it. */
+async function clearBgPhoto(){
+  photoLoad=Promise.resolve(); showPhoto(null);
+  try{ await PhotoDB.del(); }catch(e){}
+  await Store.purge(PHOTO_KEY);
+  const p=savedAppearance();
+  if(p.bg==='photo'||p.photo) saveAppearance({bg:p.bg==='photo'?'plain':p.bg,photo:0}); else applyAppearance();
+}
 function themeCard(t,p){
   const k=themeTokens({theme:t.id,mode:t.dark?'dark':'light'});
   const em=(bg,b)=>`<em style="background:${bg};border-color:${b}"></em>`;
@@ -3926,7 +3996,7 @@ function themeCard(t,p){
     <b>${t.name}</b><small>${t.note}</small></button>`;
 }
 function appearanceSection(){
-  const p=appearanceNow(), photo=Store.get(PHOTO_KEY);
+  const p=appearanceNow(), photo=!!(photoURL||p.photo);          // the picture itself is never put into the page's HTML
   const seg=(key,opts)=>`<div class="seg" role="group">${opts.map(([v,l])=>`<button class="${p[key]===v?'on':''}" aria-pressed="${p[key]===v}" data-${key}="${v}" onclick="saveAppearance({${key}:'${v}'})">${l}</button>`).join('')}</div>`;
   const fixedDark=p.theme!=='custom'&&themeById(p.theme).dark;
   return `<h4 id="appearance">Appearance <span class="ap-sub">This tablet only</span></h4>
@@ -3946,7 +4016,7 @@ function appearanceSection(){
    ${p.bg==='pattern'?`<div class="ap-lab">Pattern <small>15 designs · they take the theme’s colour</small></div>
    <div class="ap-pats">${Object.entries(PATTERNS).map(([k,x])=>`<button class="ap-pat ${p.pattern===k?'on':''}" data-pattern="${k}" aria-pressed="${p.pattern===k}" onclick="saveAppearance({pattern:'${k}'})"><span class="bx"><i class="pt-${k}"></i></span><span>${x.name}</span></button>`).join('')}</div>`:''}
    ${p.bg==='photo'?`<div class="ap-lab">Your photo</div>
-   <div class="ap-photo"><span class="ap-thumb" style="${photo?`background-image:url('${photo}')`:''}"><i id="apThumbFade" style="opacity:${photo?fadeOpacity(p.fade):0}"></i></span>
+   <div class="ap-photo" id="apPhoto"><span class="ap-thumb" style="${photoURL?`background-image:url('${photoURL}')`:''}"><i id="apThumbFade" style="opacity:${photo?fadeOpacity(p.fade):0}"></i></span>
      <div class="ap-pmid"><b>${photo?'Your photo, faded':'No photo yet'}</b><small class="ap-hint" style="margin-top:2px">Kept on this tablet only - never uploaded.</small>
        ${photo?`<label class="ap-fade">Fade<input type="range" id="apFade" min="50" max="95" step="5" value="${Math.round(+fadeOpacity(p.fade)*100)}" oninput="previewFade(this.value)" onchange="saveAppearance({fade:+this.value})" aria-label="Fade"></label>`:''}</div>
      <div class="ap-pbtns"><button class="btn dark" onclick="choosePhoto()">Choose a photo</button>${photo?'<button class="btn rm" onclick="removePhoto()">Remove</button>':''}</div></div>`:''}`;
