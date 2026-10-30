@@ -633,7 +633,7 @@ input,select{font:inherit;color:inherit}
    chart sits on a solid card. The header, banners, tab bar, sheets and the
    PIN pad stay plain. */
 #bgLayer{position:absolute;left:0;right:0;top:0;height:0;pointer-events:none;z-index:0;display:none;overflow:hidden;background-position:center;background-size:cover;background-repeat:no-repeat}
-#bgLayer i{position:absolute;inset:0}
+#bgLayer i{position:absolute;top:0;right:0;bottom:0;left:0}
 .app[data-bg="tint"] #bgLayer,.app[data-bg="pattern"] #bgLayer,.app[data-bg="photo"] #bgLayer{display:block}
 .top,#banner,.stage,.view{position:relative;z-index:1}
 .app[data-bg="tint"] #bgLayer{background-image:radial-gradient(130% 100% at 15% 0%,var(--tint),transparent 75%),linear-gradient(var(--tint),var(--tint))}
@@ -672,7 +672,7 @@ input,select{font:inherit;color:inherit}
 .ap-pat.on span{color:var(--ink)}
 .ap-photo{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
 .ap-thumb{width:112px;height:70px;border-radius:9px;flex:none;border:1px solid var(--line);background:var(--paper) center/cover no-repeat;position:relative;overflow:hidden}
-.ap-thumb i{position:absolute;inset:0;background:var(--paper)}
+.ap-thumb i{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--paper)}
 .ap-pmid{flex:1 1 200px;min-width:0}
 .ap-pmid b{display:block;font-size:14px;font-weight:800}
 .ap-fade{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:12px;font-weight:700;color:var(--mute)}
@@ -722,7 +722,9 @@ const SWATCHES=[['Teal','#0F7B7B'],['Emerald','#1A7A55'],['Green','#2E7D4F'],['O
 const KEPT_COLOURS=[['Amber','#D39A22'],['Orange','#E07B2C'],['Red','#C0503A']];
 const LIGHT_FIXED={'gold-soft':'#FBF0D8',gold:'#D39A22','gold-ink':'#6B4B0C','gold-line':'#E5C57E','ember-soft':'#F8E5E0',ember:'#C0503A','ember-ink':'#C0503A','ember-line':'#E4B4A6','warn-ink':'#B42828','abs-bg':'#EDF1F2','abs-line':'#C6D2D6','abs-ink':'#7D8D95',chip:'#E7EDEF',chipink:'#4A5B63',tag:'#E2E8EA',tagink:'#6B7A81',strike:'#B6C4C9'};
 const DARK_FIXED={'gold-soft':'#3A3020',gold:'#E0A93B','gold-ink':'#F2C877','gold-line':'#6B5524','ember-soft':'#3E2621',ember:'#E0674A','ember-ink':'#F09A86','ember-line':'#7A3E31','warn-ink':'#F09A86','abs-bg':'#16231F','abs-line':'#34473F','abs-ink':'#8A9C95',chip:'#24342F',chipink:'#B5C4BE',tag:'#22312C',tagink:'#A3B3AD',strike:'#4F635B'};
-/* colour arithmetic, just enough for the themes */
+/* Colour arithmetic, just enough for the themes - kept in one Appearance
+   object so the page's other scripts don't see a global lum() or contrast(). */
+const Appearance=(()=>{
 const hexRgb=h=>{ h=String(h).replace('#',''); if(h.length===3) h=h.replace(/./g,'$&$&'); const n=parseInt(h.slice(0,6),16); return [n>>16&255,n>>8&255,n&255]; };
 const rgbHex=c=>'#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('').toUpperCase();
 const mixHex=(a,b,t)=>{ const x=hexRgb(a), y=hexRgb(b); return rgbHex(x.map((v,i)=>v+(y[i]-v)*t)); };   // t of b over a
@@ -731,6 +733,8 @@ const contrast=(a,b)=>{ const x=lum(a), y=lum(b); return (Math.max(x,y)+.05)/(Ma
 const alphaHex=(h,a)=>{ const c=hexRgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
 /* Walk a colour towards white (or black) until it reads at `need`:1 against `on`. */
 function readable(c,on,need,toward){ let x=c; for(let i=0;i<20&&contrast(x,on)<need;i++) x=mixHex(x,toward,.12); return x; }
+return {hexRgb,rgbHex,mixHex,lum,contrast,alphaHex,readable};
+})();
 function savedAppearance(){
   let o=null;
   // Store is declared further down the page; until it exists (this first
@@ -742,6 +746,7 @@ function appearanceNow(){ return Object.assign({},APPEAR_DEFAULT,ORG_APPEARANCE|
 const themeById=id=>THEMES.find(t=>t.id===id)||THEMES[0];
 /* The light set for a custom accent, built the way the mockup's Indigo was. */
 function customLight(a){
+  const {mixHex}=Appearance;
   const head=mixHex(a,'#000000',.53);
   return {head,headink:'#F1F4F6',headmute:mixHex(head,'#FFFFFF',.65),accent:a,paper:mixHex('#FFFFFF',head,.05),card:'#FFFFFF',
     line:mixHex('#FFFFFF',head,.18),ink:head,mute:mixHex(head,'#8A8F99',.55),pres:mixHex('#FFFFFF',a,.1),presb:mixHex('#FFFFFF',a,.24),prest:mixHex(a,'#000000',.2)};
@@ -751,6 +756,7 @@ function isDarkNow(p){ p=p||appearanceNow(); return (p.theme!=='custom'&&themeBy
 /* Every colour token for a choice. Dark with a light theme borrows Night
    study's dark surfaces and keeps the theme's own accent. */
 function themeTokens(p){
+  const {mixHex,readable,alphaHex}=Appearance;
   p=p||appearanceNow();
   const preset=p.theme==='custom'?null:themeById(p.theme), dark=isDarkNow(p);
   const accent=preset?preset.accent:(/^#[0-9a-f]{6}$/i.test(p.custom||'')?p.custom:APPEAR_DEFAULT.custom);
@@ -797,7 +803,10 @@ function paintTheme(p){
   return t;
 }
 try{ paintTheme(); }catch(e){}
-try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(appearanceNow().mode==='auto') (window.applyAppearance||paintTheme)(); }); }catch(e){}
+try{
+  const mq=matchMedia('(prefers-color-scheme: dark)'), onChange=()=>{ if(appearanceNow().mode==='auto') (window.applyAppearance||paintTheme)(); };
+  if(mq.addEventListener) mq.addEventListener('change',onChange); else mq.addListener(onChange);     // older WebViews: addListener only
+}catch(e){}
 </script>
 </head>
 <body>
