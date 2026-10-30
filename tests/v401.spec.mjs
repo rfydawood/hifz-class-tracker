@@ -58,6 +58,7 @@ test('sideways with the keyboard up, the box being typed in stays visible and Ca
   await page.locator('.sheet .actions').getByRole('button', { name: 'Cancel' }).click();
 
   await page.getByRole('button', { name: '+ Add a class' }).click();
+  await expect(page.locator('#acName')).toBeFocused(); // openAddClass focuses the name after 50 ms; wait so it can't steal focus later
   await page.getByRole('button', { name: '+ Add a break' }).click();
   await page.locator('#acCard .brow2 .bname').focus();
   await page.setViewportSize({ width: 805, height: 230 });
