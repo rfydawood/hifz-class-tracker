@@ -3310,11 +3310,13 @@ async function writeDeleteAccount(plan){
   await HifzAccountDelete.run(fbDb,plan,fsWrite);
 }
 /* This device forgets the account: session, instant-paint caches, the legacy
-   local copies and history, the teacher PIN, Firestore's offline copy. Both
+   local copies and history, the teacher PIN and auto-lock choice, the look
+   (Appearance) and its background photo, Firestore's offline copy. Both
    Preferences and localStorage on native (Store.purge). Not ui.tabsHidden -
    that is the device's, not the account's. */
 async function forgetAccountHere(classIds,notice){
-  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,POLICY_KEY,
+  try{ if(typeof clearBgPhoto==='function') await clearBgPhoto(); }catch(e){}
+  const keys=new Set([SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,KEY,PKEY,HKEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,APPEAR_KEY,PHOTO_KEY,POLICY_KEY,
     ...HifzAccountDelete.LOCAL_KEYS,...(classIds||[]).map(cacheKey)]);
   (await Store.keys()).forEach(k=>{ if(k&&k.indexOf(HifzAccountDelete.LOCAL_PREFIX)===0) keys.add(k); });
   await Promise.all([...keys].map(k=>Store.purge(k)));
@@ -3677,6 +3679,11 @@ function autoLockCheck(){
   if(Date.now()-teacherSeen<m*60000) return;
   setTeacher(false); toast('Locked again');
 }
+/* Opening the app fresh starts locked when a PIN is set and auto-lock is on:
+   the "last teacher action" clock is in memory, so a remembered unlock would
+   otherwise give a fresh few minutes on every close and reopen (4.3). With
+   auto-lock Off the teacher chose to stay unlocked, so that is kept. */
+function lockAtBoot(){ if(hasPin()&&autoLockMin()&&Store.get(UNLOCKED_KEY)==='1') Store.set(UNLOCKED_KEY,'0'); }
 function setAutoLock(m){ Store.set(AUTOLOCK_KEY,String(m)); teacherTouch(); drawSettings(); }
 const hasPin=()=>!!Store.get(PIN_KEY);
 const teacherOn=()=>!hasPin()||Store.get(UNLOCKED_KEY)==='1';
@@ -4286,6 +4293,7 @@ function tick(){
   try{
     await Store.hydrate([PKEY,KEY,HKEY,SESSION_ORG_KEY,SESSION_CLASS_KEY,CACHE_KEY,MIGRATION_FLAG_KEY,MIGRATION_FAILURES_KEY,TABS_HIDDEN_KEY,PIN_KEY,UNLOCKED_KEY,AUTOLOCK_KEY,APPEAR_KEY,PHOTO_KEY,POLICY_KEY]);
     applyAppearance();                          // this device's colours and background, now from Store (native included)
+    lockAtBoot();
     paintLock();
     if(Store.get(TABS_HIDDEN_KEY)==='1') document.querySelector('.app').classList.add('tabs-hidden','handle-on');
     CLASS_ID=Store.get(SESSION_CLASS_KEY)||'default';
