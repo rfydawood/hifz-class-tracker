@@ -3651,7 +3651,8 @@ let TAB='log';
    minutes (5 unless changed; Store key teacher.autoLock, this device only).
    After that long without a teacher action (anything that passed asTeacher(),
    or a tap in a teacher-only tab or the menu) the tablet locks itself with a
-   "Locked again" toast. The clock is kept in memory: a reload starts it over. */
+   "Locked again" toast. The clock is kept in memory, so opening the app fresh
+   starts locked (lockAtBoot) unless auto-lock is Off. */
 const PIN_KEY='teacher.pin', UNLOCKED_KEY='teacher.unlocked', AUTOLOCK_KEY='teacher.autoLock';
 const LOCKED_TABS=['reports','roster','settings','profile'];
 const AUTOLOCK_CHOICES=[0,2,5,10], AUTOLOCK_DEFAULT=5;
