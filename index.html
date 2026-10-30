@@ -22,14 +22,14 @@
      dark buttons) have their own --head/--btn, so a theme can colour one
      without the other. Amber (out), red (past the limit) and the break
      colours keep their meaning in every theme. */
-  --ink:#1F2E36; --leaf:#0F7B7B; --leaf-ink:#0F7B7B; --leaf-soft:#DCEDED; --soft-ink:#0F7B7B; --leaf-line:#BBD9D9;
+  --ink:#1F2E36; --leaf:#0F7B7B; --leaf-ink:#0F7B7B; --leaf-soft:#DCEDED; --soft-ink:#0D6C6C; --leaf-line:#BBD9D9;
   --gold:#D39A22; --gold-soft:#FBF0D8; --gold-ink:#6B4B0C; --gold-line:#E5C57E;
-  --ember:#C0503A; --ember-soft:#F8E5E0; --ember-ink:#C0503A; --ember-line:#E4B4A6; --warn-ink:#B42828;
+  --ember:#C0503A; --ember-soft:#F8E5E0; --ember-ink:#AD4834; --ember-line:#E4B4A6; --warn-ink:#B42828;
   --warn:#C0503A; --on-gold:#1F2E36;
   --paper:#F2F5F6; --card:#FFFFFF; --line:#D6DFE2; --line2:#C6D2D6; --line3:#B9C6CB; --rule:#E4EBED; --mute:#5B6B73;
   --head:#1F2E36; --headink:#EEF3F4; --headmute:#A6BFC7; --headdim:#BDCED4; --btn:#1F2E36;
   --pres:#E7F1F1; --presb:#CFE2E2; --prest:#0C5C5C; --open-bg:#F6FBFB; --tint:rgba(15,123,123,.1);
-  --abs-bg:#EDF1F2; --abs-line:#C6D2D6; --abs-ink:#7D8D95; --strike:#B6C4C9; --tag:#E2E8EA; --tagink:#6B7A81;
+  --abs-bg:#EDF1F2; --abs-line:#C6D2D6; --abs-ink:#5F6E76; --strike:#B6C4C9; --tagbg:#E2E8EA; --tagink:#5B6A71;
   --chip:#E7EDEF; --chipink:#4A5B63; --sel:#EEF4F5; --outer:#E3EAEC; --pat:#1F2E36; --patop:.1;
   font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -108,7 +108,7 @@ input,select{font:inherit;color:inherit}
    strike-through, because the day still counts as attended. */
 .tile.gone{background:var(--abs-bg);color:var(--mute);border-color:var(--abs-line)}
 .tile.gone .state{color:var(--mute);font-weight:700}
-.tile.gone .tag{background:var(--tag);color:var(--tagink)}
+.tile.gone .tag{background:var(--tagbg);color:var(--tagink)}
 .tile.deact .name{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--strike)}
 .tile.deact .state{color:var(--abs-ink)}
 .tile.out{background:var(--gold-soft);border-color:var(--gold)}
@@ -117,7 +117,7 @@ input,select{font:inherit;color:inherit}
 .tile.out.long .state{color:var(--ember-ink)}
 .tile .tag{align-self:flex-start;order:-1;margin-bottom:2px;font-size:var(--tag,10px);font-weight:700;padding:2px 6px;border-radius:6px;background:var(--gold-soft);color:var(--gold-ink)}
 .tile .tag.flag{background:var(--ember-soft);color:var(--ember-ink)}
-.tile.deact .tag{background:var(--tag);color:var(--tagink)}
+.tile.deact .tag{background:var(--tagbg);color:var(--tagink)}
 .tile:disabled{opacity:.6;cursor:default}
 @media (prefers-reduced-motion:reduce){.tile,.sheet{transition:none;animation:none}}
 
@@ -132,6 +132,7 @@ input,select{font:inherit;color:inherit}
 .out-item .who span{display:block;font-size:11px;line-height:1.3;color:var(--mute)}
 .out-item .t{grid-column:2;grid-row:1;justify-self:end;font-size:clamp(16px,2.2vw,21px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .out-item.long .t{color:var(--ember-ink)}
+:root[data-mode="dark"] .out-item .back{background:var(--leaf)}   /* the theme's accent; white reads on it at 4.5:1 */
 .out-item .back{grid-column:1/-1;grid-row:2;text-align:center;background:var(--btn);color:#fff;border-radius:9px;padding:7px 12px;font-weight:700;font-size:13px;white-space:nowrap}
 .empty{padding:26px 18px;text-align:center;color:var(--mute);font-size:14px;line-height:1.5}
 .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
@@ -659,11 +660,13 @@ input,select{font:inherit;color:inherit}
 .ap-pv>span{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:5px}
 .ap-pv em{display:block;height:17px;border-radius:4px;border:1.5px solid}
 .ap-rb{height:41px;border-radius:8px;margin-bottom:3px;background:conic-gradient(#0F7B7B,#1A7A55,#5E7A2E,#2C5FA8,#4B4FA8,#7A4E9A,#8A3F6E,#6B4A33,#0F7B7B)}
-.ap-sw{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.ap-dot{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line2);flex:none;padding:0}
-.ap-dot.on{box-shadow:0 0 0 3px var(--ink)}
-.ap-dot.no{opacity:.35;position:relative;cursor:not-allowed}
-.ap-dot.no::after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:3px;margin-top:-1.5px;background:var(--ink);transform:rotate(-45deg)}
+.ap-sw{display:flex;flex-wrap:wrap;align-items:center;gap:0}
+/* a 44px touch target around the same 32px dot */
+.ap-dot{width:44px;height:44px;border:0;border-radius:50%;padding:0;flex:none;background:transparent;position:relative}
+.ap-dot::before{content:"";position:absolute;left:6px;top:6px;width:32px;height:32px;box-sizing:border-box;border-radius:50%;border:3px solid #fff;background:var(--c);box-shadow:0 0 0 1px var(--line2)}
+.ap-dot.on::before{box-shadow:0 0 0 3px var(--ink)}
+.ap-dot.no{opacity:.35;cursor:not-allowed}
+.ap-dot.no::after{content:"";position:absolute;left:3px;right:3px;top:50%;height:3px;margin-top:-1.5px;background:var(--ink);transform:rotate(-45deg)}
 .ap-hint{display:block;font-size:12px;font-weight:600;color:var(--mute);line-height:1.4;margin-top:6px}
 .ap-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:4px 18px}
 .ap-row .seg{flex-wrap:wrap}
@@ -715,7 +718,7 @@ let ORG_APPEARANCE=null;                       // room for an organization's def
    also carry their own amber/red/not-here colours (DARK_FIXED). */
 const THEMES=[
   ['classic','Classic',"Today's colours",'#1F2E36','#EEF3F4','#A6BFC7','#0F7B7B','#F2F5F6','#FFFFFF','#D6DFE2','#1F2E36','#5B6B73','#E7F1F1','#CFE2E2','#0C5C5C'],
-  ['lapis','Lapis and brass','Deep blue; gold only for alerts','#142A4E','#EEF2F8','#A9B8D3','#2C5FA8','#F3F1EA','#FFFFFF','#DDD8CA','#142A4E','#5A6272','#EAF0F8','#CCD9EC','#1F4C8C'],
+  ['lapis','Lapis and brass','Deep blue with warm cream','#142A4E','#EEF2F8','#A9B8D3','#2C5FA8','#F3F1EA','#FFFFFF','#DDD8CA','#142A4E','#5A6272','#EAF0F8','#CCD9EC','#1F4C8C'],
   ['sand','Sand and sky','Warmer and lighter','#14405C','#EFF4F7','#A9C4D6','#1D6FA3','#F7F1E3','#FFFDF7','#E4D9C2','#14405C','#5C5342','#FCF8EE','#E9E0CE','#2E5F7D'],
   ['garden','Garden','Soft greens, calm and quiet','#1E3B2C','#EEF4F0','#A8C2B2','#2E7D4F','#F1F4EE','#FFFFFF','#D7E0D3','#1E3B2C','#56665B','#E9F2EA','#CDE0D0','#24603D'],
   ['night','Night study','Dark, for evening classes in dim rooms','#0B1714','#E7EEF0','#93A8A0','#34B37E','#101C18','#1B2A25','#2B3D36','#E7EEF0','#A3B3AD','#1F302A','#2E4740','#7FD3AE',1],
@@ -729,9 +732,9 @@ const THEMES=[
 /* The custom colour swatches. Amber, orange and red are left out on purpose:
    they mean Out and Past the limit. */
 const SWATCHES=[['Teal','#0F7B7B'],['Emerald','#1A7A55'],['Green','#2E7D4F'],['Olive','#5E7A2E'],['Turquoise','#1F6E8C'],['Blue','#2C5FA8'],['Cobalt','#1E3A8A'],['Indigo','#4B4FA8'],['Purple','#7A4E9A'],['Plum','#8A3F6E'],['Brown','#6B4A33'],['Slate','#4F5A63']];
-const KEPT_COLOURS=[['Amber','#D39A22'],['Orange','#E07B2C'],['Red','#C0503A']];
-const LIGHT_FIXED={'gold-soft':'#FBF0D8',gold:'#D39A22','gold-ink':'#6B4B0C','gold-line':'#E5C57E','ember-soft':'#F8E5E0',ember:'#C0503A','ember-ink':'#C0503A','ember-line':'#E4B4A6','warn-ink':'#B42828','abs-bg':'#EDF1F2','abs-line':'#C6D2D6','abs-ink':'#7D8D95',chip:'#E7EDEF',chipink:'#4A5B63',tag:'#E2E8EA',tagink:'#6B7A81',strike:'#B6C4C9'};
-const DARK_FIXED={'gold-soft':'#3A3020',gold:'#E0A93B','gold-ink':'#F2C877','gold-line':'#6B5524','ember-soft':'#3E2621',ember:'#E0674A','ember-ink':'#F09A86','ember-line':'#7A3E31','warn-ink':'#F09A86','abs-bg':'#16231F','abs-line':'#34473F','abs-ink':'#8A9C95',chip:'#24342F',chipink:'#B5C4BE',tag:'#22312C',tagink:'#A3B3AD',strike:'#4F635B'};
+const KEPT_COLOURS=[['Amber','#D39A22','Out'],['Orange','#E07B2C','Out'],['Red','#C0503A','Past the limit']];
+const LIGHT_FIXED={'gold-soft':'#FBF0D8',gold:'#D39A22','gold-ink':'#6B4B0C','gold-line':'#E5C57E','ember-soft':'#F8E5E0',ember:'#C0503A','ember-ink':'#AD4834','ember-line':'#E4B4A6','warn-ink':'#B42828','abs-bg':'#EDF1F2','abs-line':'#C6D2D6','abs-ink':'#5F6E76',chip:'#E7EDEF',chipink:'#4A5B63',tagbg:'#E2E8EA',tagink:'#5B6A71',strike:'#B6C4C9'};
+const DARK_FIXED={'gold-soft':'#3A3020',gold:'#E0A93B','gold-ink':'#F2C877','gold-line':'#6B5524','ember-soft':'#3E2621',ember:'#E0674A','ember-ink':'#F09A86','ember-line':'#7A3E31','warn-ink':'#F09A86','abs-bg':'#16231F','abs-line':'#34473F','abs-ink':'#8A9C95',chip:'#24342F',chipink:'#B5C4BE',tagbg:'#22312C',tagink:'#A3B3AD',strike:'#4F635B'};
 /* Colour arithmetic, just enough for the themes - kept in one Appearance
    object so the page's other scripts don't see a global lum() or contrast(). */
 const Appearance=(()=>{
@@ -786,7 +789,7 @@ function themeTokens(p){
     leaf:readable(b.accent,'#FFFFFF',4.5,'#000000'),
     'leaf-ink':readable(b.accent,b.card,4.5,dark?'#FFFFFF':'#000000'),
     'leaf-soft':classic?'#DCEDED':mixHex(b.card,b.accent,dark?.26:.14),
-    // accent text on that soft accent (the class-name pill); Classic keeps today's
+    // accent text on that soft accent (the class-name pill) is nudged below, Classic too
     tint:alphaHex(b.accent,dark?.12:.10),
     outer:classic?'#E3EAEC':mixHex(b.paper,dark?'#000000':b.head,dark?.25:.06),
     line2:classic?'#C6D2D6':mixHex(b.line,b.ink,.1),
@@ -799,11 +802,11 @@ function themeTokens(p){
     pat:dark?'#D9A84E':b.ink, patop:dark?'.2':'.1'
   });
   t['leaf-line']=classic?'#BBD9D9':mixHex(t['leaf-soft'],b.accent,.2);
-  t['soft-ink']=classic?'#0F7B7B':readable(t['leaf-ink'],t['leaf-soft'],4.5,dark?'#FFFFFF':'#000000');
+  t['soft-ink']=readable(t['leaf-ink'],t['leaf-soft'],4.5,dark?'#FFFFFF':'#000000');
   t.dark=dark;
   return t;
 }
-const TOKEN_NAMES=['head','headink','headmute','headdim','line3','rule','open-bg','leaf-line','tag','tagink','strike','paper','card','line','ink','mute','pres','presb','prest','leaf','leaf-ink','leaf-soft','soft-ink','tint','outer','line2','btn','sel','pat','patop','gold-soft','gold','gold-ink','gold-line','ember-soft','ember','ember-ink','ember-line','warn-ink','abs-bg','abs-line','abs-ink','chip','chipink'];
+const TOKEN_NAMES=['head','headink','headmute','headdim','line3','rule','open-bg','leaf-line','tagbg','tagink','strike','paper','card','line','ink','mute','pres','presb','prest','leaf','leaf-ink','leaf-soft','soft-ink','tint','outer','line2','btn','sel','pat','patop','gold-soft','gold','gold-ink','gold-line','ember-soft','ember','ember-ink','ember-line','warn-ink','abs-bg','abs-line','abs-ink','chip','chipink'];
 function paintTheme(p){
   const t=themeTokens(p), r=document.documentElement;
   TOKEN_NAMES.forEach(k=>r.style.setProperty('--'+k,t[k]));
@@ -4031,21 +4034,21 @@ function appearanceSection(){
    <div class="ap-themes">${THEMES.map(t=>themeCard(t,p)).join('')}
      <button class="ap-th ${p.theme==='custom'?'on':''}" data-theme="custom" aria-pressed="${p.theme==='custom'}" onclick="saveAppearance({theme:'custom'})"><span class="ap-rb"></span><b>Custom colour</b><small>Pick your own</small></button></div>
    <div class="ap-lab">Custom colour <small>the app builds the header, buttons and tabs around it</small></div>
-   <div class="ap-sw">${SWATCHES.map(([n,h])=>`<button class="ap-dot ${p.theme==='custom'&&String(p.custom).toUpperCase()===h?'on':''}" style="background:${h}" title="${n}" aria-label="${n}" data-swatch="${h}" onclick="saveAppearance({theme:'custom',custom:'${h}'})"></button>`).join('')}
-     ${KEPT_COLOURS.map(([n,h])=>`<span class="ap-dot no" style="background:${h}" title="${n} - not available" aria-label="${n} - not available"></span>`).join('')}</div>
+   <div class="ap-sw">${SWATCHES.map(([n,h])=>`<button class="ap-dot ${p.theme==='custom'&&String(p.custom).toUpperCase()===h?'on':''}" style="--c:${h}" title="${n}" aria-label="${n}" aria-pressed="${p.theme==='custom'&&String(p.custom).toUpperCase()===h}" data-swatch="${h}" onclick="saveAppearance({theme:'custom',custom:'${h}'})"></button>`).join('')}
+     ${KEPT_COLOURS.map(([n,h,k])=>`<span class="ap-dot no" style="--c:${h}" title="Kept for ${k}" aria-label="${n}: kept for ${k}"></span>`).join('')}</div>
    <small class="ap-hint">Amber, orange and red are kept for Out and Past the limit</small>
    <div class="ap-row">
      <div><div class="ap-lab">Light or dark</div>${seg('mode',[['light','Light'],['dark','Dark'],['auto','Automatic']])}
        <small class="ap-hint">${fixedDark?`${themeById(p.theme).name} is always dark.`:'Automatic follows the tablet’s own setting.'}</small></div>
-     <div><div class="ap-lab">Background behind the tiles</div>${seg('bg',[['plain','Plain'],['tint','Soft tint'],['pattern','Pattern'],['photo','Custom']])}
+     <div><div class="ap-lab">Background behind the tiles</div>${seg('bg',[['plain','Plain'],['tint','Soft tint'],['pattern','Pattern'],['photo','Photo']])}
        <small class="ap-hint">Never behind names or timers.</small></div>
    </div>
-   ${p.bg==='pattern'?`<div class="ap-lab">Pattern <small>15 designs · they take the theme’s colour</small></div>
+   ${p.bg==='pattern'?`<div class="ap-lab">Pattern <small>15 designs, in your theme’s colour</small></div>
    <div class="ap-pats">${Object.entries(PATTERNS).map(([k,x])=>`<button class="ap-pat ${p.pattern===k?'on':''}" data-pattern="${k}" aria-pressed="${p.pattern===k}" onclick="saveAppearance({pattern:'${k}'})"><span class="bx"><i class="pt-${k}"></i></span><span>${x.name}</span></button>`).join('')}</div>`:''}
    ${p.bg==='photo'?`<div class="ap-lab">Your photo</div>
    <div class="ap-photo" id="apPhoto"><span class="ap-thumb" style="${photoURL?`background-image:url('${photoURL}')`:''}"><i id="apThumbFade" style="opacity:${photo?fadeOpacity(p.fade):0}"></i></span>
-     <div class="ap-pmid"><b>${photo?'Your photo, faded':'No photo yet'}</b><small class="ap-hint" style="margin-top:2px">Kept on this tablet only - never uploaded.</small>
-       ${photo?`<label class="ap-fade">Fade<input type="range" id="apFade" min="50" max="95" step="5" value="${Math.round(+fadeOpacity(p.fade)*100)}" oninput="previewFade(this.value)" onchange="saveAppearance({fade:+this.value})" aria-label="Fade"></label>`:''}</div>
+     <div class="ap-pmid"><b>${photo?'Your photo, faded':'No photo yet'}</b><small class="ap-hint" style="margin-top:2px">Stays on this tablet. Never uploaded.</small>
+       ${photo?`<label class="ap-fade">Fade <span>less</span><input type="range" id="apFade" min="50" max="95" step="5" value="${Math.round(+fadeOpacity(p.fade)*100)}" oninput="previewFade(this.value)" onchange="saveAppearance({fade:+this.value})" aria-label="Fade"><span>more</span></label>`:''}</div>
      <div class="ap-pbtns"><button class="btn dark" onclick="choosePhoto()">Choose a photo</button>${photo?'<button class="btn rm" onclick="removePhoto()">Remove</button>':''}</div></div>`:''}`;
 }
 
