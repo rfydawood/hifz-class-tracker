@@ -2138,7 +2138,7 @@ function keepTime(el){ if(!el.value) el.value=el.dataset.last||''; else el.datas
 /* Return with the times untouched is just a Return - anyone may do that, and
    it is not a teacher action, so it doesn't keep the tablet unlocked (4.3). */
 function saveBreakEdits(sid){
-  if($('startTime')&&$('endTime')&&!timesTouched()&&state.active[sid]) return ret(sid);
+  if($('scrim').classList.contains('show')&&$('startTime')&&!timesTouched()&&state.active[sid]) return ret(sid);
   if(!asTeacher(()=>saveBreakEdits(sid))) return;
   const o=state.active[sid]; if(!o) return closeSheet();
   const t=editedTimes();
