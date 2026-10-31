@@ -918,7 +918,7 @@ try{
 <script src="vendor/firebase/firebase-firestore-compat.js"></script>
 <script src="account-delete.js"></script>
 <script>
-/*BUILD_STAMP*/const APP_VERSION="4.3",APP_BUILD="75af79938c",APP_BUILD_TIME="2026-10-30T23:40:56.733Z";
+/*BUILD_STAMP*/const APP_VERSION="4.3.1",APP_BUILD="9c85bac989",APP_BUILD_TIME="2026-10-31T03:53:05.940Z";
 const REASONS=[
   {key:'washroom',label:'Washroom',icon:'<svg viewBox="0 0 24 24"><path d="M5 12h14v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5v-3zM7 12V6a2 2 0 0 1 4 0v1"/></svg>'},
   {key:'water',label:'Water',icon:'<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg>'},
@@ -2433,7 +2433,7 @@ function openReason(sid){
     `<div class="body"><div class="reasons">${REASONS.map(r=>{
        const lim=LIMIT(r.key), used=tripsUsed(sid,r.key), capped=!!(tripCap(lim)&&used>=tripCap(lim));
        const cap = r.key==='assigned' ? 'you set the minutes'
-                 : r.key==='other' ? 'you set the expected time'
+                 : r.key==='other' ? `about ${state.settings.longMin} min expected`
                  : lim ? (!tripCap(lim)?`${lim.min} min each · no trip limit`:capped?`${used} of ${lim.trips} used`:`${used} of ${lim.trips} · ${lim.min} min each`)
                  : `alert after ${state.settings.longMin} min`;
        const act = `openMinutesSheet('${sid}','${r.key}')`;       // every break type: set the minutes for this trip, then start
@@ -2444,7 +2444,8 @@ function openReason(sid){
      <button class="leftday" onclick="markLeft('${sid}')">${nameOf(sid)} left for the day</button></div></div>`, dots);
 }
 /* Shared by "Assigned" and "Other" - both let the teacher set an expected
-   duration 1-10 min (prefilled 2) with the same stepper, but the two reasons
+   duration with the same stepper (Assigned prefilled 2; Other since 4.3.1
+   prefilled with the class's usual time, settings.longMin, set in Settings), but the two reasons
    mean different things and must read differently: Assigned is excused time
    the teacher granted (nothing counts against the student until they run
    over); Other is ordinary time out of class that still counts toward
@@ -2467,7 +2468,7 @@ let currentMinutes=2, currentMax=10;
 function openMinutesSheet(sid,key){
   const assigned=key==='assigned', other=key==='other', lim=LIMIT(key), locked=!teacherOn();
   const carried=($('rnote')||{}).value||'';              // a note typed on the reasons sheet comes along
-  currentMinutes=lim?Math.max(1,lim.min):2;
+  currentMinutes=lim?Math.max(1,lim.min):other?Math.min(30,Math.max(1,+state.settings.longMin||10)):2;   // Other: the class's usual time (Settings, 4.3.1)
   currentMax=Math.max(10,currentMinutes);
   const label=RSN(key).label.toLowerCase();
   const title=assigned?`How long is ${nameOf(sid)} assigned for?`
@@ -3455,7 +3456,7 @@ brkModel.ac=()=>ac.breaks;
 function firstClassSettings(){ const f=classById('default'); return CLASS_ID==='default'?state.settings:settingsFrom(f&&f.settingsOverride); }
 function openAddClass(){
   const fs=firstClassSettings(), u=scheduleOf(fs).usual;
-  ac={step:1,name:'',days:[1,2,3,4,5],start:u.start,end:u.end,breaks:[],how:'type',typed:[],copyFrom:'',copied:[],limits:'same',own:JSON.parse(JSON.stringify(fs.limits)),err:''};
+  ac={step:1,name:'',days:[1,2,3,4,5],start:u.start,end:u.end,breaks:[],how:'type',typed:[],copyFrom:'',copied:[],limits:'same',own:JSON.parse(JSON.stringify(fs.limits)),ownLongMin:+fs.longMin||10,err:''};
   $('addClass').classList.add('show'); acPaint();
   setTimeout(()=>{ const n=$('acName'); if(n) n.focus(); },50);
 }
@@ -3475,7 +3476,7 @@ async function acCopyFrom(cid){
   else{ try{ const qs=await classRefFor(cid).collection('students').get(); names=qs.docs.map(d=>d.data()).filter(x=>x.active!==false).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>x.name); }catch(e){} }
   if(ac&&ac.copyFrom===cid){ ac.copied=names; acPaint(); }
 }
-function limitsLine(L){ return ['washroom','water','wudhu'].map(k=>`${RSN(k).label} ${L[k].min} min, ${tripCap(L[k])?`${L[k].trips} a day`:'no trip limit'}`).join(' · '); }
+function limitsLine(L,otherMin){ return ['washroom','water','wudhu'].map(k=>`${RSN(k).label} ${L[k].min} min, ${tripCap(L[k])?`${L[k].trips} a day`:'no trip limit'}`).concat(otherMin?[`${RSN('other').label} about ${otherMin} min`]:[]).join(' · '); }
 /* One stepper pair per break type: minutes 1-30 (every number), trips 1-10
    then "No limit". apply(k,field,value) saves it wherever the pair belongs. */
 function limitSteppers(L,k,fn){
@@ -3489,6 +3490,15 @@ function stepped(l,field,d){
   if(!t) return d<0?10:NO_TRIP_LIMIT;                              // No limit: − goes back to 10
   return t+d>10?NO_TRIP_LIMIT:Math.max(1,t+d);                     // + past 10 is No limit
 }
+/* Other has no trip cap, only an expected time: settings.longMin (4.3.1).
+   Minutes 1-30, like the other break types. */
+function otherStepper(m,fn){
+  const lab=RSN('other').label;
+  return `<span class="lsteps"><span class="lstep"><button class="step-btn" aria-label="Fewer ${lab} minutes" onclick="${fn}(-1)">−</button><b aria-label="${lab} minutes">${m} min</b><button class="step-btn" aria-label="More ${lab} minutes" onclick="${fn}(1)">+</button></span></span>`;
+}
+const steppedMin=(m,d)=>Math.min(30,Math.max(1,(+m||10)+d));
+function stepSettingOther(d){ state.settings.longMin=steppedMin(state.settings.longMin,d); writeSettings(); render(); drawSettings(); }
+function stepNewClassOther(d){ ac.ownLongMin=steppedMin(ac.ownLongMin,d); acPaint(); }
 function stepSettingLimit(k,field,d){ const l=state.settings.limits[k]; l[field]=stepped(l,field,d); writeSettings(); render(); drawSettings(); }
 function stepNewClassLimit(k,field,d){ const l=ac.own[k]; l[field]=stepped(l,field,d); acPaint(); }
 function acNext(){
@@ -3534,10 +3544,10 @@ function acPaint(){
     card.innerHTML=head+body+foot(`<button class="btn dark" onclick="acNext()">Next</button>`);
   } else {
     const L=ac.limits==='same'?fs.limits:ac.own;
-    body=`<label class="radio"><input type="radio" name="aclim" ${ac.limits==='same'?'checked':''} onchange="ac.limits='same';acPaint()"><span>Same as ${esc(first)}<small>${limitsLine(fs.limits)}</small></span></label>
+    body=`<label class="radio"><input type="radio" name="aclim" ${ac.limits==='same'?'checked':''} onchange="ac.limits='same';acPaint()"><span>Same as ${esc(first)}<small>${limitsLine(fs.limits,fs.longMin)}</small></span></label>
       <label class="radio"><input type="radio" name="aclim" ${ac.limits==='own'?'checked':''} onchange="ac.limits='own';acPaint()"><span>Set different limits</span></label>
-      ${ac.limits==='own'?['washroom','water','wudhu'].map(k=>`<div class="field lim"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${limitSteppers(ac.own,k,'stepNewClassLimit')}</div>`).join(''):''}
-      <p class="acsum">${esc(ac.name)} · ${daysText(ac.days)} · ${hm(ac.start)}–${hm(ac.end)} · ${plural(acStudents().length,'student')} · ${ac.limits==='same'?`limits as ${esc(first)}`:limitsLine(L)}</p>`;
+      ${ac.limits==='own'?['washroom','water','wudhu'].map(k=>`<div class="field lim"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${limitSteppers(ac.own,k,'stepNewClassLimit')}</div>`).join('')+`<div class="field lim"><div>${RSN('other').label}<small>Expected minutes · no trip limit</small></div>${otherStepper(ac.ownLongMin,'stepNewClassOther')}</div>`:''}
+      <p class="acsum">${esc(ac.name)} · ${daysText(ac.days)} · ${hm(ac.start)}–${hm(ac.end)} · ${plural(acStudents().length,'student')} · ${ac.limits==='same'?`limits as ${esc(first)}`:limitsLine(L,ac.ownLongMin)}</p>`;
     card.innerHTML=head+body+foot(`<button class="btn dark" onclick="acCreate()">Create ${esc(ac.name)}</button>`);
   }
 }
@@ -3548,6 +3558,7 @@ function acCreate(){
   const fs=firstClassSettings();
   const S=JSON.parse(JSON.stringify(fs));
   S.limits=JSON.parse(JSON.stringify(ac.limits==='same'?fs.limits:ac.own));
+  S.longMin=ac.limits==='same'?fs.longMin:ac.ownLongMin;
   S.schedule={usual:{start:ac.start,end:ac.end,breaks:ac.breaks.map(b=>({name:cleanName(b.name),start:b.start,end:b.end})).sort(byStart)},days:{},dates:{}};
   S.classDays=ac.days.slice();
   syncLegacyFields(S);
@@ -4087,6 +4098,7 @@ function drawSettings(){
    ${scheduleSection()}
    <h4>Break limits</h4>
    ${['washroom','water','wudhu'].map(k=>`<div class="field lim"><div>${RSN(k).label}<small>Minutes per trip · trips per day</small></div>${limitSteppers(set.limits,k,'stepSettingLimit')}</div>`).join('')}
+   <div class="field lim" id="otherLimField"><div>${RSN('other').label}<small>Expected minutes · no trip limit</small></div>${otherStepper(set.longMin,'stepSettingOther')}</div>
    <h4>Teacher mode</h4>
    <div class="field lim" id="autoLockField"><div>Lock again automatically<small>${hasPin()?'After this many minutes with no teacher action. Students can still start and end their breaks.':'Set a teacher PIN with the padlock first. Until then nothing is locked.'}</small></div>
      <div class="seg" role="group" aria-label="Lock again automatically">${AUTOLOCK_CHOICES.map(m=>`<button class="${autoLockMin()===m?'on':''}" aria-pressed="${autoLockMin()===m}" onclick="setAutoLock(${m})">${m?m+' min':'Off'}</button>`).join('')}</div></div>
