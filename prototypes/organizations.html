@@ -518,6 +518,9 @@ body{display:flex;flex-direction:column}
 .ini.inv{background:var(--gold-soft);color:#6B4B0C}
 .ini.soft{background:var(--leaf-soft);color:var(--leaf)}
 .ptempty{padding:12px;color:var(--mute);font-weight:600;font-size:13.5px}
+.headbox{margin:4px 0 14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.headbox .ptlist{border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.hdsub{display:block;margin-top:2px}
 /* sign-up: Terms and privacy, as in the app */
 .plinks{display:flex;flex-wrap:wrap;gap:10px}
 .plinks a{flex:1 1 180px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;font-weight:800;font-size:15px;color:var(--leaf);text-decoration:none;background:var(--card)}
@@ -1043,7 +1046,14 @@ const orgOf=c=>c&&c.orgId?db.orgs[c.orgId]:null;
 const membership=(orgId,pid)=>(db.members||[]).find(m=>m.orgId===orgId&&m.personId===pid)||null;
 const isAdmin=(orgId,pid)=>{ const m=membership(orgId,pid); return !!(m&&m.roles.includes('admin')); };
 const programsOf=orgId=>(db.orgs[orgId].programs||[]).map(p=>db.programs[p]).filter(Boolean);
+/* Program head (p.adminId): one per program, chosen by an admin. Sees and
+   manages that program's classes, teachers and reports, not the rest of the
+   organization. Can be one of its teachers or someone who teaches no class. */
 const programAdminOf=(orgId,pid)=>programsOf(orgId).filter(p=>p.adminId===pid).map(p=>p.id);
+const headInvite=progId=>(db.invites||[]).find(i=>i.status==='pending'&&(i.headOf||[]).includes(progId))||null;
+const headOfNames=inv=>(inv.headOf||[]).map(id=>(db.programs[id]||{}).name).filter(Boolean);
+function inviteRoleTxt(inv){ if(inv.role==='admin') return 'Admin'; const h=headOfNames(inv);
+  return h.length?`Head of ${h.join(' and ')}${inv.classIds.length?', and teacher':''}`:'Teacher'; }
 const canSeeOf=(orgId,pid)=>{ const m=membership(orgId,pid); return !m?null:m.roles.includes('admin')?'everything':m.canSee||'own'; };
 /* Who gets the Organization view, and what they may do there. */
 function orgAccess(orgId,pid){
@@ -1158,7 +1168,7 @@ function openDrawer(){ if(readOnly) return; $('drawer').classList.add('show'); $
 function closeDrawer(){ $('drawer').classList.remove('show'); $('drawerScrim').classList.remove('show'); }
 function whoToAsk(c){
   const p=db.programs[c.programId], names=[];
-  if(p&&p.adminId) names.push(`${personName(p.adminId)} (program admin)`);
+  if(p&&p.adminId) names.push(`${personName(p.adminId)} (head of ${p.name})`);
   const admins=(db.members||[]).filter(m=>m.orgId===c.orgId&&m.roles.includes('admin')).map(m=>personName(m.personId));
   if(admins.length) names.push(`${admins.join(' or ')} (admin${admins.length>1?'s':''})`);
   return names.join(', or ');
@@ -1366,11 +1376,11 @@ function showWaiting(orgId){
 function showInvite(invId,viaCode){
   const inv=db.invites.find(i=>i.id===invId), org=db.orgs[inv.orgId], p=me();
   SCREEN='invite'; showView(null);
-  const cls=inv.classIds.map(id=>db.classes[id]).filter(Boolean);
+  const cls=inv.classIds.map(id=>db.classes[id]).filter(Boolean), heads=headOfNames(inv);
   card(`<h2>You're invited</h2>
-    <p class="lede">${esc(personName(inv.invitedBy))} invited ${esc(viaCode?p.email:inv.email)} to join <b>${esc(org.name)}</b>${inv.role==='admin'?' as an admin':' as a teacher'}.</p>
-    <div class="invcard"><b>${esc(org.name)}</b>${cls.length?`<ul>${cls.map(c=>`<li>${esc(classLabel(c))}</li>`).join('')}</ul>`:'<div class="note2">No classes yet - the admin will add you to one.</div>'}</div>
-    <p class="note2">Your classes are already set up. A class can have more than one teacher, and the records stay with the class.</p>
+    <p class="lede">${esc(personName(inv.invitedBy))} invited ${esc(viaCode?p.email:inv.email)} to join <b>${esc(org.name)}</b>${inv.role==='admin'?' as an admin':heads.length?` as head of ${esc(heads.join(' and '))}`:' as a teacher'}.</p>
+    <div class="invcard"><b>${esc(org.name)}</b>${cls.length||heads.length?`<ul>${heads.map(h=>`<li>Head of ${esc(h)}: you'll see all its classes, teachers and reports</li>`).join('')}${cls.map(c=>`<li>${esc(classLabel(c))}</li>`).join('')}</ul>`:'<div class="note2">No classes yet - the admin will add you to one.</div>'}</div>
+    <p class="note2">${cls.length?'Your classes are already set up. A class can have more than one teacher, and the records stay with the class.':heads.length?`You don't need a class of your own. Joining opens ${esc(heads.join(' and '))} in the Organization view.`:'A class can have more than one teacher, and the records stay with the class.'}</p>
     <div class="setup-actions"><button class="btn ghost" onclick="inviteNotNow('${inv.id}')">Not now</button><button class="btn dark" onclick="joinInvite('${inv.id}')">Join ${esc(org.name)}</button></div>`);
 }
 function inviteNotNow(id){ addNotNow(id); route(); }
@@ -1382,6 +1392,7 @@ function joinInvite(id){
   inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&!c.teacherIds.includes(p.id)) c.teacherIds.push(p.id); });
   programsOf(inv.orgId).forEach(pg=>{ ptList(pg); if(pg.inviteIds.includes(inv.id)){ pg.inviteIds=pg.inviteIds.filter(x=>x!==inv.id); addToProgram(pg.id,{personId:p.id}); } });
   inv.classIds.forEach(cid=>{ const c=db.classes[cid]; if(c&&c.programId) addToProgram(c.programId,{personId:p.id}); });
+  (inv.headOf||[]).forEach(pid=>{ const pg=db.programs[pid]; if(pg) pg.adminId=p.id; });   // invited as program head
   inv.status='joined'; inv.joinedBy=p.id; saveDb();
   markSeen(p.id,inv.classIds);
   toast(`Welcome to ${org.name}`);
@@ -1623,7 +1634,8 @@ function paintOrgSetup(){
   const names=osProgNames(), total=names.reduce((a,n,i)=>a+osProg(i).classes.length,0);
   card(`<h2>Program details</h2>${steps}<p class="lede">Usual hours are filled in. Add each program's classes and who teaches them - or add them later from Classes.</p>
     <div class="pdlist">${names.map((n,i)=>{ const p=osProg(i), k=p.classes.length;
-      return `<div class="pdrow"><div class="nm"><b>${esc(n)}</b><small>${daysText(p.days)} · ${hm(p.start)}–${hm(p.end)} · <button class="lnk2" onclick="osEditHours(${i})">Edit hours</button></small></div>
+      return `<div class="pdrow"><div class="nm"><b>${esc(n)}</b><small>${daysText(p.days)} · ${hm(p.start)}–${hm(p.end)} · <button class="lnk2" onclick="osEditHours(${i})">Edit hours</button></small>
+          <small class="hdsub">Head: <button class="lnk2" aria-label="Head of ${esc(n)}" onclick="osHead(${i})">${p.head?esc(p.head===me().email.toLowerCase()?'You':p.head):'Add a head (optional)'}</button></small></div>
         <button class="pcnt${k?'':' zero'}" aria-label="${esc(classCountTxt(k))} in ${esc(n)}: see the list" onclick="osClassList(${i})">${classCountTxt(k)}</button>
         <button class="btn ghost sm" onclick="osAddClass(${i})">+ Add class</button></div>`; }).join('')}</div>
     <p class="note2">${total?classCountTxt(total):'No classes yet'} across ${names.length} program${names.length===1?'':'s'}.</p>
@@ -1657,6 +1669,19 @@ function osSaveHours(){ const h=os.hours, p=osProg(h.i);
   p.days=h.days; p.start=h.start; p.end=h.end;
   p.full=toMin(p.start)<=toMin('10:10')&&toMin(p.end)>=toMin('13:05');   // snack and lunch only where they fit the day
   os.hours=null; closeSheet(); paintOrgSetup(); }
+/* ----- step 3: a head for a program (optional) ----- */
+function osHead(i){ const n=osProgNames()[i], p=osProg(i), mine=me().email.toLowerCase(); $('scrim').classList.add('over');
+  const opts=[...new Set([mine,...p.classes.map(c=>c.email).filter(Boolean)])];
+  sheetHTML(`Head of ${esc(n)}`,`Optional. They see and manage all of ${esc(n)}'s classes, teachers and reports, but not the rest of ${esc(os.name)}. One of its teachers, or someone who doesn't teach.`,
+    `<div class="body"><div class="flab" style="margin-top:0">Quick pick</div>
+      <div class="popts" style="margin-top:8px">${opts.map(e=>`<button class="popt${p.head===e?' on':''}" data-e="${esc(e)}" onclick="$('osHeadEmail').value=this.dataset.e;document.querySelectorAll('.sheet .popt').forEach(b=>b.classList.toggle('on',b===this))">${e===mine?'Me':esc(e)}</button>`).join('')}</div>
+      <label class="flab" for="osHeadEmail">Head's email</label><div class="note" style="margin-top:6px"><input id="osHeadEmail" type="email" value="${esc(p.head||'')}" placeholder="${esc(os.domain?'e.g. head@'+os.domain:'their@email')}" onkeydown="if(event.key==='Enter')osSetHead(${i})"></div>
+      <p class="note2">Someone who isn't teaching a class here is invited as head only, with no class.</p>
+      <p class="err" id="hdErr"></p></div>
+     <div class="actions">${p.head?`<button class="btn ghost" onclick="osSetHead(${i},'')">No head</button>`:`<button class="btn ghost" onclick="closeSheet()">Cancel</button>`}<button class="btn dark" onclick="osSetHead(${i})">Save</button></div>`); }
+function osSetHead(i,v){ const p=osProg(i), email=v===undefined?cleanTxt($('osHeadEmail').value).toLowerCase():v;
+  if(email&&email!==me().email.toLowerCase()){ if(!emailOk(email)) return $('hdErr').textContent="That doesn't look like an email address."; const e=osEmailErr(email); if(e) return $('hdErr').textContent=e; }
+  p.head=email; closeSheet(); paintOrgSetup(); if(email) toast(`Head of ${osProgNames()[i]} set`); }
 /* ----- students: names typed one at a time, or several pasted at once ----- */
 const splitNames=t=>String(t||'').split(/[\n,;]+/).map(n=>cleanTxt(n.replace(/^\s*\d+[.)]\s*/,''))).filter(Boolean);
 const stuTxt=k=>k===1?'1 student':`${k} students`;
@@ -1758,6 +1783,12 @@ function createOrg(){
     if(!inv){ inv={id:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),orgId:id,email:cl.email,name:known?known.name:'',role:'teacher',classIds:[],invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'}; db.invites.push(inv); invited.push(inv); }
     inv.classIds.push(cid); addToProgram(c.programId,{inviteId:inv.id});
   }));
+  // program heads: the admin themself, or an invite (added to a teacher's invite when they also teach here)
+  names.forEach((n,i)=>{ const h=osProg(i).head, pid=progIds[i]; if(!h) return;
+    if(h===p.email.toLowerCase()){ db.programs[pid].adminId=p.id; return; }
+    let inv=db.invites.find(x=>x.orgId===id&&x.status==='pending'&&x.email===h);
+    if(!inv){ inv={id:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),orgId:id,email:h,name:'',role:'teacher',classIds:[],invitedBy:p.id,at:Date.now(),code:newCode(),status:'pending'}; db.invites.push(inv); invited.push(inv); }
+    inv.headOf=[...new Set([...(inv.headOf||[]),pid])]; });
   db.members.push({orgId:id,personId:p.id,roles:os.teach||mine?['admin','teacher']:['admin'],canSee:'everything'});
   saveDb();
   const org=db.orgs[id], teach=os.teach&&!mine; os=null; showOrg(id,'classes');
@@ -1769,7 +1800,7 @@ function createOrg(){
 2. Sign in with the email your invite was sent to${org.domain?` (your @${org.domain} address)`:''}.
 
 Your class will be waiting.`;
-  sheetHTML(`${esc(org.name)} is ready`,`${names.length} program${names.length===1?'':'s'} · ${nClasses} class${nClasses===1?'':'es'} · ${invited.length} teacher${invited.length===1?'':'s'} invited. The app can't send email, so send this to your staff by WhatsApp, text or email. Practice copy: nothing is sent.`,
+  sheetHTML(`${esc(org.name)} is ready`,`${names.length} program${names.length===1?'':'s'} · ${nClasses} class${nClasses===1?'':'es'} · ${invited.length} ${invited.length===1?'person':'people'} invited. The app can't send email, so send this to your staff by WhatsApp, text or email. Practice copy: nothing is sent.`,
     `<div class="body"><textarea class="msgbox" id="invMsg" readonly>${esc(msg)}</textarea><p class="note2">Signing in with a different email? Each teacher's own invite, with its code, is under People.</p><p class="okmsg" id="copied"></p></div>
      <div class="actions"><button class="btn ghost" onclick="osDone()">Go to ${esc(org.name)}</button><button class="btn dark" onclick="copyInvite()">Copy message</button></div>`);
 }
@@ -1946,7 +1977,7 @@ const domainOk=(org,email)=>!org.domainOnly||!org.domain||String(email).toLowerC
 const domainRefusal=(org,email)=>`${org.name} only lets @${org.domain} addresses join, so ${email} can't be invited. Use their @${org.domain} address, or turn off "Only @${org.domain} addresses can join" in Programs.`;
 function inviteMessage(inv){
   const org=db.orgs[inv.orgId], cls=inv.classIds.map(id=>db.classes[id]).filter(Boolean).map(classLabel);
-  return `Assalamu alaikum! ${personName(inv.invitedBy)} has invited you to ${org.name} on Hifz Class Tracker${cls.length?`, to teach ${cls.join(' and ')}`:''}${inv.role==='admin'?', as an admin':''}.
+  return `Assalamu alaikum! ${personName(inv.invitedBy)} has invited you to ${org.name} on Hifz Class Tracker${(()=>{ const parts=[]; if(headOfNames(inv).length) parts.push(`as head of ${headOfNames(inv).join(' and ')}`); if(cls.length) parts.push(`to teach ${cls.join(' and ')}`); return parts.length?', '+parts.join(' and '):''; })()}${inv.role==='admin'?', as an admin':''}.
 
 1. Open https://rfydawood.github.io/hifz-class-tracker/
 2. Sign in with ${inv.email} - it has to be this exact email.
@@ -2007,17 +2038,17 @@ function orgPeopleHTML(acc){
     const pa=programAdminOf(ORG.id,m.personId), isA=m.roles.includes('admin');
     return `<div class="prow" data-person="${m.personId}"><div class="who2"><b class="ini mid">${esc(initials(person.name))}</b><div><b>${esc(person.name)}${m.personId===p.id?' <span class="badge2 youb">you</span>':''}</b><small>${esc(person.email)}</small></div></div>
       <div class="rcol">${canEditPeople?`<select aria-label="Role for ${esc(person.name)}" onchange="setRole('${m.personId}',this.value)"><option value="teacher" ${isA?'':'selected'}>Teacher</option><option value="admin" ${isA?'selected':''}>Admin</option></select>`:`${isA?'<span class="badge2 admin">Admin</span>':''}${cs.length?'<span class="badge2 teacher">Teacher</span>':''}`}
-        ${pa.map(id=>`<span class="badge2 padmin">Program admin · ${esc(db.programs[id].name)}</span>`).join('')}</div>
+        ${pa.map(id=>`<span class="badge2 padmin">Program head · ${esc(db.programs[id].name)}</span>`).join('')}</div>
       <div class="cls">${cs.map(classLabel).map(esc).join(' · ')||'No class'}</div>
-      <div class="scol">${isA?'<span class="badge2 teacher">Can see: everything</span>':`<select aria-label="Can see for ${esc(person.name)}" ${canEditPeople?'':'disabled'} onchange="setCanSee('${m.personId}',this.value)">${[['own','Own classes'],['summaries','Own + summaries'],['everything','Everything']].map(([v,l])=>`<option value="${v}" ${(m.canSee||'own')===v?'selected':''}>Can see: ${l}</option>`).join('')}</select>`}</div>
+      <div class="scol">${isA?'<span class="badge2 teacher">Can see: everything</span>':pa.length?`<span class="badge2 teacher">Can see: all of ${esc(pa.map(id=>db.programs[id].name).join(', '))}</span>`:`<select aria-label="Can see for ${esc(person.name)}" ${canEditPeople?'':'disabled'} onchange="setCanSee('${m.personId}',this.value)">${[['own','Own classes'],['summaries','Own + summaries'],['everything','Everything']].map(([v,l])=>`<option value="${v}" ${(m.canSee||'own')===v?'selected':''}>Can see: ${l}</option>`).join('')}</select>`}</div>
       <div class="rmcol">${canEditPeople&&!(isA&&admins<=1)?`<button class="lnk" onclick="removePerson('${m.personId}')">Remove</button>`:''}</div></div>`;
   }).join('');
-  let inv=invitesPending(ORG.id); if(acc.programAdmin) inv=inv.filter(i=>i.classIds.some(id=>db.classes[id]&&acc.programs.includes(db.classes[id].programId)));
+  let inv=invitesPending(ORG.id); if(acc.programAdmin) inv=inv.filter(i=>i.classIds.some(id=>db.classes[id]&&acc.programs.includes(db.classes[id].programId))||(i.headOf||[]).some(id=>acc.programs.includes(id)));
   return `<div class="ofilters"><b style="font-size:18px">People</b>${acc.manage?`<button class="btn dark sm" onclick="openInvite()">+ Invite</button>`:''}</div>
     <div class="ptable">${rows}</div>
-    ${inv.length?`<div class="sect">Waiting to join</div>${inv.map(i=>`<div class="wait" data-invite="${i.id}"><span class="q">?</span><div><b>${esc(i.email)}</b><small>Invited ${new Date(i.at).toLocaleDateString([],{month:'short',day:'numeric'})} as ${i.role==='admin'?'Admin':'Teacher'}${i.classIds.length?' · '+i.classIds.map(id=>db.classes[id]?classLabel(db.classes[id]):'').filter(Boolean).join(' · '):''} · code ${esc(i.code)}</small></div>
+    ${inv.length?`<div class="sect">Waiting to join</div>${inv.map(i=>`<div class="wait" data-invite="${i.id}"><span class="q">?</span><div><b>${esc(i.email)}</b><small>Invited ${new Date(i.at).toLocaleDateString([],{month:'short',day:'numeric'})} as ${esc(inviteRoleTxt(i))}${i.classIds.length?' · '+i.classIds.map(id=>db.classes[id]?classLabel(db.classes[id]):'').filter(Boolean).join(' · '):''} · code ${esc(i.code)}</small></div>
       <button class="btn ghost sm" onclick="shareInvite('${i.id}')">Share invite</button>${acc.manage?`<button class="btn ghost sm" style="color:var(--ember)" onclick="revokeInvite('${i.id}')">Revoke</button>`:''}</div>`).join('')}`:''}
-    <p class="note2">"Can see": own classes only (the usual), own classes plus summary reports of the others, or everything (admins). There is always at least one admin.${acc.readOnly?' You can see everything here, read only.':''}</p>`;
+    <p class="note2">"Can see": own classes only (the usual), own classes plus summary reports of the others, or everything (admins). A program head sees all of their program; change heads in Programs. There is always at least one admin.${acc.readOnly?' You can see everything here, read only.':''}</p>`;
 }
 function setRole(pid,v){
   const m=membership(ORG.id,pid), admins=(db.members||[]).filter(x=>x.orgId===ORG.id&&x.roles.includes('admin')).length;
@@ -2049,6 +2080,7 @@ function orgProgramsHTML(acc){
     const people=progTeachers(p), invs=progInvites(p), n=people.length+invs.length, open=!!ORG.openTimes[p.id];
     const L=p.limits.washroom, sum=`${daysText(p.days)} · ${hm(p.start)}–${hm(p.end)} · Washroom ${L.min} min, ${tripCap(L)?`${L.trips} a day`:'no trip limit'} …`;
     return `<div class="pcard2" data-program="${p.id}"><h3>${esc(p.name)}</h3>
+      ${headBoxHTML(p,acc)}
       <div class="pthead"><b>Teachers in this program</b><span class="ptcount" data-count>${n}</span>${can?`<button class="btn primary sm" onclick="openTeacherPicker('${p.id}')">+ Add teachers</button>`:''}</div>
       <div class="ptlist">${people.map(id=>{ const x=db.people[id];
           return `<div class="ptrow" data-teacher="${id}"><b class="ini mid soft">${esc(initials(x.name))}</b><div><b>${esc(x.name)}</b><small>${esc(x.email)} · ${esc(teachesTxt(p.id,id))}</small></div>${can?`<button class="lnk" aria-label="Remove ${esc(x.name)} from ${esc(p.name)}" onclick="removeFromProgram('${p.id}','person','${id}')">Remove</button>`:''}</div>`; }).join('')}
@@ -2060,8 +2092,7 @@ function orgProgramsHTML(acc){
         <div class="frow">Days<span class="daysel">${DAYN.map((nm,i)=>`<button ${d} class="${p.days.includes(i+1)?'on':''}" aria-pressed="${p.days.includes(i+1)}" onclick="toggleProgDay('${p.id}',${i+1})">${nm}</button>`).join('')}</span></div>
         <div class="frow">Class times<span class="two"><input type="time" aria-label="${p.name} class times from" ${d} value="${p.start}" onchange="setProg('${p.id}','start',this.value)"><input type="time" aria-label="${p.name} class times to" ${d} value="${p.end}" onchange="setProg('${p.id}','end',this.value)"></span></div>
         ${tp('Snack','snack')}${tp('Lunch','lunch')}
-        ${['washroom','water','wudhu'].map(k=>`<div class="frow">${RSN(k).label}${stepperPair(p.limits[k],k,`stepProg_${p.id}`,!can)}</div>`).join('')}
-        <div class="frow"><div>Program admin<small>Optional · manages only ${esc(p.name)}: its classes, teachers and reports</small></div><select aria-label="${p.name} program admin" ${acc.admin?'':'disabled'} onchange="setProg('${p.id}','adminId',this.value||null)"><option value="">None</option>${mem.map(m=>`<option value="${m.personId}" ${p.adminId===m.personId?'selected':''}>${esc(personName(m.personId))}</option>`).join('')}</select></div></div>`:''}
+        ${['washroom','water','wudhu'].map(k=>`<div class="frow">${RSN(k).label}${stepperPair(p.limits[k],k,`stepProg_${p.id}`,!can)}</div>`).join('')}</div>`:''}
     </div>`; };
   const progs=acc.programs.map(id=>db.programs[id]);
   progs.forEach(p=>{ window['stepProg_'+p.id]=(k,f,dlt)=>{ p.limits[k][f]=stepVal(p.limits[k],f,dlt); saveDb(); paintOrg(); }; });
@@ -2071,6 +2102,59 @@ function orgProgramsHTML(acc){
       <div class="swrow"><div><b>Only @${esc(org.domain||'domain')} addresses can join</b><small>When on, invites to any other address are refused. People already in ${esc(org.name)} stay.</small></div><button class="switch ${org.domainOnly?'on':''}" ${dis} role="switch" aria-checked="${!!org.domainOnly}" aria-label="Only domain addresses can join" onclick="setOrg('domainOnly',${!org.domainOnly})"></button></div></div>`}
     <div class="sect">Programs</div>${progs.map(progCard).join('')}
     ${acc.admin?`<div class="roster-add"><input id="newProg" placeholder="New program's name" onkeydown="if(event.key==='Enter')addProgram()"><button class="btn ghost" onclick="addProgram()">+ Add a program</button></div>`:''}`;
+}
+/* ----- Program head: shown at the top of each program; only admins change it ----- */
+function headBoxHTML(p,acc){
+  const org=db.orgs[ORG.id], h=p.adminId&&db.people[p.adminId], inv=!h&&headInvite(p.id);
+  const who=h?`<div class="ptrow"><b class="ini mid soft">${esc(initials(h.name))}</b><div><b>${esc(h.name)}${h.id===me().id?' <span class="badge2 youb">you</span>':''}</b><small>${esc(h.email)} · ${esc(teachesTxt(p.id,h.id))}</small></div></div>`
+    :inv?`<div class="ptrow"><b class="ini mid inv">${esc(initials(inv.email))}</b><div><b>${esc(inv.email)}</b><small><span class="invtxt">Invited as head · waiting to join</span></small></div>${acc.admin?`<button class="lnk" onclick="shareInvite('${inv.id}')">Share invite</button>`:''}</div>`
+    :'<div class="ptempty">No head yet. Only admins manage this program.</div>';
+  return `<div class="headbox"><div class="pthead"><b>Program head</b>${acc.admin?`<button class="btn ghost sm" onclick="openHeadPicker('${p.id}')">${h||inv?'Change':'Choose a head'}</button>`:''}</div>
+    <div class="ptlist">${who}</div>
+    <p class="note2">Sees and manages all of ${esc(p.name)}: its classes, teachers and reports. Not the rest of ${esc(org.name)}.</p></div>`;
+}
+let hp=null;
+function openHeadPicker(progId){ hp={progId,pick:db.programs[progId].adminId||(headInvite(progId)?'@inv':''),email:'',err:''}; paintHeadPicker(); }
+const headsTxt=pid=>{ const h=programAdminOf(ORG.id,pid).map(id=>db.programs[id].name); return h.length?`Head of ${h.join(', ')}`:''; };
+function paintHeadPicker(){
+  const p=db.programs[hp.progId], org=db.orgs[ORG.id], inProg=new Set(progTeachers(p)), inv=headInvite(p.id);
+  const mem=(db.members||[]).filter(m=>m.orgId===ORG.id).map(m=>db.people[m.personId]).filter(Boolean)
+    .sort((a,b)=>(inProg.has(b.id)-inProg.has(a.id))||a.name.localeCompare(b.name));
+  const row=(id,name,sub,ini)=>`<button class="pkrow" role="radio" aria-checked="${hp.pick===id}" onclick="hp.pick='${id}';paintHeadPicker()"><i class="box">✓</i>${ini?`<b class="ini mid soft">${esc(ini)}</b>`:''}<div><b class="nm">${esc(name)}</b><small>${esc(sub)}</small></div></button>`;
+  $('scrim').classList.add('over');
+  sheetHTML(`Head of ${esc(p.name)}`,`One per program. They see and manage all of ${esc(p.name)}'s classes, teachers and reports, but not the rest of ${esc(org.name)}. They don't have to teach a class.`,
+    `<div class="body"><div class="pklist" role="radiogroup" aria-label="Who heads ${esc(p.name)}">
+        ${inv?row('@inv',inv.email,'Invited as head · waiting to join',initials(inv.email)):''}
+        ${mem.map(x=>row(x.id,x.name,inProg.has(x.id)?`${p.name} teacher · ${teachesTxt(p.id,x.id)}`:isAdmin(ORG.id,x.id)?'Admin':headsTxt(x.id)&&p.adminId!==x.id?headsTxt(x.id):`Not in ${p.name} · ${otherProgramsTxt(ORG.id,x.id)}`,initials(x.name))).join('')}
+        ${row('','No head',`Only admins manage ${p.name}`,'')}
+      </div>
+      <div class="sect">Or invite someone new as head</div>
+      <p class="note2" style="margin-top:0">For a head who isn't in ${esc(org.name)} yet. They get no class unless you give them one.</p>
+      <div class="roster-add" style="margin-top:8px"><input id="hpEmail" type="email" aria-label="New head's email" placeholder="${esc(org.domain?'e.g. head@'+org.domain:'their@email')}" value="${esc(hp.email)}" oninput="hp.email=this.value" onkeydown="if(event.key==='Enter')headInviteNew()"><button class="btn ghost sm" onclick="headInviteNew()">Invite</button></div>
+      ${inv?`<p class="note2">${esc(inv.email)} is invited as head and hasn't joined yet. Saving someone else here cancels that.</p>`:''}
+      <p class="err" id="hpErr">${esc(hp.err)}</p></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="saveHead()">Save</button></div>`);
+}
+// a waiting head invite for this program is cancelled; an invite left with nothing else is revoked
+function dropHeadInvites(progId){ (db.invites||[]).filter(i=>i.status==='pending'&&(i.headOf||[]).includes(progId)).forEach(i=>{
+  i.headOf=i.headOf.filter(x=>x!==progId); if(!i.headOf.length&&!i.classIds.length&&i.role!=='admin') i.status='revoked'; }); }
+function saveHead(){
+  if(hp.pick==='@inv'){ hp=null; return closeSheet(); }   // kept the waiting invite: nothing changes
+  const p=db.programs[hp.progId], was=p.adminId; dropHeadInvites(p.id); p.adminId=hp.pick||null; hp=null;
+  saveDb(); closeSheet(); paintOrg(); toast(p.adminId?`${personName(p.adminId)} is now head of ${p.name}`:`${p.name} has no head now`);
+  if(was&&was===me().id&&!orgAccess(ORG.id,was)) route();
+}
+function headInviteNew(){
+  const p=db.programs[hp.progId], org=db.orgs[ORG.id], email=cleanTxt(hp.email).toLowerCase();
+  if(!emailOk(email)){ hp.err='Please type an email address.'; return paintHeadPicker(); }
+  if(!domainOk(org,email)){ hp.err=domainRefusal(org,email); return paintHeadPicker(); }
+  const known=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
+  if(known&&membership(ORG.id,known.id)){ hp.pick=known.id; return saveHead(); }   // already in: just make them head
+  dropHeadInvites(p.id); p.adminId=null;
+  let inv=db.invites.find(i=>i.orgId===ORG.id&&i.status==='pending'&&i.email===email);
+  if(!inv){ inv={id:'i'+Date.now().toString(36),orgId:ORG.id,email,name:known?known.name:'',role:'teacher',classIds:[],headOf:[],invitedBy:me().id,at:Date.now(),code:newCode(),status:'pending'}; db.invites.push(inv); }
+  inv.headOf=[...new Set([...(inv.headOf||[]),p.id])]; hp=null;
+  saveDb(); paintOrg(); shareInvite(inv.id);
 }
 /* Off the list only: their classes and every record stay. If they still teach
    a class in this program, say so first. */
@@ -2184,7 +2268,7 @@ function fillPicker(){
   const order=['maryam','aisha','yusuf','bilal','rafaye','khadija','hamid','sumayya','hamza','tariq'];
   const people=Object.values(db.people).sort((a,b)=>{ const i=order.indexOf(a.id), j=order.indexOf(b.id); return (i<0?99:i)-(j<0?99:j); });
   const label=p=>{ const roles=(db.members||[]).filter(m=>m.personId===p.id).map(m=>{ const org=db.orgs[m.orgId], pa=programAdminOf(m.orgId,p.id);
-    return m.roles.includes('admin')?`admin, ${org.name}`:pa.length?`program admin, ${db.programs[pa[0]].name}`:null; }).filter(Boolean);
+    return m.roles.includes('admin')?`admin, ${org.name}`:pa.length?`head of ${db.programs[pa[0]].name}`:null; }).filter(Boolean);
     return `${p.name}${roles.length?` (${roles.join('; ')})`:''}`; };
   const idris=!isScratch()&&(db.invites||[]).find(i=>i.email==='idris@example.org'&&i.status==='pending')&&!Object.values(db.people).some(p=>p.email==='idris@example.org');
   // from scratch: anyone invited who hasn't signed in yet, one entry per email
