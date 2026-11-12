@@ -1006,7 +1006,7 @@ function openReports(){
 const NS='hifzOrgPractice.v1.';
 const KDB=NS+'db', KCLS=cid=>NS+'class.'+cid, KME=NS+'me', KSKIP=NS+'notNow', KMODE=NS+'mode';
 /* 'scratch' = an empty app, to go through everything from the start;
-   'demo' = Uthman Academy as it is today. Chosen the first time the page
+   'demo' = Sample Academy as it is today. Chosen the first time the page
    opens on a device (and again from Start over), and remembered. */
 function practiceMode(){ try{ return localStorage.getItem(KMODE); }catch(e){ return null; } }
 function setPracticeMode(m){ try{ localStorage.setItem(KMODE,m); }catch(e){} }
@@ -1026,7 +1026,7 @@ function upgradeDb(){
   Object.values(db.programs||{}).forEach(p=>{ if(p.teacherIds) return; ch=true; p.teacherIds=[]; p.inviteIds=[];
     Object.values(db.classes).filter(c=>c.programId===p.id&&c.status!=='archived').forEach(c=>(c.teacherIds||[]).forEach(t=>{ if(!p.teacherIds.includes(t)) p.teacherIds.push(t); }));
     (db.invites||[]).filter(i=>i.status==='pending'&&i.classIds.some(cid=>db.classes[cid]&&db.classes[cid].programId===p.id)).forEach(i=>p.inviteIds.push(i.id)); });
-  if(db.orgs&&db.orgs.uthman&&!db.people.hamza&&!isScratch()){ ch=true; db.people.hamza={id:'hamza',name:'Ustadh Hamza',email:'hamza@uthmanacademy.org',provider:'google'};
+  if(db.orgs&&db.orgs.uthman&&!db.people.hamza&&!isScratch()){ ch=true; db.people.hamza={id:'hamza',name:'Ustadh Hamza',email:'hamza@example.org',provider:'google'};
     db.members.push({orgId:'uthman',personId:'hamza',roles:['teacher'],canSee:'own'}); }
   if(ch) lsSet(KDB,db);
 }
@@ -1607,8 +1607,8 @@ function paintOrgSetup(){
   SCREEN='orgsetup'; showView(null);
   const steps=`<div class="osteps">${['Organization','Programs','Details'].map((l,i)=>`<span class="${os.step>i+1?'done':os.step===i+1?'on':''}">${i+1} ${l}</span>`).join('')}</div>`;
   if(os.step===1) return card(`<h2>Set up an organization</h2>${steps}
-    <label>Organization name<input id="osName" value="${esc(os.name)}" placeholder="e.g. Uthman Academy" oninput="os.name=this.value"></label>
-    <label>Email domain (optional)<input id="osDomain" value="${esc(os.domain)}" placeholder="e.g. uthmanacademy.org" oninput="os.domain=this.value.replace(/^@/,'').trim().toLowerCase();$('osOnlyLbl').textContent='Only @'+(os.domain||'domain')+' addresses can join'"></label>
+    <label>Organization name<input id="osName" value="${esc(os.name)}" placeholder="e.g. Sample Academy" oninput="os.name=this.value"></label>
+    <label>Email domain (optional)<input id="osDomain" value="${esc(os.domain)}" placeholder="e.g. example.org" oninput="os.domain=this.value.replace(/^@/,'').trim().toLowerCase();$('osOnlyLbl').textContent='Only @'+(os.domain||'domain')+' addresses can join'"></label>
     <div class="swrow"><div><b id="osOnlyLbl">Only @${esc(os.domain||'domain')} addresses can join</b><small>Invites to any other address are refused.</small></div><button class="switch ${os.only?'on':''}" role="switch" aria-checked="${os.only}" aria-label="Only domain addresses can join" onclick="os.only=!os.only;this.classList.toggle('on',os.only);this.setAttribute('aria-checked',os.only)"></button></div>
     <div class="swrow" style="margin-top:8px"><div><b>Do you also teach a class?</b><small>Then you'll make your class right after this.</small></div><button class="switch ${os.teach?'on':''}" role="switch" aria-checked="${os.teach}" aria-label="Do you also teach a class?" onclick="os.teach=!os.teach;this.classList.toggle('on',os.teach);this.setAttribute('aria-checked',os.teach)"></button></div>
     <div class="setup-actions" style="margin-top:18px"><button class="btn ghost" onclick="route()">Cancel</button><button class="btn dark" onclick="orgSetupNext()">Next</button></div><p class="err" id="osErr"></p>`);
@@ -2186,7 +2186,7 @@ function fillPicker(){
   const label=p=>{ const roles=(db.members||[]).filter(m=>m.personId===p.id).map(m=>{ const org=db.orgs[m.orgId], pa=programAdminOf(m.orgId,p.id);
     return m.roles.includes('admin')?`admin, ${org.name}`:pa.length?`program admin, ${db.programs[pa[0]].name}`:null; }).filter(Boolean);
     return `${p.name}${roles.length?` (${roles.join('; ')})`:''}`; };
-  const idris=!isScratch()&&(db.invites||[]).find(i=>i.email==='idris@uthmanacademy.org'&&i.status==='pending')&&!Object.values(db.people).some(p=>p.email==='idris@uthmanacademy.org');
+  const idris=!isScratch()&&(db.invites||[]).find(i=>i.email==='idris@example.org'&&i.status==='pending')&&!Object.values(db.people).some(p=>p.email==='idris@example.org');
   // from scratch: anyone invited who hasn't signed in yet, one entry per email
   const known=new Set(Object.values(db.people).map(p=>p.email.toLowerCase())), invited=[];
   if(isScratch()) (db.invites||[]).filter(i=>i.status==='pending'&&!known.has(i.email.toLowerCase())).forEach(i=>{ if(!invited.some(x=>x.email===i.email)) invited.push(i); });
@@ -2201,7 +2201,7 @@ function pickPerson(v){
   if(SCREEN==='class'&&!readOnly) save();
   CUR=null; readOnly=false; clearNotNow(); $('toast').classList.remove('show');
   if(v==='@new'){ setMe(null); fillPicker(); return showSignIn('Someone new to the app. Type any name and email to try it.'); }
-  if(v==='@idris'){ const id='idris'; db.people[id]={id,name:'Hafiz Idris',email:'idris@uthmanacademy.org',provider:'google'}; saveDb(); setMe(id); return route(); }
+  if(v==='@idris'){ const id='idris'; db.people[id]={id,name:'Hafiz Idris',email:'idris@example.org',provider:'google'}; saveDb(); setMe(id); return route(); }
   if(v.startsWith('@inv:')){
     // what they'd see the first time they sign in with that email: "You're invited"
     const inv=(db.invites||[]).find(i=>i.id===v.slice(5)); if(!inv) return route();
@@ -2215,7 +2215,7 @@ function askStartOver(){
   sheetHTML('Start the practice copy over?','Every practice class, person and invite is cleared. Only this practice page is cleared; your real app is never touched.',
     `<div class="body"><div class="rowlist">
       <button class="dbtn leaf" onclick="startOver('scratch')">Empty, start from scratch<small>No organizations, classes or people. Sign in as someone new and go through it from the beginning.</small></button>
-      <button class="dbtn" onclick="startOver('demo')">Back to the demo<small>Uthman Academy and Masjid Al-Noor, as they are today</small></button>
+      <button class="dbtn" onclick="startOver('demo')">Back to the demo<small>Sample Academy and Sample Masjid, as they are today</small></button>
     </div></div><div class="actions"><button class="btn ghost" onclick="closeSheet()">Keep going</button></div>`);
 }
 function startOver(mode){
@@ -2234,7 +2234,7 @@ function showStartChoice(){
     <p class="lede">You can change this any time with Start over in the yellow bar.</p>
     <div class="signin-opts">
       <button class="dbtn leaf" onclick="firstChoice('scratch')">Start from scratch<small>An empty app: no organizations, classes or people. Create an account, set up an organization, add programs and classes, invite a teacher, and join as that teacher.</small></button>
-      <button class="dbtn" onclick="firstChoice('demo')">Explore the demo<small>Uthman Academy with its programs, teachers and classes already running, and Masjid Al-Noor.</small></button>
+      <button class="dbtn" onclick="firstChoice('demo')">Explore the demo<small>Sample Academy with its programs, teachers and classes already running, and Sample Masjid.</small></button>
     </div>`);
 }
 function firstChoice(mode){
@@ -2259,18 +2259,18 @@ window.addEventListener('storage',e=>{
 });
 
 /* =====================================================================
-   The demo: Uthman Academy and Masjid Al-Noor, built from the current time
+   The demo: Sample Academy and Sample Masjid, built from the current time
    so it looks live. Everyone except the owner, and every student, is made up.
    ===================================================================== */
 function seedRng(str){ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } let s=h>>>0||1; return ()=>{ s^=s<<13; s>>>=0; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
 function seedDemo(){
   const now=Date.now(), T=new Date(); T.setHours(0,0,0,0);
   const P=(id,name,email)=>({id,name,email,provider:'google'});
-  const people={maryam:P('maryam','Ustadha Maryam','maryam@uthmanacademy.org'),aisha:P('aisha','Ustadha Aisha','aisha@uthmanacademy.org'),
-    yusuf:P('yusuf','Hafiz Yusuf','yusuf@uthmanacademy.org'),bilal:P('bilal','Ustadh Bilal','bilal@uthmanacademy.org'),
-    rafaye:P('rafaye','Hafiz Abdur Rafaye','rfy.dawood@gmail.com'),khadija:P('khadija','Ustadha Khadija','khadija@uthmanacademy.org'),
-    hamid:P('hamid','Ustadh Hamid','hamid@uthmanacademy.org'),sumayya:P('sumayya','Ustadha Sumayya','sumayya@uthmanacademy.org'),
-    tariq:P('tariq','Imam Tariq','tariq@masjidalnoor.org'),hamza:P('hamza','Ustadh Hamza','hamza@uthmanacademy.org')};
+  const people={maryam:P('maryam','Ustadha Maryam','maryam@example.org'),aisha:P('aisha','Ustadha Aisha','aisha@example.org'),
+    yusuf:P('yusuf','Hafiz Yusuf','yusuf@example.org'),bilal:P('bilal','Ustadh Bilal','bilal@example.org'),
+    rafaye:P('rafaye','Ustadh Kareem','kareem@example.com'),khadija:P('khadija','Ustadha Khadija','khadija@example.org'),
+    hamid:P('hamid','Ustadh Hamid','hamid@example.org'),sumayya:P('sumayya','Ustadha Sumayya','sumayya@example.org'),
+    tariq:P('tariq','Imam Tariq','tariq@example.net'),hamza:P('hamza','Ustadh Hamza','hamza@example.org')};
   const L=(w,wt,wa,wat,wu,wut)=>({washroom:{min:w,trips:wt},water:{min:wa,trips:wat},wudhu:{min:wu,trips:wut}});
   const programs={
     boys:{id:'boys',orgId:'uthman',name:'Boys Full-time Hifz',days:[1,2,3,4,5],start:'08:00',end:'15:30',snack:{start:'10:10',end:'10:20'},lunch:{start:'12:05',end:'13:05'},limits:L(7,2,2,2,3,2),adminId:null},
@@ -2278,20 +2278,20 @@ function seedDemo(){
     evening:{id:'evening',orgId:'uthman',name:'Evening Maktab',days:[1,2,3,4],start:'17:00',end:'19:00',snack:{start:'18:00',end:'18:10'},lunch:null,limits:L(5,1,2,2,3,1),adminId:'yusuf'},
     sunday:{id:'sunday',orgId:'uthman',name:'Sunday School',days:[7],start:'10:00',end:'13:00',snack:{start:'11:30',end:'11:45'},lunch:null,limits:L(5,1,2,2,3,1),adminId:null},
     nsunday:{id:'nsunday',orgId:'alnoor',name:'Sunday School',days:[7],start:'10:00',end:'13:00',snack:{start:'11:30',end:'11:45'},lunch:null,limits:L(5,1,2,2,3,1),adminId:null}};
-  const orgs={uthman:{id:'uthman',name:'Uthman Academy',domain:'uthmanacademy.org',domainOnly:true,programs:['boys','girls','evening','sunday']},
-    alnoor:{id:'alnoor',name:'Masjid Al-Noor',domain:'masjidalnoor.org',domainOnly:false,programs:['nsunday']}};
+  const orgs={uthman:{id:'uthman',name:'Sample Academy',domain:'example.org',domainOnly:true,programs:['boys','girls','evening','sunday']},
+    alnoor:{id:'alnoor',name:'Sample Masjid',domain:'example.net',domainOnly:false,programs:['nsunday']}};
   const C=(id,orgId,programId,name,teacherIds,canEdit)=>({id,orgId,programId,name,teacherIds,canEdit:!!canEdit,status:'active'});
   const classes={
     bA:C('bA','uthman','boys','Class A',['bilal'],false), bB:C('bB','uthman','boys','Class B',['rafaye'],true), bC:C('bC','uthman','boys','Class C',['yusuf'],false),
     gA:C('gA','uthman','girls','Class A',['aisha'],false), gB:C('gB','uthman','girls','Class B',['khadija'],false),
     e1:C('e1','uthman','evening','Level 1',[],false), e2:C('e2','uthman','evening','Level 2',['hamid'],false),
     sJ:C('sJ','uthman','sunday','Juniors',['sumayya'],false), nJ:C('nJ','alnoor','nsunday','Juniors',['rafaye'],true),
-    own:{id:'own',orgId:null,ownerId:'rafaye',name:"Hafiz Abdur Rafaye's Hifz Class",settings:mergeSettings({}),status:'active'}};
+    own:{id:'own',orgId:null,ownerId:'rafaye',name:"Ustadh Kareem's Hifz Class",settings:mergeSettings({}),status:'active'}};
   const M=(orgId,personId,roles,canSee)=>({orgId,personId,roles,canSee});
   const members=[M('uthman','maryam',['admin'],'everything'),M('uthman','aisha',['admin','teacher'],'everything'),M('uthman','yusuf',['teacher'],'own'),
     M('uthman','bilal',['teacher'],'own'),M('uthman','rafaye',['teacher'],'summaries'),M('uthman','khadija',['teacher'],'own'),M('uthman','hamid',['teacher'],'own'),
     M('uthman','sumayya',['teacher'],'own'),M('uthman','hamza',['teacher'],'own'),M('alnoor','tariq',['admin'],'everything'),M('alnoor','rafaye',['teacher'],'own')];
-  const invites=[{id:'invIdris',orgId:'uthman',email:'idris@uthmanacademy.org',name:'Hafiz Idris',role:'teacher',classIds:['bA','e1'],invitedBy:'maryam',at:now-2*86400000,code:'K7P-4QX',status:'pending'}];
+  const invites=[{id:'invIdris',orgId:'uthman',email:'idris@example.org',name:'Hafiz Idris',role:'teacher',classIds:['bA','e1'],invitedBy:'maryam',at:now-2*86400000,code:'K7P-4QX',status:'pending'}];
   const d={v:1,people,orgs,programs,classes,members,invites,lastClass:{rafaye:'bB'}};
   lsSet(KDB,d);
   // made-up students
@@ -2342,7 +2342,7 @@ function seedDemo(){
 /* ===== start ===== */
 /* This version opens as a brand-new user would see the app: empty, at sign-in.
    The first time it loads on a device, earlier practice data is cleared once. */
-const KVER='hifzOrgPractice.ver', PRACTICE_VER='2';   // outside NS, so Start over keeps it
+const KVER='hifzOrgPractice.ver', PRACTICE_VER='3';   // outside NS, so Start over keeps it
 if((()=>{ try{ return localStorage.getItem(KVER)!==PRACTICE_VER; }catch(e){ return true; } })()){
   practiceKeys().forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   try{ sessionStorage.removeItem(KME); sessionStorage.removeItem(KSKIP); localStorage.setItem(KVER,PRACTICE_VER); }catch(e){}
