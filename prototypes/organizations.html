@@ -227,7 +227,8 @@ html,body{height:100%}
 body{display:flex;flex-direction:column}
 .practice{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 12px;background:#FFE58A;color:#3B2F00;border-bottom:2px solid #E5C14B;font-size:13px;font-weight:700;z-index:90;position:relative}
 .practice b{font-weight:800}
-.practice .who{display:flex;align-items:center;gap:6px;margin-left:auto}
+.practice .who{display:flex;align-items:center;gap:6px;margin-left:auto;min-width:0;max-width:100%}
+.practice .who select{min-width:0;flex:1 1 auto}
 .practice select{border:1px solid #C9A63A;border-radius:8px;padding:4px 8px;background:#FFF6CF;font-size:13px;font-weight:800;color:#3B2F00;max-width:46vw}
 .practice button{border:1px solid #C9A63A;border-radius:8px;padding:4px 10px;background:#FFF6CF;font-weight:800;font-size:13px}
 /* clip, not just hidden: the teacher menu waits off the right edge, and with
@@ -517,6 +518,28 @@ body{display:flex;flex-direction:column}
 .ini.inv{background:var(--gold-soft);color:#6B4B0C}
 .ini.soft{background:var(--leaf-soft);color:var(--leaf)}
 .ptempty{padding:12px;color:var(--mute);font-weight:600;font-size:13.5px}
+/* sign-up: Terms and privacy, as in the app */
+.plinks{display:flex;flex-wrap:wrap;gap:10px}
+.plinks a{flex:1 1 180px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;font-weight:800;font-size:15px;color:var(--leaf);text-decoration:none;background:var(--card)}
+.plinks a svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.setup-card label.ptoggle{display:flex;align-items:center;gap:14px;margin:16px 0 18px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--paper);font-weight:700;font-size:15px;line-height:1.35;cursor:pointer}
+.setup-card .ptoggle input{appearance:none;-webkit-appearance:none;flex:none;display:block;width:50px;height:30px;margin:0;padding:0;border:0;border-radius:15px;background:#B9C6CB;position:relative;cursor:pointer;transition:background .15s}
+.setup-card .ptoggle input::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(31,46,54,.3);transition:transform .15s}
+.setup-card .ptoggle input:checked{background:var(--leaf)}
+.setup-card .ptoggle input:checked::after{transform:translateX(20px)}
+.pacts{display:flex;flex-wrap:wrap-reverse;gap:10px}
+.pacts .btn{flex:1 1 200px;padding:14px}
+.gacct{display:flex;align-items:center;gap:10px;margin-bottom:4px;font-weight:800}
+.gacct i{font-style:normal;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--paper);border:1px solid var(--line);font-size:15px;color:var(--leaf)}
+/* students: Add later / Add now, name tags, and the students list */
+.two2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+@media (max-width:560px){ .two2{grid-template-columns:1fr} }
+.sheet .roster-add{margin-top:10px}
+.sheet .roster-add input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:11px 13px;font:inherit;font-size:15px;font-weight:600;background:var(--paper)}
+.stus{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:150px;overflow:auto}
+.stu{display:inline-flex;align-items:center;gap:2px;padding:3px 3px 3px 12px;border-radius:999px;background:var(--leaf-soft);color:var(--leaf);font-weight:800;font-size:14px}
+.stu button{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:inherit;background:none;border:0;cursor:pointer}
+.stu svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
 .tlrow{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);text-align:left}
 .tlrow div{flex:1;min-width:0}
 .tlrow b{display:block;font-size:14.5px;font-weight:800}
@@ -1250,29 +1273,46 @@ function hideCards(){ $('screen').classList.remove('show'); closeSheet(); closeD
 function card(html){ hideCards(); $('screenCard').innerHTML=html; $('screen').classList.add('show'); $('screen').scrollTop=0; }
 
 /* ----- sign in ----- */
+/* As in the app: one "Sign in with Google" button, then (first time only)
+   Terms and privacy. The practice copy can't use Google, so a small window
+   stands in for Google's account picker: any name and email. */
 function showSignIn(note){
   SCREEN='signin'; showView(null);
-  card(`<h2>Sign in</h2><p class="lede">${note||'Sign in to your classes. In this practice copy, type any name and email.'}</p>
-    <label>Your name<input id="siName" placeholder="e.g. Ustadh Imran" autocomplete="off"></label>
-    <label>Email<input id="siEmail" type="email" placeholder="you@example.com" autocomplete="off"></label>
-    <div class="signin-opts"><button class="btn dark" onclick="signIn('google')">Sign in with Google</button>
-    <div class="orline">or</div>
-    <button class="btn ghost" onclick="signIn('link')">Sign in with an email link</button></div>
-    <p class="err" id="siErr"></p>`);
+  card(`<h2>Sign in to your class</h2>
+    <p class="lede">Sign in with your Google account. Your class is saved to it, so the same class opens on any tablet, phone or computer where you sign in, and nothing is lost if this device is.</p>
+    <button class="btn dark" style="width:100%" onclick="googlePicker()">Sign in with Google</button>
+    <p class="note2">${esc(note||'Practice copy: the next window stands in for Google. Type any name and email.')}</p>`);
+}
+function googlePicker(){
+  $('scrim').classList.add('over');
+  sheetHTML('<span class="gacct"><i>G</i>Choose an account</span>','Practice copy: this stands in for Google\'s sign-in window. Type any name and email. Nothing is sent.',
+    `<div class="body"><label class="flab" for="siName">Name</label><div class="note" style="margin-top:6px"><input id="siName" placeholder="e.g. Ustadh Imran" autocomplete="off" onkeydown="if(event.key==='Enter')signIn()"></div>
+      <label class="flab" for="siEmail">Email</label><div class="note" style="margin-top:6px"><input id="siEmail" type="email" placeholder="you@example.com" autocomplete="off" onkeydown="if(event.key==='Enter')signIn()"></div>
+      <p class="err" id="siErr"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn dark" onclick="signIn()">Continue</button></div>`);
+  setTimeout(()=>$('siName')&&$('siName').focus(),50);
 }
 const emailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-function signIn(how){
+function signIn(){
   const name=($('siName').value||'').replace(/[<>"`]/g,'').trim(), email=($('siEmail').value||'').trim().toLowerCase();
   if(!emailOk(email)) return $('siErr').textContent='Please type an email address.';
-  if(how==='link'&&!signIn.linkSent){ signIn.linkSent=email;
-    $('siErr').innerHTML=`<span class="okmsg">We sent a sign-in link to ${esc(email)}. (Practice copy: nothing was sent.)</span><br><button class="btn primary" style="margin-top:10px" onclick="signIn('link')">Open the link</button>`; return; }
-  signIn.linkSent=null;
   let p=Object.values(db.people).find(x=>x.email.toLowerCase()===email);
   if(!p){ if(!name) return $('siErr').textContent='Please type your name too.';
-    const id='p'+Date.now().toString(36); p=db.people[id]={id,name,email,provider:how}; }
-  else p.provider=how;
-  saveDb(); clearNotNow(); setMe(p.id); fillPicker(); route();
+    const id='p'+Date.now().toString(36); p=db.people[id]={id,name,email,provider:'google',needsPolicy:true}; }
+  else p.provider='google';
+  saveDb(); clearNotNow(); setMe(p.id); closeSheet(); fillPicker(); route();
 }
+/* first sign-in: Terms of use and Privacy policy, the app's own screen */
+function showPolicy(){
+  SCREEN='policy'; showView(null);
+  const ext='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  card(`<h2>Terms and privacy</h2>
+    <p class="lede">Before you start, please read and accept BreakLog's Terms of use and Privacy policy.</p>
+    <div class="plinks"><a href="https://rfydawood.github.io/breaklog/terms.html" target="_blank" rel="noopener">Terms of use${ext}</a><a href="https://rfydawood.github.io/breaklog/privacy.html" target="_blank" rel="noopener">Privacy policy${ext}</a></div>
+    <label class="ptoggle"><input type="checkbox" role="switch" id="policyOk" onchange="$('policyAccept').disabled=!this.checked"><span>I have read and accept the Terms of use and Privacy policy</span></label>
+    <div class="pacts"><button class="btn ghost" onclick="switchAccount(true)">Sign out</button><button class="btn dark" id="policyAccept" disabled onclick="acceptPolicy()">Accept and continue</button></div>`);
+}
+function acceptPolicy(){ const p=me(); if(!p) return route(); delete p.needsPolicy; p.policyAt=Date.now(); saveDb(); route(); }
 
 /* ----- after sign-in: decided by the app, no questions ----- */
 /* After sign-in, in order:
@@ -1285,6 +1325,7 @@ function signIn(how){
 function route(){
   const p=me(); fillPicker();
   if(!p) return showSignIn();
+  if(p.needsPolicy) return showPolicy();
   const inv=(db.invites||[]).find(i=>i.status==='pending'&&i.email.toLowerCase()===p.email.toLowerCase()&&!notNow().includes(i.id));
   if(inv) return showInvite(inv.id);
   const mine=myClasses(p.id);
@@ -1370,7 +1411,7 @@ function startGo(){ if(startPick==='org') return openOrgSetup(); if(startPick===
 let oc=null;
 function showSetupClass(fromProfile,from){
   hideCards(); showView(fromProfile?'profileView':null);
-  oc={step:1,back:fromProfile?'profile':'route',name:cleanTxt((me()||{}).name),cls:'',school:false,days:[],start:'',end:'',snack:{start:'',end:''},lunch:{start:'',end:''},mode:'one',students:[],paste:''};
+  oc={step:1,back:fromProfile?'profile':'route',name:cleanTxt((me()||{}).name),cls:'',school:false,days:[],start:'',end:'',snack:{start:'',end:''},lunch:{start:'',end:''},mode:'now',students:[],paste:''};
   paintSetupClass();
 }
 function ocBack(){ if(oc.step===1){ const b=oc.back; oc=null; return b==='profile'?(hideCards(),showProfile()):route(); } ocKeep(); oc.step--; paintSetupClass(); }
@@ -1392,7 +1433,7 @@ const ocBreak=b=>b.start&&b.end?{start:b.start,end:b.end}:null;
 function ocSchedLine(){ const br=[['Snack',oc.snack],['Lunch',oc.lunch]].filter(([,b])=>ocBreak(b)).map(([n,b])=>`${n} ${hm(b.start)}`);
   return `${daysText(oc.days)} · ${hm(oc.start)}–${hm(oc.end)} · ${br.length?br.join(', '):'no breaks'}`; }
 const ocPasted=()=>String(oc.paste||'').split(/[\n,;]+/).map(n=>n.replace(/^\s*\d+[.)]\s*/,'').replace(/[<>"'`]/g,'').trim()).filter(Boolean);
-const ocRoster=()=>oc.mode==='one'?oc.students:oc.mode==='paste'?ocPasted():[];
+const ocRoster=()=>oc.mode==='now'?oc.students:[];
 function paintSetupClass(){
   SCREEN='setup';
   const steps=`<div class="osteps">${['Your class','Schedule','Students'].map((l,i)=>`<span class="${oc.step>i+1?'done':oc.step===i+1?'on':''}">${i+1} ${l}</span>`).join('')}</div>`;
@@ -1413,13 +1454,12 @@ function paintSetupClass(){
     <div class="setup-actions" style="margin-top:14px"><button class="btn ghost" onclick="ocBack()">Back</button><button class="btn dark" id="ocNextBtn" onclick="ocNext()">Next</button></div><p class="err" id="ocErr"></p>`), ocSchedHint(); }
   const n=ocRoster().length;
   card(`<h2>Your students</h2>${steps}
-    <div class="segw three" role="group" aria-label="How to add students">${[['one','One by one'],['paste','Paste a list'],['later','Add them later']].map(([k,l])=>`<button class="${oc.mode===k?'on':''}" aria-pressed="${oc.mode===k}" onclick="ocKeep();oc.mode='${k}';paintSetupClass()">${l}</button>`).join('')}</div>
-    ${oc.mode==='one'?`<div class="roster-add" style="margin-top:14px"><input id="ocStudent" aria-label="Student's name" placeholder="Type a name and press Enter" onkeydown="if(event.key==='Enter')ocAddStudent()"><button class="btn ghost sm" onclick="ocAddStudent()">Add</button></div>
-      <div class="roster-list">${oc.students.map((s,i)=>`<div class="roster-item"><span>${esc(s)}</span><button aria-label="Remove ${esc(s)}" onclick="ocRemoveStudent(${i})">Remove</button></div>`).join('')||'<div class="roster-item" style="color:var(--mute)">No students yet.</div>'}</div>`
-    :oc.mode==='paste'?`<textarea id="ocPaste" aria-label="Students, one per line" style="margin-top:14px" placeholder="Paste names from WhatsApp, Excel or a note, one per line. Numbers like &quot;1.&quot; are taken off." oninput="oc.paste=this.value;$('ocCount').textContent=ocCountTxt()">${esc(oc.paste)}</textarea>`
+    <div class="segw" role="group" aria-label="When to add students">${[['later','Add later'],['now','Add now']].map(([k,l])=>`<button class="${oc.mode===k?'on':''}" aria-pressed="${oc.mode===k}" onclick="ocKeep();oc.mode='${k}';paintSetupClass()">${l}</button>`).join('')}</div>
+    ${oc.mode==='now'?`<div class="roster-add" style="margin-top:14px"><input id="ocStudent" aria-label="Student name" placeholder="Student name, or paste several split by commas" onkeydown="if(event.key==='Enter')ocAddStudent()" onpaste="pasteNames(event,ocAddNames)"><button class="btn ghost sm" onclick="ocAddStudent()">Add</button></div>
+      ${stuTags(oc.students,'ocRemoveStudent')}`
     :`<p class="note2" style="margin:14px 0">The class starts empty. Add students any time from the Roster.</p>`}
     <div class="setup-actions" style="margin-top:14px"><span id="ocCount">${ocCountTxt()}</span><button class="btn ghost" style="flex:none;margin-left:auto" onclick="ocBack()">Back</button><button class="btn dark" style="margin-left:0" onclick="ocCreate()">Create my class</button></div><p class="err" id="ocErr"></p>`);
-  if(oc.mode==='one') setTimeout(()=>$('ocStudent')&&$('ocStudent').focus(),0);
+  if(oc.mode==='now') setTimeout(()=>$('ocStudent')&&$('ocStudent').focus(),0);
 }
 function ocCountTxt(){ const n=ocRoster().length; return oc.mode==='later'||!n?'No students yet':n===1?'1 student':`${n} students`; }
 function ocDay(d){ oc.days=oc.days.includes(d)?oc.days.filter(x=>x!==d):[...oc.days,d].sort((a,b)=>a-b); paintSetupClass(); }
@@ -1432,7 +1472,8 @@ function ocNext(){
   if(oc.step===2){ const e=ocSchedErr(); if(e) return $('ocErr').textContent=e; }
   oc.step++; paintSetupClass();
 }
-function ocAddStudent(){ const n=cleanTxt($('ocStudent').value); if(!n) return; if(!oc.students.includes(n)) oc.students.push(n); paintSetupClass(); }
+function ocAddNames(names){ const skip=mergeNames(oc.students,names); paintSetupClass(); if(skip) $('ocErr').textContent=`${skip===1?'One name was':skip+' names were'} already on the list.`; }
+function ocAddStudent(){ const names=splitNames($('ocStudent').value); if(names.length) ocAddNames(names); }
 function ocRemoveStudent(i){ oc.students.splice(i,1); paintSetupClass(); }
 function ocCreate(){
   ocKeep(); const p=me(), names=[...new Set(ocRoster())];
@@ -1616,14 +1657,35 @@ function osSaveHours(){ const h=os.hours, p=osProg(h.i);
   p.days=h.days; p.start=h.start; p.end=h.end;
   p.full=toMin(p.start)<=toMin('10:10')&&toMin(p.end)>=toMin('13:05');   // snack and lunch only where they fit the day
   os.hours=null; closeSheet(); paintOrgSetup(); }
-function osAddClass(i,back){ const n=osProgNames()[i], k=osProg(i).classes.length; $('scrim').classList.add('over');
+/* ----- students: names typed one at a time, or several pasted at once ----- */
+const splitNames=t=>String(t||'').split(/[\n,;]+/).map(n=>cleanTxt(n.replace(/^\s*\d+[.)]\s*/,''))).filter(Boolean);
+const stuTxt=k=>k===1?'1 student':`${k} students`;
+const ICO={pen:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5l4 4L8 20H4v-4z"/></svg>',x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>'};
+// adds names to a list, skipping any already there; returns how many were skipped
+function mergeNames(list,names){ let skipped=0; names.forEach(n=>{ if(list.some(x=>x.toLowerCase()===n.toLowerCase())) skipped++; else list.push(n); }); return skipped; }
+// a single-line box turns pasted line breaks into spaces, so a pasted list is split here first
+function pasteNames(e,add){ const t=(e.clipboardData||window.clipboardData).getData('text'); if(!/[\n,;]/.test(t)) return; e.preventDefault(); add(splitNames(t)); }
+function stuTags(list,drop){ return list.length?`<div class="stus">${list.map((s,j)=>`<span class="stu">${esc(s)}<button aria-label="Remove ${esc(s)}" onclick="${drop}(${j})">${ICO.x}</button></span>`).join('')}</div>`
+  :'<p class="note2">No students yet. Type a name and press Add or Enter.</p>'; }
+function osAddClass(i,back){ os.add={i,back:!!back,name:'',email:'',mode:'later',students:[]}; paintAddClass(); setTimeout(()=>$('ocName')&&$('ocName').focus(),50); }
+function paintAddClass(){ const a=os.add, i=a.i, n=osProgNames()[i], k=osProg(i).classes.length; $('scrim').classList.add('over');
+  const enter=`if(event.key==='Enter')osSaveClass()`, cnt=a.mode==='now'?a.students.length:0;
   sheetHTML(`Add a class to ${esc(n)}`,`${classCountTxt(k)} in this program so far.`,
-    `<div class="body"><label class="flab" for="ocName">Class name</label><div class="note" style="margin-top:6px"><input id="ocName" placeholder="e.g. Class A" onkeydown="if(event.key==='Enter')osSaveClass(${i},${!!back})"></div>
-      <label class="flab" for="ocEmail">Teacher's email (optional)</label><div class="note" style="margin-top:6px"><input id="ocEmail" type="email" placeholder="${esc(os.domain?'e.g. teacher@'+os.domain:'their@email')}" onkeydown="if(event.key==='Enter')osSaveClass(${i},${!!back})"></div>
+    `<div class="body"><div class="two2">
+        <div><label class="flab" for="ocName">Class name</label><div class="note" style="margin-top:6px"><input id="ocName" value="${esc(a.name)}" placeholder="e.g. Class A" oninput="os.add.name=this.value" onkeydown="${enter}"></div></div>
+        <div><label class="flab" for="ocEmail">Teacher's email (optional)</label><div class="note" style="margin-top:6px"><input id="ocEmail" type="email" value="${esc(a.email)}" placeholder="${esc(os.domain?'e.g. teacher@'+os.domain:'their@email')}" oninput="os.add.email=this.value" onkeydown="${enter}"></div></div>
+      </div>
       <p class="note2">They're invited when you create ${esc(os.name)}, and open straight into this class. Leave it empty to choose a teacher later.</p>
+      <div class="flab" id="acStuLbl">Students</div>
+      <div class="segw" role="group" aria-labelledby="acStuLbl">${[['later','Add later'],['now','Add now']].map(([m,l])=>`<button class="${a.mode===m?'on':''}" aria-pressed="${a.mode===m}" onclick="osAddMode('${m}')">${l}</button>`).join('')}</div>
+      ${a.mode==='now'?`<div class="roster-add"><input id="acStu" aria-label="Student name" placeholder="Student name, or paste several split by commas" onkeydown="if(event.key==='Enter')osAddStu()" onpaste="pasteNames(event,osAddNames)"><button class="btn ghost sm" onclick="osAddStu()">Add</button></div>${stuTags(a.students,'osDropStu')}`
+        :'<p class="note2">The teacher can add students after they join.</p>'}
       <p class="err" id="ocErr"></p></div>
-     <div class="actions"><button class="btn ghost" onclick="${back?`osClassList(${i})`:'closeSheet()'}">Cancel</button><button class="btn dark" onclick="osSaveClass(${i},${!!back})">Add class</button></div>`);
-  setTimeout(()=>$('ocName')&&$('ocName').focus(),50); }
+     <div class="actions"><button class="btn ghost" onclick="${a.back?`osClassList(${i})`:'closeSheet()'}">Cancel</button><button class="btn dark" onclick="osSaveClass()">${cnt?`Add class + ${stuTxt(cnt)}`:'Add class'}</button></div>`); }
+function osAddMode(m){ os.add.mode=m; paintAddClass(); if(m==='now') setTimeout(()=>$('acStu')&&$('acStu').focus(),0); }
+function osAddNames(names){ const skip=mergeNames(os.add.students,names); paintAddClass(); setTimeout(()=>$('acStu')&&$('acStu').focus(),0); if(skip) $('ocErr').textContent=`${skip===1?'One name was':skip+' names were'} already on the list.`; }
+function osAddStu(){ const names=splitNames($('acStu').value); if(names.length) osAddNames(names); }
+function osDropStu(j){ os.add.students.splice(j,1); paintAddClass(); }
 // the existing invite rules: a real address, and "Only @domain" when it's on
 function osEmailErr(email){
   if(!email) return '';
@@ -1631,21 +1693,23 @@ function osEmailErr(email){
   if(!domainOk({domainOnly:os.only,domain:os.domain},email)) return `${os.name} only lets @${os.domain} addresses join, so ${email} can't be invited.`;
   return '';
 }
-function osSaveClass(i,back){ const p=osProg(i), name=cleanTxt($('ocName').value), email=cleanTxt($('ocEmail').value).toLowerCase();
+function osSaveClass(){ const a=os.add, i=a.i, back=a.back, p=osProg(i), name=cleanTxt($('ocName').value), email=cleanTxt($('ocEmail').value).toLowerCase();
   if(!name) return $('ocErr').textContent='Please give the class a name.';
   if(p.classes.some(c=>c.name.toLowerCase()===name.toLowerCase())) return $('ocErr').textContent=`${osProgNames()[i]} already has a class called ${name}.`;
   const e=osEmailErr(email); if(e) return $('ocErr').textContent=e;
-  p.classes.push({name,email});
+  const students=[];
+  if(a.mode==='now'){ mergeNames(students,a.students); if($('acStu')) mergeNames(students,splitNames($('acStu').value)); }   // a name still in the box counts too
+  p.classes.push({name,email,students}); os.add=null;
   if(back) return osClassList(i,true);
-  closeSheet(); paintOrgSetup(); toast(`${name} added to ${osProgNames()[i]}`); }
+  closeSheet(); paintOrgSetup(); toast(`${name} added to ${osProgNames()[i]}${students.length?` with ${stuTxt(students.length)}`:''}`); }
 function osClassList(i,keep){ if(!keep){ os.ledit=-1; os.ldel=-1; } const n=osProgNames()[i], cs=osProg(i).classes; $('scrim').classList.add('over');
-  const ico={pen:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5l4 4L8 20H4v-4z"/></svg>',x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>'};
-  sheetHTML(`Classes in ${esc(n)}`,`${classCountTxt(cs.length)} · the pencil edits a line, the x asks before removing it.`,
+  const ico=ICO;
+  sheetHTML(`Classes in ${esc(n)}`,`${classCountTxt(cs.length)} · the pencil edits a class, the x asks before removing it, the student count opens its students.`,
     `<div class="body">${cs.map((c,j)=>os.ledit===j
         ?`<div class="clrow"><input id="leName" aria-label="Class name" value="${esc(c.name)}"><input id="leEmail" type="email" aria-label="Teacher's email" value="${esc(c.email)}" placeholder="Teacher's email (optional)"><button class="icob ok" aria-label="Save changes" onclick="osSaveEdit(${i},${j})">${ico.ok}</button><button class="icob" aria-label="Cancel editing" onclick="os.ledit=-1;osClassList(${i},true)">${ico.x}</button></div>`
         :os.ldel===j
         ?`<div class="clrow"><div class="who ask"><b>Remove ${esc(c.name)}?</b><small>${c.email?`${esc(c.email)} will not be invited.`:'It has no teacher yet.'}</small></div><button class="btn ghost sm" onclick="os.ldel=-1;osClassList(${i},true)">Keep</button><button class="btn warn sm" onclick="osRemoveClass(${i},${j})">Remove</button></div>`
-        :`<div class="clrow"><div class="who"><b>${esc(c.name)}</b><small>${c.email?esc(c.email):'No teacher yet'}</small></div><button class="icob" aria-label="Edit ${esc(c.name)}" onclick="os.ledit=${j};os.ldel=-1;osClassList(${i},true)">${ico.pen}</button><button class="icob del" aria-label="Remove ${esc(c.name)}" onclick="os.ldel=${j};os.ledit=-1;osClassList(${i},true)">${ico.x}</button></div>`).join('')
+        :`<div class="clrow"><div class="who"><b>${esc(c.name)}</b><small>${c.email?esc(c.email):'No teacher yet'} · <button class="lnk2" aria-label="Students in ${esc(c.name)}" onclick="osStudents(${i},${j})">${(c.students||[]).length?stuTxt(c.students.length):'Add students'}</button></small></div><button class="icob" aria-label="Edit ${esc(c.name)}" onclick="os.ledit=${j};os.ldel=-1;osClassList(${i},true)">${ico.pen}</button><button class="icob del" aria-label="Remove ${esc(c.name)}" onclick="os.ldel=${j};os.ledit=-1;osClassList(${i},true)">${ico.x}</button></div>`).join('')
       ||'<div class="ptempty">No classes yet. Add the first one below.</div>'}<p class="err" id="leErr"></p></div>
      <div class="actions"><button class="btn ghost" onclick="osAddClass(${i},true)">+ Add class</button><button class="btn dark" onclick="closeSheet();paintOrgSetup()">Done</button></div>`);
   if(os.ledit>=0) setTimeout(()=>$('leName')&&$('leName').focus(),50); }
@@ -1653,8 +1717,29 @@ function osSaveEdit(i,j){ const cs=osProg(i).classes, name=cleanTxt($('leName').
   if(!name) return $('leErr').textContent='Please give the class a name.';
   if(cs.some((c,k)=>k!==j&&c.name.toLowerCase()===name.toLowerCase())) return $('leErr').textContent=`There's already a class called ${name} here.`;
   const e=osEmailErr(email); if(e) return $('leErr').textContent=e;
-  cs[j]={name,email}; os.ledit=-1; osClassList(i,true); }
+  cs[j]={name,email,students:cs[j].students||[]}; os.ledit=-1; osClassList(i,true); }
 function osRemoveClass(i,j){ const cs=osProg(i).classes, c=cs[j]; cs.splice(j,1); os.ldel=-1; osClassList(i,true); toast(`${c.name} removed`); }
+/* ----- one class's students: add, rename (pencil), remove (x, asks first) ----- */
+function osStudents(i,j){ os.stu={i,j,edit:-1,del:-1}; paintStudents(); setTimeout(()=>$('stAdd')&&$('stAdd').focus(),50); }
+function paintStudents(){ const s=os.stu, c=osProg(s.i).classes[s.j], list=c.students||(c.students=[]); $('scrim').classList.add('over');
+  sheetHTML(`Students in ${esc(c.name)}`,`${esc(osProgNames()[s.i])} · ${list.length?stuTxt(list.length):'No students yet'} · the pencil renames a student, the x asks before removing them.`,
+    `<div class="body"><div class="roster-add" style="margin-top:0;margin-bottom:4px"><input id="stAdd" aria-label="Student name" placeholder="Add a student, or paste several split by commas" onkeydown="if(event.key==='Enter')osStuAdd()" onpaste="pasteNames(event,osStuAddNames)"><button class="btn ghost sm" onclick="osStuAdd()">Add</button></div>
+      ${list.map((n,k)=>s.edit===k
+        ?`<div class="clrow"><input id="stEdit" aria-label="Student name" value="${esc(n)}" onkeydown="if(event.key==='Enter')osStuSave(${k})"><button class="icob ok" aria-label="Save name" onclick="osStuSave(${k})">${ICO.ok}</button><button class="icob" aria-label="Cancel renaming" onclick="os.stu.edit=-1;paintStudents()">${ICO.x}</button></div>`
+        :s.del===k
+        ?`<div class="clrow"><div class="who ask"><b>Remove ${esc(n)}?</b><small>They come off ${esc(c.name)}.</small></div><button class="btn ghost sm" onclick="os.stu.del=-1;paintStudents()">Keep</button><button class="btn warn sm" onclick="osStuRemove(${k})">Remove</button></div>`
+        :`<div class="clrow"><div class="who"><b>${esc(n)}</b></div><button class="icob" aria-label="Rename ${esc(n)}" onclick="os.stu.edit=${k};os.stu.del=-1;paintStudents()">${ICO.pen}</button><button class="icob del" aria-label="Remove ${esc(n)}" onclick="os.stu.del=${k};os.stu.edit=-1;paintStudents()">${ICO.x}</button></div>`).join('')
+      ||'<div class="ptempty">No students yet. Add the first one above.</div>'}<p class="err" id="stErr"></p></div>
+     <div class="actions"><button class="btn ghost" onclick="os.stu=null;osClassList(${s.i})">Back to classes</button><button class="btn dark" onclick="os.stu=null;closeSheet();paintOrgSetup()">Done</button></div>`);
+  if(s.edit>=0) setTimeout(()=>$('stEdit')&&$('stEdit').focus(),50); }
+const stuList=()=>osProg(os.stu.i).classes[os.stu.j].students;
+function osStuAddNames(names){ const skip=mergeNames(stuList(),names); paintStudents(); setTimeout(()=>$('stAdd')&&$('stAdd').focus(),0); if(skip) $('stErr').textContent=`${skip===1?'One name was':skip+' names were'} already in this class.`; }
+function osStuAdd(){ const names=splitNames($('stAdd').value); if(names.length) osStuAddNames(names); }
+function osStuSave(k){ const list=stuList(), n=cleanTxt($('stEdit').value);
+  if(!n) return $('stErr').textContent='Please type the student\'s name.';
+  if(list.some((x,m)=>m!==k&&x.toLowerCase()===n.toLowerCase())) return $('stErr').textContent=`There's already a student called ${n} in this class.`;
+  list[k]=n; os.stu.edit=-1; paintStudents(); }
+function osStuRemove(k){ const list=stuList(), n=list[k]; list.splice(k,1); os.stu.del=-1; paintStudents(); toast(`${n} removed`); }
 function createOrg(){
   const names=osProgNames(), p=me(), id='o'+Date.now().toString(36);
   const progIds=names.map((n,i)=>{ const d=osProg(i), pid=id+'p'+i;
@@ -1665,7 +1750,7 @@ function createOrg(){
   names.forEach((n,i)=>osProg(i).classes.forEach(cl=>{
     const cid='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); nClasses++;
     const c=db.classes[cid]={id:cid,orgId:id,status:'active',teacherIds:[],name:cl.name,programId:progIds[i],canEdit:false};
-    lsSet(KCLS(cid),{students:[],history:{},day:null,today:null});
+    lsSet(KCLS(cid),{students:(cl.students||[]).map((n,k)=>({id:'s'+k,name:n,active:true})),history:{},day:null,today:null});
     if(!cl.email) return;
     const known=Object.values(db.people).find(x=>x.email.toLowerCase()===cl.email);
     if(known&&known.id===p.id){ c.teacherIds.push(p.id); addToProgram(c.programId,{personId:p.id}); markSeen(p.id,[cid]); mine=true; return; }
@@ -2122,7 +2207,7 @@ function pickPerson(v){
     const inv=(db.invites||[]).find(i=>i.id===v.slice(5)); if(!inv) return route();
     const local=inv.email.split('@')[0].replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
     const pid='p'+Date.now().toString(36);
-    db.people[pid]={id:pid,name:inv.name||local,email:inv.email,provider:'google'}; saveDb(); setMe(pid); return route();
+    db.people[pid]={id:pid,name:inv.name||local,email:inv.email,provider:'google',needsPolicy:true}; saveDb(); setMe(pid); return route();
   }
   setMe(v); route();
 }
@@ -2255,7 +2340,14 @@ function seedDemo(){
 }
 
 /* ===== start ===== */
-if(!practiceMode()){ db={v:1,people:{},orgs:{},programs:{},classes:{},members:[],invites:[],lastClass:{}}; fillPicker(); showStartChoice(); }
+/* This version opens as a brand-new user would see the app: empty, at sign-in.
+   The first time it loads on a device, earlier practice data is cleared once. */
+const KVER='hifzOrgPractice.ver', PRACTICE_VER='2';   // outside NS, so Start over keeps it
+if((()=>{ try{ return localStorage.getItem(KVER)!==PRACTICE_VER; }catch(e){ return true; } })()){
+  practiceKeys().forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  try{ sessionStorage.removeItem(KME); sessionStorage.removeItem(KSKIP); localStorage.setItem(KVER,PRACTICE_VER); }catch(e){}
+}
+if(!practiceMode()){ setPracticeMode('scratch'); emptyWorld(); loadDb(); setMe(null); fillPicker(); showSignIn(); }
 else { loadDb(); if(!meId()&&!isScratch()) setMe('maryam'); fillPicker(); route(); }
 setInterval(()=>{ tick(); if(SCREEN==='org'&&ORG.tab==='classes'&&!$('scrim').classList.contains('show')) paintOrg(); },1000);
 document.addEventListener('click',()=>{ if(render.pending&&!$('scrim').classList.contains('show')){ render.pending=false; render(); } });
